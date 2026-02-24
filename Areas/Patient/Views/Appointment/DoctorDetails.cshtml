@@ -680,7 +680,8 @@
                 });
             }
 
-            // رزرو نوبت
+            // رزرو نوبت — هدایت به SelectTime وقتی تاریخ معتبر است (فاز ۱.۱ نقشه راه)
+            var selectTimeUrlWithPlaceholders = '@Url.Action("SelectTime", "AppointmentBooking", new { area = "Patient", doctorId = 0, date = "0000-00-00" })';
             $('#bookAppointmentBtn').on('click', function () {
                 @if (!User.Identity.IsAuthenticated)
                 {
@@ -696,8 +697,13 @@
                         toastr.warning('لطفاً تاریخ و زمان را انتخاب کنید', 'هشدار');
                         return;
                     }
-
-                    window.location.href = '@Url.Action("SelectDate", "AppointmentBooking")?doctorId=' + encodeURIComponent(doctorId) + '&date=' + encodeURIComponent(selectedDate) + '&time=' + encodeURIComponent(selectedTime);
+                    var dateForRoute = String(selectedDate).replace(/\//g, '-');
+                    if (!dateForRoute.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        toastr.warning('فرمت تاریخ نامعتبر است', 'هشدار');
+                        return;
+                    }
+                    var url = selectTimeUrlWithPlaceholders.replace(/\/0\/0000-00-00$/, '/' + doctorId + '/' + dateForRoute);
+                    window.location.href = url;
                     </text>
                 }
             });

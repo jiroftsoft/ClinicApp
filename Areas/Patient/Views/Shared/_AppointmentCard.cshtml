@@ -111,6 +111,13 @@
                     }
                     else if (Model.Status == ClinicApp.Models.Enums.AppointmentStatus.Scheduled)
                     {
+                        if (Model.ShowOnlineConsultationLink)
+                        {
+                            <a href="@Url.Action("Join", "OnlineConsultation", new { area = "Patient", id = Model.AppointmentId })" class="btn btn-sm btn-medical-primary mt-2" aria-label="ورود به اتاق مشاوره تصویری">
+                                <i class="fas fa-video ml-1" aria-hidden="true"></i>
+                                ورود به مشاوره تصویری
+                            </a>
+                        }
                         <button type="button" class="btn btn-sm btn-outline-medical-danger cancel-appointment-btn mt-2" data-appointment-id="@Model.AppointmentId">
                             <i class="fas fa-times ml-1"></i>
                             لغو نوبت

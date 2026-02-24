@@ -543,6 +543,11 @@
                 console.log('🏥 MEDICAL: End date set:', modelData.EndDateShamsi);
             }
             
+            // ✅ JalaliDatePicker Enterprise: اطمینان از مقداردهی فیلدهای تاریخ (جزئیات بیمه)
+            if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                JalaliDatePickerEnterprise.startWatchAgain();
+            }
+            
             // Set model values for debugging
             console.log('🏥 MEDICAL: Model values:', {
                 InsuranceProviderId: modelData.InsuranceProviderId,
@@ -1024,6 +1029,23 @@
                 console.log('🏥 Medical Environment: Supplementary plan without provider');
             } else {
                 $('#SupplementaryInsuranceProviderId').removeClass('is-invalid');
+            }
+            
+            // ✅ اعتبارسنجی بازه تاریخ (تاریخ پایان ≥ تاریخ شروع) با JalaliDatePicker Enterprise
+            var startShamsi = ($('#StartDateShamsi').val() || '').trim();
+            var endShamsi = ($('#EndDateShamsi').val() || '').trim();
+            if (startShamsi && endShamsi && typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.convertPersianToGregorian) {
+                try {
+                    var gStart = JalaliDatePickerEnterprise.convertPersianToGregorian(startShamsi);
+                    var gEnd = JalaliDatePickerEnterprise.convertPersianToGregorian(endShamsi);
+                    if (gStart && gEnd && gEnd < gStart) {
+                        $('#EndDateShamsi').addClass('is-invalid');
+                        isValid = false;
+                        errors.push('تاریخ پایان اعتبار باید بعد از تاریخ شروع باشد');
+                    } else {
+                        $('#EndDateShamsi').removeClass('is-invalid');
+                    }
+                } catch (e) { /* نادیده */ }
             }
             
             // 🏥 Medical Environment: Show validation errors

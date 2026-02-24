@@ -415,6 +415,48 @@ namespace ClinicApp.Services
             }
         }
 
+        /// <summary>
+        /// نوبت‌های مشاوره آنلاین قابل نمایش در نوتیف (امروز و فردا و پس‌فردا).
+        /// </summary>
+        public async Task<ServiceResult<List<OnlineConsultationNotificationItemViewModel>>> GetOnlineConsultationNotificationsAsync(int patientId)
+        {
+            try
+            {
+                var today = DateTime.UtcNow.Date;
+                var endDate = today.AddDays(3);
+                var list = await _appointmentRepository.GetPatientAppointmentsAsync(patientId, today, endDate);
+                var online = (list ?? new List<Models.Entities.Appointment.Appointment>())
+                    .Where(a => a.IsOnlineConsultation && a.Status == AppointmentStatus.Scheduled)
+                    .OrderBy(a => a.AppointmentDate)
+                    .Take(10)
+                    .Select(a => new OnlineConsultationNotificationItemViewModel
+                    {
+                        AppointmentId = a.AppointmentId,
+                        DoctorName = a.Doctor?.FullName ?? "پزشک",
+                        DateShamsi = a.AppointmentDate.ToPersianDate(),
+                        TimeText = TimeFormatHelper.FormatTimeToPersian(a.AppointmentDate.TimeOfDay),
+                        JoinUrl = "/Patient/Consultation/Join/" + a.AppointmentId
+                    })
+                    .ToList();
+
+                return ServiceResult<List<OnlineConsultationNotificationItemViewModel>>.Successful(
+                    online,
+                    "لیست ویزیت آنلاین",
+                    operationName: "GetOnlineConsultationNotifications",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اعلان‌های مشاوره آنلاین - PatientId: {PatientId}", patientId);
+                return ServiceResult<List<OnlineConsultationNotificationItemViewModel>>.Failed(
+                    "خطا در دریافت اعلان‌ها",
+                    "GET_ONLINE_CONSULTATION_NOTIFICATIONS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
         #endregion
     }
 }

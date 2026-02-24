@@ -7,7 +7,9 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.DoctorManagementVM;
+using ClinicApp.ViewModels.OnlineConsultation;
 using DoctorSummaryViewModel = ClinicApp.Interfaces.ClinicAdmin.DoctorSummaryViewModel;
 
 namespace ClinicApp.Repositories.ClinicAdmin
@@ -96,6 +98,39 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 throw new InvalidOperationException($"خطا در دریافت داده‌های داشبورد", ex);
             }
+        }
+
+        /// <summary>
+        /// دریافت لیست نوبت‌های مشاوره آنلاین در انتظار (پرداخت‌شده؛ JoinUrl توسط سرویس پر می‌شود)
+        /// </summary>
+        public async Task<List<PendingOnlineConsultationItemViewModel>> GetPendingOnlineConsultationsAsync(int? doctorId = null)
+        {
+            var cutoff = DateTime.UtcNow.AddDays(-7);
+            var query = _context.Appointments
+                .Where(a => !a.IsDeleted
+                    && a.IsOnlineConsultation
+                    && a.PaymentTransactionId != null
+                    && a.Status != AppointmentStatus.Cancelled
+                    && a.AppointmentDate >= cutoff)
+                .Include(a => a.Doctor)
+                .Include(a => a.Patient)
+                .AsNoTracking();
+
+            if (doctorId.HasValue && doctorId.Value > 0)
+                query = query.Where(a => a.DoctorId == doctorId.Value);
+
+            var items = await query
+                .OrderByDescending(a => a.AppointmentDate)
+                .Take(20)
+                .ToListAsync();
+
+            return items.Select(a => new PendingOnlineConsultationItemViewModel
+            {
+                AppointmentId = a.AppointmentId,
+                AppointmentDate = a.AppointmentDate,
+                PatientName = a.Patient != null ? ($"{a.Patient.FirstName ?? ""} {a.Patient.LastName ?? ""}".Trim()) : (a.PatientName ?? "بیمار"),
+                JoinUrl = null
+            }).ToList();
         }
 
         /// <summary>

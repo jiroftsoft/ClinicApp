@@ -35,6 +35,7 @@ namespace ClinicApp.Services.Appointment
         private readonly IAppSettings _appSettings; // ✅ CRITICAL FIX: برای دسترسی به DefaultAppointmentDurationMinutes
         private readonly IPromotionalEventService _promotionalEventService; // ✅ برای محاسبه تخفیف‌های تبلیغاتی
         private readonly AppointmentNotificationQueue.IAppointmentNotificationQueueService _notificationService; // ✅ Event-based اعلان، فقط بعد از Commit
+        private readonly IDoctorServiceCategoryService _doctorServiceCategoryService; // ✅ فاز ۲.۱: دسته‌بندی‌های خدمتی پزشک برای dropdown نوع ویزیت
 
         public AppointmentBookingService(
             IAppointmentRepository appointmentRepository,
@@ -46,6 +47,7 @@ namespace ClinicApp.Services.Appointment
             IAppSettings appSettings,
             IPromotionalEventService promotionalEventService,
             AppointmentNotificationQueue.IAppointmentNotificationQueueService notificationService,
+            IDoctorServiceCategoryService doctorServiceCategoryService,
             ILogger logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -57,6 +59,7 @@ namespace ClinicApp.Services.Appointment
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _promotionalEventService = promotionalEventService ?? throw new ArgumentNullException(nameof(promotionalEventService));
             _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
+            _doctorServiceCategoryService = doctorServiceCategoryService ?? throw new ArgumentNullException(nameof(doctorServiceCategoryService));
             _logger = logger?.ForContext<AppointmentBookingService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -100,6 +103,8 @@ namespace ClinicApp.Services.Appointment
                     DepartmentName = a.Doctor?.DoctorDepartments?.FirstOrDefault()?.Department?.Name ?? "نامشخص",
                     Description = a.Description,
                     IsOnlineBooking = a.IsOnlineBooking,
+                    IsOnlineConsultation = a.IsOnlineConsultation,
+                    ShowOnlineConsultationLink = a.IsOnlineConsultation && _appSettings.EnableOnlineConsultation,
                     Duration = a.Duration,
                     CreatedAt = a.CreatedAt,
                     // ✅ نوبت نیاز به پرداخت دارد فقط وقتی: (Pending یا Scheduled) و مبلغ > 0 و هنوز پرداخت موفق (نقد/آنلاین) ثبت نشده
@@ -160,6 +165,8 @@ namespace ClinicApp.Services.Appointment
                     DepartmentName = appointment.Doctor?.DoctorDepartments?.FirstOrDefault()?.Department?.Name ?? "نامشخص",
                     Description = appointment.Description,
                     IsOnlineBooking = appointment.IsOnlineBooking,
+                    IsOnlineConsultation = appointment.IsOnlineConsultation,
+                    ShowOnlineConsultationLink = appointment.IsOnlineConsultation && _appSettings.EnableOnlineConsultation,
                     Duration = appointment.Duration,
                     CreatedAt = appointment.CreatedAt,
                     RequiresPayment = (appointment.Status == AppointmentStatus.Pending || appointment.Status == AppointmentStatus.Scheduled) &&
@@ -457,6 +464,35 @@ namespace ClinicApp.Services.Appointment
             {
                 _logger.Error(ex, "خطا در دریافت آمار پزشک {DoctorId}", doctorId);
                 return ServiceResult<DoctorPublicStatsDto>.Failed("خطا در دریافت آمار");
+            }
+        }
+
+        /// <summary>
+        /// فاز ۲.۱: لیست دسته‌بندی‌های خدمتی یک پزشک برای dropdown نوع ویزیت (بیمار).
+        /// </summary>
+        public async Task<ServiceResult<List<ServiceCategoryLookupDto>>> GetServiceCategoriesForDoctorLookupAsync(int doctorId)
+        {
+            try
+            {
+                if (doctorId <= 0)
+                    return ServiceResult<List<ServiceCategoryLookupDto>>.Failed("شناسه پزشک نامعتبر است");
+
+                var paged = await _doctorServiceCategoryService.GetServiceCategoriesForDoctorAsync(doctorId, "", 1, 500);
+                if (!paged.Success || paged.Data?.Items == null)
+                    return ServiceResult<List<ServiceCategoryLookupDto>>.Successful(new List<ServiceCategoryLookupDto>());
+
+                var list = paged.Data.Items
+                    .Where(x => x.IsActive)
+                    .Select(x => new ServiceCategoryLookupDto { Id = x.ServiceCategoryId, Name = x.ServiceCategoryTitle ?? x.ServiceCategoryName ?? "" })
+                    .Where(x => !string.IsNullOrEmpty(x.Name))
+                    .ToList();
+
+                return ServiceResult<List<ServiceCategoryLookupDto>>.Successful(list);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت دسته‌بندی‌های خدمتی پزشک {DoctorId}", doctorId);
+                return ServiceResult<List<ServiceCategoryLookupDto>>.Failed("خطا در دریافت لیست نوع ویزیت");
             }
         }
 
@@ -822,28 +858,29 @@ namespace ClinicApp.Services.Appointment
                     // appointmentDateTime قبلاً محاسبه شد
 
                     // ✅ ایجاد نوبت با اطلاعات تخفیف
+                    var isOnlineConsultation = _appSettings.OnlineConsultationServiceCategoryId.HasValue
+                        && request.ServiceCategoryId.HasValue
+                        && request.ServiceCategoryId.Value == _appSettings.OnlineConsultationServiceCategoryId.Value;
+
                     var appointment = new AppointmentEntity
                     {
                         DoctorId = request.DoctorId,
                         PatientId = request.PatientId,
                         AppointmentDate = appointmentDateTime,
                         Status = AppointmentStatus.Pending, // ✅ CRITICAL FIX: نوبت در انتظار پرداخت (نه Scheduled)
-                        // بعد از موفقیت پرداخت، در PaymentCallback به Scheduled تبدیل می‌شود
-                        // این طبق قراردادهای مالی است: نوبت قبل از پرداخت رزرو نمی‌شود
-                        PendingExpiresAt = _timeProvider.UtcNow.AddMinutes(_appSettings.PendingExpirationMinutes), // ✅ CRITICAL: استفاده از تنظیمات AppSettings
-                        // بعد از مدت زمان تعیین شده در AppSettings، نوبت منقضی می‌شود و اسلات آزاد می‌شود
-                        // این برای جلوگیری از اشغال اسلات‌ها توسط نوبت‌های Pending که پرداخت نشده‌اند
-                        // مقدار پیش‌فرض: 5 دقیقه (قابل تنظیم در Web.config: Appointment:PendingExpirationMinutes)
-                        Price = priceResult.FinalPrice, // ✅ قیمت نهایی (بعد از تخفیف)
-                        DiscountAmount = priceResult.DiscountAmount, // ✅ مبلغ تخفیف
-                        PromotionalEventId = priceResult.PromotionalEventId, // ✅ شناسه ایونت تبلیغاتی
+                        PendingExpiresAt = _timeProvider.UtcNow.AddMinutes(_appSettings.PendingExpirationMinutes),
+                        Price = priceResult.FinalPrice,
+                        DiscountAmount = priceResult.DiscountAmount,
+                        PromotionalEventId = priceResult.PromotionalEventId,
                         Description = request.Description,
+                        ServiceCategoryId = request.ServiceCategoryId,
+                        IsOnlineConsultation = isOnlineConsultation, // وقتی بیمار دسته «مشاوره آنلاین» را انتخاب کرده باشد
                         IsOnlineBooking = true,
                         Duration = (int)(request.EndTime - request.StartTime).TotalMinutes,
                         Priority = AppointmentPriority.Normal,
                         IsEmergency = false,
                         CreatedByUserId = _currentUserService.UserId,
-                        CreatedAt = _timeProvider.UtcNow, // ✅ UTC برای timestamp
+                        CreatedAt = _timeProvider.UtcNow,
                         IsDeleted = false
                     };
 

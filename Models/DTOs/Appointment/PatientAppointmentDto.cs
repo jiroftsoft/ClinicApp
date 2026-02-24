@@ -22,6 +22,10 @@ namespace ClinicApp.Models.DTOs.Appointment
         public string DepartmentName { get; set; }
         public string Description { get; set; }
         public bool IsOnlineBooking { get; set; }
+        /// <summary>آیا نوبت مشاوره آنلاین تصویری است؟</summary>
+        public bool IsOnlineConsultation { get; set; }
+        /// <summary>آیا لینک «ورود به مشاوره تصویری» نمایش داده شود؟ (مشاوره آنلاین + ماژول فعال)</summary>
+        public bool ShowOnlineConsultationLink { get; set; }
         public int Duration { get; set; } // مدت زمان ویزیت به دقیقه
         public DateTime CreatedAt { get; set; }
         

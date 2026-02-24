@@ -18,5 +18,11 @@ public enum NotificationType
     AppointmentReminder3h = 4,
 
     /// <summary>یادآوری نوبت — 30 دقیقه قبل (اختیاری)</summary>
-    AppointmentReminder30min = 5
+    AppointmentReminder30min = 5,
+
+    /// <summary>درخواست مشاوره آنلاین به پزشک (SMS لینک ورود به اتاق بعد از پرداخت)</summary>
+    OnlineConsultationRequestToDoctor = 6,
+
+    /// <summary>اعلان مشاوره آنلاین به بیمار (SMS لینک ورود به اتاق بعد از پرداخت)</summary>
+    OnlineConsultationRequestToPatient = 7
 }

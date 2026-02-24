@@ -257,6 +257,15 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // مشاوره آنلاین تصویری — Admin/OnlineConsultation/Join/123
+            context.MapRoute(
+                name: "Admin_OnlineConsultation_Join",
+                url: "Admin/OnlineConsultation/Join/{id}",
+                defaults: new { controller = "OnlineConsultation", action = "Join", area = "Admin" },
+                constraints: new { id = @"^\d+$" },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
             context.MapRoute(
                 name: "Admin_DoctorReporting_Routes",
                 url: "Admin/DoctorReporting/{action}/{id}",
@@ -348,6 +357,22 @@ namespace ClinicApp.Areas.Admin
                 defaults: new { controller = "PromotionalEvent", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق Best Practices
+
+            // ✅ DoctorServiceCategory در Admin است نه CMS — مسیر صریح تا لینک اشتباه /Admin/CMS/DoctorServiceCategory هم کار کند
+            context.MapRoute(
+                name: "Admin_DoctorServiceCategory_Routes",
+                url: "Admin/DoctorServiceCategory/{action}/{id}",
+                defaults: new { controller = "DoctorServiceCategory", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // مسیر جایگزین: اگر لینک اشتباه /Admin/CMS/DoctorServiceCategory زده شد، همان کنترلر Admin سرویس دهد
+            context.MapRoute(
+                name: "Admin_CMS_DoctorServiceCategory_Fix",
+                url: "Admin/CMS/DoctorServiceCategory/{action}/{id}",
+                defaults: new { controller = "DoctorServiceCategory", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
 
             // CMS Home: صفحهٔ ورود CMS — گرید ماژول‌ها
             context.MapRoute(

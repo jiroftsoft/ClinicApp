@@ -149,9 +149,34 @@ body.patient-portal-body {
     opacity: 0.95;
 }
 
-.patient-navbar-top .navbar-notifications:hover {
+.patient-navbar-top .navbar-notifications .navbar-notifications-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    border-radius: var(--pl-radius-sm);
+    position: relative;
+}
+
+.patient-navbar-top .navbar-notifications .navbar-notifications-btn::after {
+    display: none;
+}
+
+.patient-navbar-top .navbar-notifications:hover,
+.patient-navbar-top .navbar-notifications .navbar-notifications-btn:hover {
     background: var(--pl-navbar-hover);
     opacity: 1;
+}
+
+.patient-navbar-top .patient-notifications-dropdown {
+    min-width: 320px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.patient-navbar-top .patient-notifications-dropdown .dropdown-item {
+    white-space: normal;
 }
 
 .patient-navbar-top .notification-badge {

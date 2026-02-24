@@ -1,4 +1,4 @@
-﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Enums;
 using System;
@@ -134,6 +134,11 @@ public class Appointment : ISoftDelete, ITrackable
     /// آیا نوبت به صورت آنلاین رزرو شده است؟
     /// </summary>
     public bool IsOnlineBooking { get; set; } = false;
+
+    /// <summary>
+    /// آیا نوبت مشاوره آنلاین تصویری است؟ (اتاق Jitsi)
+    /// </summary>
+    public bool IsOnlineConsultation { get; set; } = false;
 
     /// <summary>
     /// راه‌حل تداخل نوبت (در صورت وجود)
@@ -315,6 +320,8 @@ public class AppointmentConfig : EntityTypeConfiguration<Appointment>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Appointment_PaymentTransactionId")));
 
+        Property(a => a.IsOnlineConsultation)
+            .IsRequired();
 
         // روابط
         HasRequired(a => a.Doctor)

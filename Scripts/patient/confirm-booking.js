@@ -56,7 +56,7 @@
         submitBooking: function (formData) {
             showLoading();
 
-            const reserveUrl = window.appConfig?.appointmentBooking?.reserveUrl || '/Patient/AppointmentBooking/Reserve';
+            const reserveUrl = window.appConfig?.appointmentBooking?.reserveUrl || '/Patient/Appointment/Book/Reserve';
             
             // ✅ CRITICAL: Ensure idempotency key is included
             const idempotencyKey = $('#idempotencyKey').val();
@@ -184,13 +184,13 @@
                                 console.log('🔍 [ConfirmBooking] Redirect info - DoctorId:', doctorId, 'AppointmentDate:', appointmentDate);
                                 
                                 if (doctorId && appointmentDate) {
-                                    // ✅ تبدیل تاریخ به فرمت yyyy-MM-dd اگر لازم باشد
                                     const formattedDate = appointmentDate.includes('/') ? appointmentDate : appointmentDate;
-                                    window.location.href = `/Patient/AppointmentBooking/SelectTime?doctorId=${doctorId}&date=${encodeURIComponent(formattedDate)}`;
+                                    const baseUrl = window.appConfig?.appointmentBooking?.selectTimeBaseUrl || '/Patient/Appointment/Book/SelectTime';
+                                    window.location.href = baseUrl + '?doctorId=' + doctorId + '&date=' + encodeURIComponent(formattedDate);
                                 } else {
-                                    // ✅ Fallback: هدایت به SelectDoctor (AllowAnonymous)
+                                    const selectDoctorUrl = window.appConfig?.appointmentBooking?.selectDoctorUrl || '/Patient/Appointment/Book/SelectDoctor';
                                     console.warn('⚠️ [ConfirmBooking] DoctorId or AppointmentDate not found, redirecting to SelectDoctor');
-                                    window.location.href = '/Patient/AppointmentBooking/SelectDoctor';
+                                    window.location.href = selectDoctorUrl;
                                 }
                             }
                             
@@ -236,13 +236,13 @@
                             console.log('🔍 [ConfirmBooking] Redirect info (catch block) - DoctorId:', doctorId, 'AppointmentDate:', appointmentDate);
                             
                             if (doctorId && appointmentDate) {
-                                // ✅ تبدیل تاریخ به فرمت yyyy-MM-dd اگر لازم باشد
                                 const formattedDate = appointmentDate.includes('/') ? appointmentDate : appointmentDate;
-                                window.location.href = `/Patient/AppointmentBooking/SelectTime?doctorId=${doctorId}&date=${encodeURIComponent(formattedDate)}`;
+                                const baseUrl = window.appConfig?.appointmentBooking?.selectTimeBaseUrl || '/Patient/Appointment/Book/SelectTime';
+                                window.location.href = baseUrl + '?doctorId=' + doctorId + '&date=' + encodeURIComponent(formattedDate);
                             } else {
-                                // ✅ Fallback: هدایت به SelectDoctor (AllowAnonymous)
+                                const selectDoctorUrl = window.appConfig?.appointmentBooking?.selectDoctorUrl || '/Patient/Appointment/Book/SelectDoctor';
                                 console.warn('⚠️ [ConfirmBooking] DoctorId or AppointmentDate not found, redirecting to SelectDoctor');
-                                window.location.href = '/Patient/AppointmentBooking/SelectDoctor';
+                                window.location.href = selectDoctorUrl;
                             }
                         } else {
                             // ❌ Reserve ناموفق بود
@@ -302,8 +302,9 @@
                 console.log('💰 [ConfirmBooking] Sending payment request - AppointmentId:', appointmentId);
                 
                 // ✅ ENTERPRISE-GRADE: AJAX Call با Error Handling
+                const processPaymentUrl = window.appConfig?.appointmentBooking?.processPaymentUrl || '/Patient/Appointment/Book/ProcessPayment';
                 const response = await $.ajax({
-                    url: '/Patient/AppointmentBooking/ProcessPayment',
+                    url: processPaymentUrl,
                     type: 'POST',
                     data: {
                         appointmentId: appointmentId,
@@ -409,7 +410,8 @@
                 allowOutsideClick: false,
                 confirmButtonColor: '#2c5aa0'
             }).then(() => {
-                window.location.href = '/Patient/Appointment/MyAppointments';
+                const myAppointmentsUrl = window.appConfig?.appointmentBooking?.myAppointmentsUrl || '/Patient/Appointment/MyAppointments';
+                window.location.href = myAppointmentsUrl;
             });
         },
 

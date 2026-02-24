@@ -787,7 +787,7 @@
                     انتسابات سرفصل خدماتی
                 </h3>
                 <div>
-                    <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" 
+                    <a href="@(Url.RouteUrl("Admin_DoctorServiceCategory_Routes", new { action = "AssignToServiceCategory", doctorId = Model.DoctorId }) ?? Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { area = "Admin", doctorId = Model.DoctorId }))" 
                        class="btn-official btn-official-primary btn-sm-official">
                         <i class="fas fa-plus-circle"></i>
                         انتساب جدید
@@ -836,7 +836,7 @@
                                         </td>
                                         <td>
                                             <div class="btn-group-official">
-                                                <a href="@Url.Action("Edit", "DoctorServiceCategory", new { id = assignment.Id})" 
+                                                <a href="@(Url.RouteUrl("Admin_DoctorServiceCategory_Routes", new { action = "Edit", id = assignment.Id }) ?? Url.Action("Edit", "DoctorServiceCategory", new { area = "Admin", id = assignment.Id }))" 
                                                    class="btn-official btn-official-warning btn-sm-official" title="ویرایش">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
@@ -862,7 +862,7 @@
                         </div>
                         <div class="empty-state-title">هیچ انتساب سرفصل خدماتی یافت نشد</div>
                         <div class="empty-state-subtitle">برای شروع، یک انتساب جدید ایجاد کنید</div>
-                        <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" 
+                        <a href="@(Url.RouteUrl("Admin_DoctorServiceCategory_Routes", new { action = "AssignToServiceCategory", doctorId = Model.DoctorId }) ?? Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { area = "Admin", doctorId = Model.DoctorId }))" 
                            class="btn-official btn-official-primary">
                             <i class="fas fa-plus-circle"></i>
                             ایجاد انتساب جدید
@@ -1008,7 +1008,7 @@
                 showLoaderOnConfirm: true,
                 preConfirm: () => {
                     return $.ajax({
-                        url: '@Url.Action("ToggleAssignmentStatus", "DoctorServiceCategory")',
+                        url: '@(Url.RouteUrl("Admin_DoctorServiceCategory_Routes", new { action = "ToggleAssignmentStatus" }) ?? Url.Action("ToggleAssignmentStatus", "DoctorServiceCategory", new { area = "Admin" }))',
                         type: 'POST',
                         data: { 
                             id: assignmentId,

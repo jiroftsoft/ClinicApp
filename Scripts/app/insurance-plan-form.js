@@ -33,92 +33,16 @@
         });
     }
 
-    // Initialize Persian DatePicker
+    // ✅ استفاده از JalaliDatePicker Enterprise (طبق JALALIDATEPICKER_ENTERPRISE_GUIDE.md)
     function initializePersianDatePicker() {
-        if (typeof persianDatepicker !== 'undefined') {
-            $('.persian-datepicker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                altField: '.gregorian-date',
-                altFormat: 'YYYY-MM-DD',
-                observer: true,
-                timePicker: {
-                    enabled: false
-                },
-                autoClose: true,
-                initialValue: false,
-                position: 'auto',
-                viewMode: 'day',
-                minDate: null,
-                maxDate: null,
-                checkDate: function(unix) {
-                    return true;
-                },
-                checkMonth: function(month) {
-                    return true;
-                },
-                checkYear: function(year) {
-                    return true;
-                },
-                navigator: {
-                    enabled: true,
-                    scroll: {
-                        enabled: true
-                    },
-                    text: {
-                        btnNextText: 'بعدی',
-                        btnPrevText: 'قبلی'
-                    }
-                },
-                toolbox: {
-                    enabled: true,
-                    calendarSwitch: {
-                        enabled: true,
-                        format: 'MMMM'
-                    },
-                    todayButton: {
-                        enabled: true,
-                        text: 'امروز'
-                    },
-                    submitButton: {
-                        enabled: true,
-                        text: 'تأیید'
-                    },
-                    clearButton: {
-                        enabled: true,
-                        text: 'پاک کردن'
-                    }
-                },
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
-                    },
-                    gregorian: {
-                        locale: 'en',
-                        showHint: true
-                    }
-                },
-                timePicker: {
-                    enabled: false
-                },
-                dayPicker: {
-                    enabled: true,
-                    titleFormat: 'YYYY MMMM'
-                },
-                monthPicker: {
-                    enabled: true,
-                    titleFormat: 'YYYY'
-                },
-                yearPicker: {
-                    enabled: true,
-                    titleFormat: 'YYYY'
-                },
-                responsive: true,
-                zIndex: 9999
-            });
-        } else {
-            console.warn('Persian DatePicker library not loaded');
+        if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+            JalaliDatePickerEnterprise.startWatchAgain();
+        } else if (typeof jalaliDatepicker !== 'undefined') {
+            setTimeout(function() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }
+            }, 300);
         }
     }
 
@@ -205,29 +129,43 @@
         });
     }
 
-    // Date validation helper
+    // Date validation helper (سازگار با JalaliDatePicker Enterprise و فرمت YYYY/MM/DD)
     function validateDateRange() {
-        var validFrom = $('#ValidFromShamsi').val();
-        var validTo = $('#ValidToShamsi').val();
+        var validFrom = ($('#ValidFromShamsi').val() || '').trim();
+        var validTo = ($('#ValidToShamsi').val() || '').trim();
         
-        if (validFrom && validTo) {
-            try {
-                if (typeof persianDate !== 'undefined') {
-                    var fromDate = new persianDate(validFrom.split('/')).toDate();
-                    var toDate = new persianDate(validTo.split('/')).toDate();
-                    
+        if (!validFrom || !validTo) return true;
+        
+        try {
+            // استفاده از JalaliDatePickerEnterprise برای تبدیل و مقایسه
+            if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.convertPersianToGregorian) {
+                var gFrom = JalaliDatePickerEnterprise.convertPersianToGregorian(validFrom);
+                var gTo = JalaliDatePickerEnterprise.convertPersianToGregorian(validTo);
+                if (gFrom && gTo) {
+                    var fromDate = new Date(gFrom);
+                    var toDate = new Date(gTo);
                     if (fromDate >= toDate) {
                         $('#ValidToShamsi').addClass('is-invalid');
                         return false;
-                    } else {
-                        $('#ValidToShamsi').removeClass('is-invalid');
-                        return true;
                     }
+                    $('#ValidToShamsi').removeClass('is-invalid');
+                    return true;
                 }
-            } catch (e) {
-                console.log('Date conversion error:', e);
-                return false;
             }
+            // Fallback: مقایسه رشته‌ای برای فرمت YYYY/MM/DD
+            var fromParts = validFrom.split('/').map(function(x) { return parseInt(x, 10) || 0; });
+            var toParts = validTo.split('/').map(function(x) { return parseInt(x, 10) || 0; });
+            if (fromParts.length >= 3 && toParts.length >= 3) {
+                var cmp = fromParts[0] !== toParts[0] ? fromParts[0] - toParts[0] : (fromParts[1] !== toParts[1] ? fromParts[1] - toParts[1] : fromParts[2] - toParts[2]);
+                if (cmp >= 0) {
+                    $('#ValidToShamsi').addClass('is-invalid');
+                    return false;
+                }
+                $('#ValidToShamsi').removeClass('is-invalid');
+                return true;
+            }
+        } catch (e) {
+            console.warn('Date range validation error:', e);
         }
         return true;
     }
@@ -247,9 +185,9 @@
         });
     }
 
-    // Initialize date validation on change
+    // Initialize date validation on change (پشتیبانی از data-jdp و inputهای تاریخ طرح بیمه)
     function initializeDateValidation() {
-        $('.persian-datepicker').on('change', function() {
+        $('#ValidFromShamsi, #ValidToShamsi').on('change jdp:change', function() {
             validateDateRange();
         });
     }

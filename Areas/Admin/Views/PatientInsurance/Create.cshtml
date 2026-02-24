@@ -1364,10 +1364,12 @@
                             <label class="form-label">تاریخ شروع اعتبار:</label>
                             <div class="position-relative">
                             @Html.TextBoxFor(m => m.StartDateShamsi, new { 
-                                    @class = "form-control persian-datepicker medical-form-control pr-5", 
-                                placeholder = "تاریخ شروع اعتبار (شمسی)", 
+                                    @class = "form-control medical-form-control pr-5", 
+                                placeholder = "مثال: 1404/01/01", 
                                 required = "required",
-                                id = "StartDateShamsi"
+                                id = "StartDateShamsi",
+                                data_jdp = "true",
+                                data_jdp_theme = "medical"
                             })
                                 <span class="position-absolute" style="right:10px;top:50%;transform:translateY(-50%);pointer-events:none;">📅</span>
                             </div>
@@ -1379,9 +1381,11 @@
                             <label class="form-label">تاریخ پایان اعتبار:</label>
                             <div class="position-relative">
                             @Html.TextBoxFor(m => m.EndDateShamsi, new { 
-                                    @class = "form-control persian-datepicker medical-form-control pr-5", 
-                                    placeholder = "تاریخ پایان اعتبار (شمسی) - اختیاری", 
-                                id = "EndDateShamsi"
+                                    @class = "form-control medical-form-control pr-5", 
+                                    placeholder = "مثال: 1404/12/29 (اختیاری)", 
+                                id = "EndDateShamsi",
+                                data_jdp = "true",
+                                data_jdp_theme = "medical"
                             })
                                 <span class="position-absolute" style="right:10px;top:50%;transform:translateY(-50%);pointer-events:none;">📅</span>
                             </div>
@@ -1457,7 +1461,7 @@
     <!-- 🎉 Toast Notifications JavaScript -->
     <script src="~/Content/plugins/toastr/toastr.min.js"></script>
     
-    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    @* ✅ لینک persian-datepicker قدیمی حذف شده؛ از JalaliDatePicker Enterprise در _AdminLayout استفاده می‌شود *@
     <style>
         /* Enhanced Fallback Date Input Styling */
         .form-control.is-invalid {
@@ -1635,69 +1639,25 @@
         }
         
         /**
-         * 🏥 Initialize Enhanced Fallback Date Inputs
+         * 🏥 Initialize Date Inputs - JalaliDatePicker Enterprise (مرحله ۳: جزئیات بیمه)
          */
         function initializeEnhancedFallbackDateInputs() {
-            console.log('🏥 Medical Environment: Initializing Enhanced Fallback Date Inputs');
+            console.log('🏥 Medical Environment: Initializing date inputs (JalaliDatePicker Enterprise)');
             
-            // Use regular text inputs with enhanced Persian date features
-            $('#StartDateShamsi, #EndDateShamsi').attr('type', 'text').addClass('form-control');
+            $('#StartDateShamsi, #EndDateShamsi').attr('type', 'text');
             
-            // Add enhanced placeholders
-            $('#StartDateShamsi').attr('placeholder', 'مثال: 1403/01/01');
-            $('#EndDateShamsi').attr('placeholder', 'مثال: 1403/12/29');
-            
-            // Add enhanced styling
-            $('#StartDateShamsi, #EndDateShamsi').addClass('persian-date-input');
-            
-            // Add manual date validation with enhanced feedback
-            $('#StartDateShamsi, #EndDateShamsi').on('blur', function() {
-                var value = $(this).val();
-                var $this = $(this);
-                
-                if (value && !isValidPersianDate(value)) {
-                    $this.addClass('is-invalid');
-                    showToastError('تاریخ وارد شده معتبر نیست. فرمت صحیح: 1403/01/01', 'خطای تاریخ');
-                } else {
-                    $this.removeClass('is-invalid');
-                    // Update hidden field if valid
-                    if (value && isValidPersianDate(value)) {
-                        var altFieldId = $this.attr('id') === 'StartDateShamsi' ? '#StartDate' : '#EndDate';
-                        // Date conversion will be handled on server-side
+            // ✅ مقداردهی و اسکن مجدد برای inputهای data-jdp
+            if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                JalaliDatePickerEnterprise.startWatchAgain();
+            } else {
+                setTimeout(function() {
+                    if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                        JalaliDatePickerEnterprise.startWatchAgain();
                     }
-                }
-            });
+                }, 300);
+            }
             
-            // Add enhanced input formatting
-            $('#StartDateShamsi, #EndDateShamsi').on('input', function() {
-                var value = $(this).val();
-                // Remove non-numeric characters except /
-                value = value.replace(/[^\d\/]/g, '');
-                $(this).val(value);
-            });
-            
-            // Add keyboard shortcuts (simplified for Persian keyboard compatibility)
-            $('#StartDateShamsi, #EndDateShamsi').on('keydown', function(e) {
-                // Allow: backspace, delete, tab, escape, enter, arrow keys
-                if ([46, 8, 9, 27, 13, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
-                    // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                    (e.keyCode === 65 && e.ctrlKey === true) ||
-                    (e.keyCode === 67 && e.ctrlKey === true) ||
-                    (e.keyCode === 86 && e.ctrlKey === true) ||
-                    (e.keyCode === 88 && e.ctrlKey === true)) {
-                    return;
-                }
-                // Allow numbers, numpad numbers, and slash (multiple slash codes for different keyboards)
-                if ((e.keyCode >= 48 && e.keyCode <= 57) || 
-                    (e.keyCode >= 96 && e.keyCode <= 105) ||
-                    e.keyCode === 191 || e.keyCode === 111 || e.keyCode === 220) {
-                    return;
-                }
-                // Block other characters
-                e.preventDefault();
-            });
-            
-            console.log('🏥 Medical Environment: Enhanced Fallback Date Inputs initialized successfully');
+            console.log('🏥 Medical Environment: Date inputs (Enterprise) initialized');
         }
         
         // initializeFallbackDateInputs() removed - using initializeEnhancedFallbackDateInputs() instead
@@ -3493,8 +3453,8 @@
                 }
             });
             
-            // Real-time validation for dates
-            $('.persian-datepicker').on('change', function() {
+            // Real-time validation for dates (JalaliDatePicker Enterprise: change + jdp:change)
+            $('#StartDateShamsi, #EndDateShamsi').on('change jdp:change', function() {
                 var dateValue = $(this).val();
                 if (dateValue) {
                     validateDateRange();
@@ -3551,11 +3511,11 @@
         }
         
         /**
-         * 🏥 Validate Date Range
+         * 🏥 Validate Date Range (با JalaliDatePicker Enterprise برای تبدیل دقیق)
          */
         function validateDateRange() {
-            var startDateShamsi = $('#StartDateShamsi').val();
-            var endDateShamsi = $('#EndDateShamsi').val();
+            var startDateShamsi = ($('#StartDateShamsi').val() || '').trim();
+            var endDateShamsi = ($('#EndDateShamsi').val() || '').trim();
             var isValid = true;
             
             // اعتبارسنجی تاریخ شروع شمسی
@@ -3578,13 +3538,18 @@
                 hideMedicalValidationMessage($('#EndDateShamsi'));
             }
             
-            // مقایسه بازه تاریخ (فقط اگر هر دو معتبر باشند)
+            // مقایسه بازه تاریخ با تبدیل دقیق (Enterprise یا fallback)
             if (startDateShamsi && endDateShamsi && isValidPersianDate(startDateShamsi) && isValidPersianDate(endDateShamsi)) {
-                // تبدیل به میلادی برای مقایسه
-                var startGregorian = persianToGregorian(startDateShamsi);
-                var endGregorian = persianToGregorian(endDateShamsi);
-                
-                if (startGregorian >= endGregorian) {
+                var startG = null, endG = null;
+                if (typeof JalaliDatePickerEnterprise !== 'undefined' && JalaliDatePickerEnterprise.convertPersianToGregorian) {
+                    startG = JalaliDatePickerEnterprise.convertPersianToGregorian(startDateShamsi);
+                    endG = JalaliDatePickerEnterprise.convertPersianToGregorian(endDateShamsi);
+                }
+                if (!startG || !endG) {
+                    startG = persianToGregorian(startDateShamsi);
+                    endG = persianToGregorian(endDateShamsi);
+                }
+                if (startG && endG && startG >= endG) {
                     $('#EndDateShamsi').addClass('is-invalid');
                     showMedicalValidationMessage($('#EndDateShamsi'), 'تاریخ پایان باید بعد از تاریخ شروع باشد');
                     isValid = false;

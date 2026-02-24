@@ -71,9 +71,14 @@
         </div>
 
         <div class="navbar-right">
-            <div class="navbar-notifications" title="اعلان‌ها" aria-label="اعلان‌ها">
-                <i class="fas fa-bell"></i>
-                <span class="notification-badge">3</span>
+            <div class="navbar-notifications dropdown" role="group" aria-label="اعلان‌ها">
+                <button type="button" class="navbar-notifications-btn dropdown-toggle" id="patientNotificationsToggle" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" title="اعلان‌ها">
+                    <i class="fas fa-bell"></i>
+                    <span class="notification-badge" id="patientNotificationBadge" style="display: none;">0</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end patient-notifications-dropdown" aria-labelledby="patientNotificationsToggle" id="patientNotificationsList">
+                    <li class="dropdown-header text-muted small">در حال بارگذاری...</li>
+                </ul>
             </div>
 
             <div class="navbar-user dropdown">
@@ -407,6 +412,39 @@
                     if (this.getAttribute('href') === '#') e.preventDefault();
                 });
             }
+
+            // ✅ اعلان‌های ویزیت آنلاین (زنگوله)
+            (function loadPatientNotifications() {
+                var apiUrl = '@Url.Action("GetOnlineConsultationNotifications", "PatientDashboardApi", new { area = "Patient" })';
+                var listEl = document.getElementById('patientNotificationsList');
+                var badgeEl = document.getElementById('patientNotificationBadge');
+                if (!listEl || !apiUrl) return;
+                fetch(apiUrl, { credentials: 'same-origin' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(data) {
+                        if (!data || !data.success) {
+                            listEl.innerHTML = '<li class="dropdown-header text-muted small">اعلانی نیست</li>';
+                            return;
+                        }
+                        var payload = data.data || {};
+                        var items = payload.items || [];
+                        var count = payload.count != null ? payload.count : items.length;
+                        if (badgeEl) {
+                            badgeEl.textContent = count > 99 ? '99+' : count;
+                            badgeEl.style.display = count > 0 ? '' : 'none';
+                        }
+                        if (items.length === 0) {
+                            listEl.innerHTML = '<li class="dropdown-header text-muted small">اعلانی نیست</li>';
+                            return;
+                        }
+                        listEl.innerHTML = items.map(function(item) {
+                            return '<li><a class="dropdown-item d-flex align-items-center" href="' + (item.joinUrl || '#') + '"><i class="fas fa-video ml-2 text-primary"></i><span><strong>ویزیت آنلاین</strong> — ' + (item.doctorName || 'پزشک') + '<br><small class="text-muted">' + (item.dateShamsi || '') + ' ' + (item.timeText || '') + '</small></span></a></li>';
+                        }).join('') + '<li><hr class="dropdown-divider"></li><li><a class="dropdown-item small text-center" href="@Url.Action("Index", "Dashboard", new { area = "Patient" })#appointments"><i class="fas fa-calendar-check ml-1"></i> همه نوبت‌ها</a></li>';
+                    })
+                    .catch(function() {
+                        listEl.innerHTML = '<li class="dropdown-header text-muted small">خطا در بارگذاری اعلان‌ها</li>';
+                    });
+            })();
 
             // ✅ Toastr Configuration
             if (typeof toastr !== 'undefined') {

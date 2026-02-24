@@ -1,0 +1,84 @@
+@model ClinicApp.ViewModels.OnlineConsultation.JoinConsultationViewModel
+@{
+    ViewBag.Title = "مشاوره آنلاین تصویری";
+    Layout = "~/Areas/Patient/Views/Shared/_PatientLayoutPro.cshtml";
+    var canJoin = Model != null && Model.CanJoin;
+    var roomUrl = (canJoin && !string.IsNullOrWhiteSpace(Model.JitsiBaseUrl) && !string.IsNullOrWhiteSpace(Model.RoomName))
+        ? (Model.JitsiBaseUrl.TrimEnd('/') + "/" + Model.RoomName.Trim())
+        : "";
+    var hasRoom = !string.IsNullOrEmpty(roomUrl);
+    var userMessage = (Model != null && !string.IsNullOrWhiteSpace(Model.UserMessage)) ? Model.UserMessage : "اتاق مشاوره در دسترس نیست. در بازه زمانی نوبت مراجعه کنید یا با پشتیبانی تماس بگیرید.";
+}
+
+@section Styles {
+    <style>
+        .consultation-page { background: var(--medical-bg-light, #f8f9fa); min-height: 100vh; padding: 0; }
+        .consultation-header {
+            background: var(--medical-primary, #2c5aa0);
+            color: #fff;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+        .consultation-disclaimer {
+            background: var(--medical-bg, #fff);
+            border: 1px solid var(--medical-border, #dee2e6);
+            color: var(--medical-text, #212529);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        .consultation-iframe-wrap { position: relative; width: 100%; height: calc(100vh - 120px); min-height: 400px; }
+        .consultation-iframe-wrap iframe { border: none; width: 100%; height: 100%; display: block; }
+        .consultation-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); color: var(--medical-text-muted, #6c757d); }
+        .consultation-error-card {
+            background: #fff;
+            border: 1px solid var(--medical-border, #dee2e6);
+            border-left: 4px solid var(--medical-warning, #856404);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem;
+        }
+    </style>
+}
+
+<div class="consultation-page" role="main" aria-label="صفحه مشاوره تصویری">
+    <div class="consultation-header">
+        <span>مشاوره آنلاین تصویری</span>
+        @if (Model != null && !string.IsNullOrEmpty(Model.DoctorName))
+        {
+            <span> — @Model.DoctorName</span>
+        }
+    </div>
+    @if (hasRoom)
+    {
+        <div class="consultation-disclaimer" role="note" aria-label="توضیح حریم خصوصی">
+            مشاوره تصویری با رعایت حریم خصوصی و قوانین درمانی انجام می‌شود. ضبط یا اشتراک‌گذاری محتوا بدون رضایت طرفین مجاز نیست.
+        </div>
+        <div class="consultation-iframe-wrap">
+            <iframe id="consultation-iframe" src="@roomUrl" allow="camera; microphone; fullscreen; display-capture" title="اتاق مشاوره ویدیویی" aria-label="اتاق مشاوره ویدیویی"></iframe>
+            <p class="consultation-loading d-none" id="consultation-loading" aria-live="polite">در حال اتصال به اتاق...</p>
+        </div>
+    }
+    else
+    {
+        <div class="consultation-error-card" role="alert">
+            <p class="text-dark mb-2"><strong>@userMessage</strong></p>
+            <p class="text-muted small mb-2">ورود به اتاق در بازه زمانی تعیین‌شده (چند دقیقه قبل و بعد از زمان نوبت) امکان‌پذیر است.</p>
+            <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="btn btn-outline-secondary btn-sm">بازگشت به نوبت‌های من</a>
+        </div>
+    }
+</div>
+@section Scripts {
+    @if (hasRoom)
+    {
+        <script>
+            (function() {
+                var iframe = document.getElementById('consultation-iframe');
+                var loading = document.getElementById('consultation-loading');
+                if (iframe && loading) {
+                    iframe.onload = function() { loading.classList.add('d-none'); };
+                    iframe.onerror = function() { loading.classList.remove('d-none'); loading.textContent = 'خطا در بارگذاری اتاق.'; };
+                }
+            })();
+        </script>
+    }
+}

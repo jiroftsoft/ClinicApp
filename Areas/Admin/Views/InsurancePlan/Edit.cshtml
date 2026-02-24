@@ -131,14 +131,14 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             @Html.LabelFor(m => m.ValidFromShamsi, new { @class = "form-label" })
-                                            @Html.TextBoxFor(m => m.ValidFromShamsi, new { @class = "form-control persian-datepicker", placeholder = "تاریخ شروع اعتبار", required = "required", aria_required = "true" })
+                                            @Html.TextBoxFor(m => m.ValidFromShamsi, new { @class = "form-control", placeholder = "تاریخ شروع اعتبار (مثال: 1404/01/01)", required = "required", aria_required = "true", data_jdp = "true", data_jdp_theme = "medical" })
                                             @Html.ValidationMessageFor(m => m.ValidFromShamsi, "", new { @class = "text-danger" })
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             @Html.LabelFor(m => m.ValidToShamsi, new { @class = "form-label" })
-                                            @Html.TextBoxFor(m => m.ValidToShamsi, new { @class = "form-control persian-datepicker", placeholder = "تاریخ پایان اعتبار", required = "required", aria_required = "true" })
+                                            @Html.TextBoxFor(m => m.ValidToShamsi, new { @class = "form-control", placeholder = "تاریخ پایان اعتبار (مثال: 1404/12/29)", required = "required", aria_required = "true", data_jdp = "true", data_jdp_theme = "medical" })
                                             @Html.ValidationMessageFor(m => m.ValidToShamsi, "", new { @class = "text-danger" })
                                         </div>
                                     </div>

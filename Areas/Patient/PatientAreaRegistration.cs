@@ -18,6 +18,23 @@ namespace ClinicApp.Areas.Patient
 
         public override void RegisterArea(AreaRegistrationContext context)
         {
+            // ✅ مشاوره آنلاین تصویری — اول ثبت شود تا با Patient_default اشتباه نشود (جلوگیری از 404)
+            context.MapRoute(
+                name: "Patient_Consultation_Join",
+                url: "Patient/Consultation/Join/{id}",
+                defaults: new { controller = "OnlineConsultation", action = "Join", area = "Patient" },
+                constraints: new { id = @"^\d+$" },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            context.MapRoute(
+                name: "Patient_OnlineConsultation_Join",
+                url: "Patient/OnlineConsultation/Join/{id}",
+                defaults: new { controller = "OnlineConsultation", action = "Join", area = "Patient" },
+                constraints: new { id = @"^\d+$" },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // ✅ BEST PRACTICE: Route خاص قبل از default route + UseNamespaceFallback = false
             // ✅ CRITICAL FIX: اضافه کردن optional route parameter برای departmentId
             // این route هم URL بدون پارامتر و هم با departmentId را می‌پذیرد
@@ -68,6 +85,22 @@ namespace ClinicApp.Areas.Patient
                 name: "Patient_AppointmentBooking_Confirm",
                 url: "Patient/Appointment/Book/Confirm",
                 defaults: new { controller = "AppointmentBooking", action = "ConfirmBooking", area = "Patient" },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // ✅ روت‌های صریح برای Appointment (فاز ۱.۲ نقشه راه) — قبل از Patient_default
+            context.MapRoute(
+                name: "Patient_Appointment_Available",
+                url: "Patient/Appointment/Available",
+                defaults: new { controller = "Appointment", action = "Available", area = "Patient" },
+                namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            context.MapRoute(
+                name: "Patient_Appointment_DoctorDetails",
+                url: "Patient/Appointment/DoctorDetails/{doctorId}",
+                defaults: new { controller = "Appointment", action = "DoctorDetails", area = "Patient", doctorId = UrlParameter.Optional },
+                constraints: new { doctorId = @"^\d+$" },
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
@@ -148,7 +181,7 @@ namespace ClinicApp.Areas.Patient
                 "Patient_default",
                 "Patient/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional, area = "Patient" },
-                new { controller = @"^(Appointment|AppointmentBooking|Dashboard|Settings|Profile|MedicalRecord)$" }, // ✅ CRITICAL: فقط controllers موجود
+                new { controller = @"^(Appointment|AppointmentBooking|Dashboard|Settings|Profile|MedicalRecord|OnlineConsultation)$" }, // ✅ CRITICAL: فقط controllers موجود
                 namespaces: new[] { "ClinicApp.Areas.Patient.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false; // ✅ طبق 08-MVC-Routing-Best-Practices.md
         }

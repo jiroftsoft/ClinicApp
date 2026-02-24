@@ -795,6 +795,10 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectTime", new { doctorId, date = parsedAppointmentDate.ToString("yyyy-MM-dd") });
                 }
 
+                // ✅ فاز ۲.۲: لیست دسته‌بندی‌های خدمتی پزشک برای dropdown نوع ویزیت (مشاوره آنلاین و غیره)
+                var categoriesResult = await _bookingService.GetServiceCategoriesForDoctorLookupAsync(doctorId);
+                ViewBag.ServiceCategories = categoriesResult.Success && categoriesResult.Data != null ? categoriesResult.Data : new List<ServiceCategoryLookupDto>();
+
                 // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
                 var viewModel = AppointmentBookingViewModelFactory.CreateAppointmentBookingViewModel(
                     doctorId,
@@ -1616,7 +1620,14 @@ namespace ClinicApp.Areas.Patient.Controllers
                             try
                             {
                                 if (verifiedAppointment != null)
+                                {
                                     await _notificationService.EnqueuePaymentConfirmationAsync(verifiedAppointment.AppointmentId);
+                                    if (verifiedAppointment.IsOnlineConsultation)
+                                    {
+                                        await _notificationService.EnqueueOnlineConsultationRequestToDoctorAsync(verifiedAppointment.AppointmentId);
+                                        await _notificationService.EnqueueOnlineConsultationRequestToPatientAsync(verifiedAppointment.AppointmentId);
+                                    }
+                                }
                             }
                             catch (Exception ex)
                             {

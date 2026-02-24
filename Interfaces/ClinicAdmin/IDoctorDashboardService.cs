@@ -32,6 +32,12 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         Task<ServiceResult<DoctorDashboardIndexViewModel>> GetDashboardDataAsync(int? clinicId = null, int? departmentId = null);
 
         /// <summary>
+        /// دریافت لیست نوبت‌های مشاوره آنلاین در انتظار (پرداخت‌شده، برای نمایش در داشبورد)
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک (اختیاری؛ در صورت null همه پزشکان)</param>
+        Task<List<ViewModels.OnlineConsultation.PendingOnlineConsultationItemViewModel>> GetPendingOnlineConsultationsAsync(int? doctorId = null);
+
+        /// <summary>
         /// دریافت جزئیات کامل یک پزشک
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>
@@ -176,6 +182,11 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// لیست دپارتمان‌ها برای فیلتر
         /// </summary>
         public List<IdNameViewModel> Departments { get; set; } = new List<IdNameViewModel>();
+
+        /// <summary>
+        /// نوبت‌های مشاوره آنلاین در انتظار (پرداخت‌شده) برای کارت «درخواست‌های مشاوره آنلاین»
+        /// </summary>
+        public List<ViewModels.OnlineConsultation.PendingOnlineConsultationItemViewModel> PendingOnlineConsultations { get; set; } = new List<ViewModels.OnlineConsultation.PendingOnlineConsultationItemViewModel>();
     }
 
     /// <summary>

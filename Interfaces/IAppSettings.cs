@@ -1,4 +1,4 @@
-﻿namespace ClinicApp.Interfaces;
+namespace ClinicApp.Interfaces;
 
 /// <summary>
 /// رابط برای دسترسی به تنظیمات سیستم
@@ -90,5 +90,28 @@ public interface IAppSettings
     /// اگر تنظیم نشده باشد، از Request.Url استفاده می‌شود (Fallback)
     /// </summary>
     string PaymentBaseUrl { get; }
+    #endregion
+
+    #region Online Consultation (Jitsi)
+    /// <summary>
+    /// فعال/غیرفعال بودن ماژول مشاوره آنلاین تصویری (برای پروداکشن قابل خاموش‌سازی)
+    /// </summary>
+    bool EnableOnlineConsultation { get; }
+    /// <summary>
+    /// آدرس پایه سرور Jitsi Meet (مثلاً https://meet.jit.si). در پروداکشن ترجیحاً HTTPS.
+    /// </summary>
+    string JitsiBaseUrl { get; }
+    /// <summary>
+    /// ورود به اتاق از چند دقیقه قبل از زمان نوبت مجاز است (پیش‌فرض ۱۵)
+    /// </summary>
+    int OnlineConsultationJoinAllowedMinutesBefore { get; }
+    /// <summary>
+    /// ورود به اتاق تا چند دقیقه بعد از زمان نوبت مجاز است (پیش‌فرض ۱۲۰)
+    /// </summary>
+    int OnlineConsultationJoinAllowedMinutesAfter { get; }
+    /// <summary>
+    /// شناسه دسته‌بندی خدمت «مشاوره آنلاین تصویری». وقتی بیمار این دسته را در رزرو انتخاب کند، نوبت با IsOnlineConsultation ذخیره می‌شود. مقدار ۰ یا null = غیرفعال.
+    /// </summary>
+    int? OnlineConsultationServiceCategoryId { get; }
     #endregion
 }

@@ -265,11 +265,13 @@
             <div class="form-group">
                 <label class="form-label">تاریخ شروع اعتبار:</label>
                 @Html.TextBoxFor(m => m.StartDateShamsi, new { 
-                    @class = "form-control persian-datepicker medical-form-control", 
-                    placeholder = "تاریخ شروع اعتبار (شمسی)", 
+                    @class = "form-control medical-form-control", 
+                    placeholder = "مثال: 1404/01/01", 
                     required = "required",
                     id = "StartDateShamsi",
-                    data_medical_field = "start-date"
+                    data_medical_field = "start-date",
+                    data_jdp = "true",
+                    data_jdp_theme = "medical"
                 })
             </div>
         </div>
@@ -277,11 +279,13 @@
             <div class="form-group">
                 <label class="form-label">تاریخ پایان اعتبار:</label>
                 @Html.TextBoxFor(m => m.EndDateShamsi, new { 
-                    @class = "form-control persian-datepicker medical-form-control", 
-                    placeholder = "تاریخ پایان اعتبار (شمسی)", 
+                    @class = "form-control medical-form-control", 
+                    placeholder = "مثال: 1404/12/29", 
                     required = "required",
                     id = "EndDateShamsi",
-                    data_medical_field = "end-date"
+                    data_medical_field = "end-date",
+                    data_jdp = "true",
+                    data_jdp_theme = "medical"
                 })
             </div>
         </div>

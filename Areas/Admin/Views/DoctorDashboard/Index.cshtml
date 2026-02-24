@@ -181,6 +181,34 @@
         </div>
     </div>
 
+    <!-- درخواست‌های مشاوره آنلاین (رنگ‌های مجاز، بدون گرادینت) -->
+    @if (Model?.PendingOnlineConsultations != null && Model.PendingOnlineConsultations.Any())
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border" style="background: var(--medical-bg-light, #f8f9fa); border-color: var(--medical-border, #dee2e6) !important;">
+                    <div class="card-header" style="background: var(--medical-primary, #2c5aa0); color: #fff; border: none;">
+                        <h5 class="mb-0"><i class="fas fa-video me-2"></i>درخواست‌های مشاوره آنلاین</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            @foreach (var item in Model.PendingOnlineConsultations)
+                            {
+                                <li class="list-group-item d-flex justify-content-between align-items-center" style="background: #fff; border-color: var(--medical-border, #dee2e6);">
+                                    <span>
+                                        <span class="fw-bold">@item.PatientName</span>
+                                        <span class="text-muted small me-2">— @item.AppointmentDate.ToString("yyyy/MM/dd HH:mm")</span>
+                                    </span>
+                                    <a href="@(item.JoinUrl ?? ("/Admin/OnlineConsultation/Join/" + item.AppointmentId))" class="btn btn-sm" style="background: var(--medical-primary, #2c5aa0); color: #fff;">ورود به اتاق</a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
     <!-- Search and Filter Section -->
     <div class="row mb-4">
         <div class="col-12">

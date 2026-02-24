@@ -105,6 +105,21 @@ namespace ClinicApp.Helpers
 
         #endregion
 
+        #region Online Consultation (Jitsi)
+
+        /// <summary>فعال/غیرفعال بودن ماژول مشاوره آنلاین تصویری</summary>
+        public bool EnableOnlineConsultation { get; set; }
+        /// <summary>آدرس پایه سرور Jitsi Meet (در پروداکشن ترجیحاً HTTPS)</summary>
+        public string JitsiBaseUrl { get; set; }
+        /// <summary>ورود به اتاق از چند دقیقه قبل از نوبت مجاز است</summary>
+        public int OnlineConsultationJoinAllowedMinutesBefore { get; set; }
+        /// <summary>ورود به اتاق تا چند دقیقه بعد از نوبت مجاز است</summary>
+        public int OnlineConsultationJoinAllowedMinutesAfter { get; set; }
+        /// <summary>شناسه دسته‌بندی خدمت «مشاوره آنلاین»؛ وقتی بیمار این دسته را در رزرو انتخاب کند، نوبت مشاوره آنلاین می‌شود. ۰ = غیرفعال.</summary>
+        public int? OnlineConsultationServiceCategoryId { get; set; }
+
+        #endregion
+
         #region Constructor & Initialization (سازنده و مقداردهی اولیه)
 
         private AppSettings()
@@ -116,6 +131,7 @@ namespace ClinicApp.Helpers
             LoadAppointmentSettings();
             LoadApplicationInformationSettings();
             LoadPaymentSettings();
+            LoadJitsiSettings();
 
             _log.Information("تنظیمات سیستم با موفقیت بارگذاری شدند");
         }
@@ -366,6 +382,31 @@ namespace ClinicApp.Helpers
             {
                 PaymentBaseUrl = PaymentBaseUrl.TrimEnd('/');
             }
+        }
+
+        private void LoadJitsiSettings()
+        {
+            EnableOnlineConsultation = GetBoolSetting("Jitsi:EnableOnlineConsultation",
+                true,
+                "فعال بودن ماژول مشاوره آنلاین تصویری");
+            JitsiBaseUrl = GetStringSetting("Jitsi:BaseUrl",
+                "https://meet.jit.si",
+                "آدرس پایه Jitsi Meet برای مشاوره آنلاین");
+            if (!string.IsNullOrWhiteSpace(JitsiBaseUrl))
+                JitsiBaseUrl = JitsiBaseUrl.TrimEnd('/');
+            OnlineConsultationJoinAllowedMinutesBefore = GetIntSetting("Jitsi:JoinAllowedMinutesBefore",
+                15,
+                "ورود به اتاق از X دقیقه قبل از نوبت",
+                0, 1440);
+            OnlineConsultationJoinAllowedMinutesAfter = GetIntSetting("Jitsi:JoinAllowedMinutesAfter",
+                120,
+                "ورود به اتاق تا X دقیقه بعد از نوبت",
+                0, 10080);
+            var catId = GetIntSetting("Jitsi:OnlineConsultationServiceCategoryId",
+                0,
+                "شناسه دسته‌بندی خدمت مشاوره آنلاین (۰ = غیرفعال)",
+                0, 999999);
+            OnlineConsultationServiceCategoryId = catId > 0 ? (int?)catId : null;
         }
 
         #endregion

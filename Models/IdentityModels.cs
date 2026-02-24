@@ -144,6 +144,7 @@ namespace ClinicApp.Models
         
         // ========== موجودیت‌های جدید برای برنامه‌ریزی پیشرفته ==========
         public DbSet<AppointmentSlot> AppointmentSlots { get; set; }
+        public DbSet<OnlineConsultationRoom> OnlineConsultationRooms { get; set; }
         public DbSet<ScheduleException> ScheduleExceptions { get; set; }
         public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
         public DbSet<Specialization> Specializations { get; set; }

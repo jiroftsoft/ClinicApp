@@ -520,6 +520,10 @@ namespace ClinicApp
                 container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
                 container.RegisterType<ClinicApp.Interfaces.Appointment.IDoctorMappingService, ClinicApp.Services.Appointment.DoctorMappingService>(new PerRequestLifetimeManager());
 
+                // مشاوره آنلاین تصویری (Jitsi)
+                container.RegisterType<IOnlineConsultationRoomRepository, OnlineConsultationRoomRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IOnlineConsultationService, OnlineConsultationService>(new PerRequestLifetimeManager());
+
                 // ✅ ثبت Promotional Event Repository و Service (برای تخفیف‌های تبلیغاتی)
                 container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventRepository, Repositories.PromotionalEvent.PromotionalEventRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<Interfaces.PromotionalEvent.IPromotionalEventService, Services.PromotionalEvent.PromotionalEventService>(new PerRequestLifetimeManager());

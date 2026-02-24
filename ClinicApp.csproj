@@ -579,6 +579,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
+    <Compile Include="Areas\Admin\Controllers\OnlineConsultationController.cs" />
     <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\PromotionalEventController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
@@ -608,6 +609,7 @@
     <Compile Include="Areas\Patient\Controllers\Base\BasePatientController.cs" />
     <Compile Include="Areas\Patient\Controllers\DashboardController.cs" />
     <Compile Include="Areas\Patient\Controllers\MedicalRecordController.cs" />
+    <Compile Include="Areas\Patient\Controllers\OnlineConsultationController.cs" />
     <Compile Include="Areas\Patient\Controllers\SettingsController.cs" />
     <Compile Include="Areas\Patient\PatientAreaRegistration.cs" />
     <Compile Include="Constants\DoctorScheduleConstants.cs" />
@@ -780,6 +782,8 @@
     <Compile Include="Infrastructure\Hangfire\HangfireUnityJobActivator.cs" />
     <Compile Include="Infrastructure\Hangfire\HangfireAuthorizationFilter.cs" />
     <Compile Include="Interfaces\Appointment\IAppointmentBookingService.cs" />
+    <Compile Include="Interfaces\Appointment\IOnlineConsultationRoomRepository.cs" />
+    <Compile Include="Interfaces\Appointment\IOnlineConsultationService.cs" />
     <Compile Include="Interfaces\Notification\INotificationQueueRepository.cs" />
     <Compile Include="Interfaces\Notification\INotificationService.cs" />
     <Compile Include="Interfaces\Appointment\IAppointmentRepository.cs" />
@@ -1113,6 +1117,10 @@
     <Compile Include="Migrations\202602151647232_AddNotificationQueueTable.Designer.cs">
       <DependentUpon>202602151647232_AddNotificationQueueTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202602231915348_AddOnlineVisitModoule.cs" />
+    <Compile Include="Migrations\202602231915348_AddOnlineVisitModoule.Designer.cs">
+      <DependentUpon>202602231915348_AddOnlineVisitModoule.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
@@ -1122,6 +1130,7 @@
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentCountsDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\ServiceCategoryLookupDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\DTOs\Payment\AuditSummary.cs" />
     <Compile Include="Models\DTOs\Payment\CashierDailyReport.cs" />
@@ -1135,6 +1144,7 @@
     <Compile Include="Models\DTOs\Payment\DiscrepancySummary.cs" />
     <Compile Include="Models\DTOs\Payment\ReconciliationReport.cs" />
     <Compile Include="Models\DTOs\PromotionalEvent\DiscountResult.cs" />
+    <Compile Include="Models\Entities\Appointment\OnlineConsultationRoom.cs" />
     <Compile Include="Models\Entities\Clinic\ClinicBankAccount.cs" />
     <Compile Include="Models\Entities\CMS\AboutPage.cs" />
     <Compile Include="Models\Entities\CMS\Announcement.cs" />
@@ -1186,6 +1196,7 @@
     <Compile Include="Models\Enums\VideoType.cs" />
     <Compile Include="Models\Validators\PatientFastCreateValidator.cs" />
     <Compile Include="Repositories\Appointment\AppointmentRepository.cs" />
+    <Compile Include="Repositories\Appointment\OnlineConsultationRoomRepository.cs" />
     <Compile Include="Repositories\Notification\NotificationQueueRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\ClinicBankAccountRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorTimeSlotRepository.cs" />
@@ -1544,6 +1555,7 @@
     <Compile Include="Repositories\UserManagement\UserRepository.cs" />
     <Compile Include="Services\Appointment\AppointmentBookingService.cs" />
     <Compile Include="Services\Appointment\AppointmentNotificationService.cs" />
+    <Compile Include="Services\Appointment\OnlineConsultationService.cs" />
     <Compile Include="Services\Notification\NotificationTemplateEngine.cs" />
     <Compile Include="Services\Notification\NotificationService.cs" />
     <Compile Include="Services\Notification\NotificationQueueProcessor.cs" />
@@ -1920,6 +1932,8 @@
     <Compile Include="ViewModels\ClinicAdmin\DepartmentDtos.cs" />
     <Compile Include="ViewModels\LayoutViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\OnlineConsultation\JoinConsultationViewModel.cs" />
+    <Compile Include="ViewModels\OnlineConsultation\PendingOnlineConsultationItemViewModel.cs" />
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Patient\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\Patient\AvailableAppointmentsViewModel.cs" />
@@ -1937,6 +1951,7 @@
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordReceptionViewModel.cs" />
     <Compile Include="ViewModels\Patient\MedicalRecord\MedicalRecordTriageViewModel.cs" />
     <Compile Include="ViewModels\Patient\NotificationSettingsDto.cs" />
+    <Compile Include="ViewModels\Patient\OnlineConsultationNotificationItemViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientAppointmentListViewModel.cs" />
     <Compile Include="ViewModels\Patient\PatientSettingsViewModel.cs" />
     <Compile Include="ViewModels\Patient\PaymentErrorViewModel.cs" />
@@ -5359,6 +5374,7 @@
     <Content Include="Content\toastr.scss" />
     <Content Include="Content\toastr.less" />
     <Content Include="Areas\Admin\Views\Shared\_AsideMenu.cshtml" />
+    <Content Include="Areas\Patient\Views\OnlineConsultation\Join.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -7749,6 +7765,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602151647232_AddNotificationQueueTable.resx">
       <DependentUpon>202602151647232_AddNotificationQueueTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602231915348_AddOnlineVisitModoule.resx">
+      <DependentUpon>202602231915348_AddOnlineVisitModoule.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

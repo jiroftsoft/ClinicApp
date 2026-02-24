@@ -24,7 +24,7 @@
             </h2>
             <p class="mb-0 opacity-75">لطفاً پزشک مورد نظر خود را انتخاب کنید</p>
         </div>
-        <a href="@Url.Action("MyAppointments", "Appointment")" class="btn btn-light">
+        <a href="@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })" class="btn btn-light">
             <i class="fas fa-arrow-right me-1"></i>
             بازگشت
         </a>
@@ -102,6 +102,13 @@
 
 @section Scripts {
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
+    <script>
+        // ✅ فاز ۳.۱: مسیرها از سرور (بدون hardcode در JS)
+        window.appConfig = window.appConfig || {};
+        window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
+        window.appConfig.appointmentBooking.selectDateUrlTemplate = '@Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = 0 })';
+        window.appConfig.appointmentBooking.getAvailableDoctorsUrl = '@Url.Action("GetAvailableDoctors", "DoctorSearchApi", new { area = "Patient" })';
+    </script>
     <script src="~/Scripts/patient/doctor-selection.js"></script>
     <script>
         // ✅ Display NotificationHelper messages

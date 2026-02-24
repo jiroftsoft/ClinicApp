@@ -94,6 +94,25 @@
                 </div>
             </div>
 
+            @{
+                var serviceCategories = ViewBag.ServiceCategories as IEnumerable<ClinicApp.Models.DTOs.Appointment.ServiceCategoryLookupDto>;
+                var hasServiceCategories = serviceCategories != null && serviceCategories.Any();
+            }
+            @if (hasServiceCategories)
+            {
+                <div class="form-group">
+                    <label for="ServiceCategoryIdSelect" class="form-label">نوع ویزیت</label>
+                    <select id="ServiceCategoryIdSelect" class="form-select">
+                        <option value="">— انتخاب کنید —</option>
+                        @foreach (var item in serviceCategories)
+                        {
+                            <option value="@item.Id" @(Model.ServiceCategoryId == item.Id ? "selected" : "")>@item.Name</option>
+                        }
+                    </select>
+                    <small class="form-text text-muted">برای مشاوره آنلاین، نوع ویزیت «مشاوره آنلاین» را انتخاب کنید.</small>
+                </div>
+            }
+
             @if (!string.IsNullOrEmpty(Model.Description))
             {
                 <div class="form-group">
@@ -124,6 +143,19 @@
         window.appConfig = window.appConfig || {};
         window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
         window.appConfig.appointmentBooking.reserveUrl = '@Url.Action("Reserve", "AppointmentBooking", new { area = "Patient" })';
+        window.appConfig.appointmentBooking.selectTimeBaseUrl = '@Url.Action("SelectTime", "AppointmentBooking", new { area = "Patient" })';
+        window.appConfig.appointmentBooking.selectDoctorUrl = '@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })';
+        window.appConfig.appointmentBooking.myAppointmentsUrl = '@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })';
+        window.appConfig.appointmentBooking.processPaymentUrl = '@Url.Action("ProcessPayment", "AppointmentBooking", new { area = "Patient" })';
+        // ✅ فاز ۲.۲: همگام‌سازی انتخاب نوع ویزیت با فیلد مخفی ارسالی به سرور
+        (function () {
+            var sel = document.getElementById('ServiceCategoryIdSelect');
+            var hid = document.getElementById('ServiceCategoryId');
+            if (sel && hid) {
+                sel.addEventListener('change', function () { hid.value = this.value || ''; });
+                hid.value = sel.value || '';
+            }
+        })();
     </script>
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/confirm-booking.js"></script>

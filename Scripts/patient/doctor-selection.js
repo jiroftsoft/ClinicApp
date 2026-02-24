@@ -131,12 +131,11 @@
             e.preventDefault();
             e.stopPropagation();
             
-            // ✅ هدایت به صفحه انتخاب تاریخ (طبق route: Patient/Appointment/Book/SelectDate/{doctorId})
-            const targetUrl = `/Patient/Appointment/Book/SelectDate/${doctorId}`;
+            // ✅ فاز ۳.۱: مسیر از appConfig (از View با Url.Action)، بدون hardcode
+            const template = window.appConfig?.appointmentBooking?.selectDateUrlTemplate || '';
+            const targetUrl = (template && template.replace(/\/0$/, '/' + doctorId)) || ('/Patient/Appointment/Book/SelectDate/' + doctorId);
             log('🔵 [DoctorSelection] Redirecting to:', targetUrl);
-            log('🔵 [DoctorSelection] Full URL:', window.location.origin + targetUrl);
             
-            // ✅ Use window.location.assign instead of href for better debugging
             window.location.assign(targetUrl);
             return false;
         },
@@ -159,9 +158,11 @@
             
             this._showLoading();
             
+            // ✅ فاز ۳.۱: مسیر API از appConfig (از View با Url.Action)
+            const getDoctorsUrl = window.appConfig?.appointmentBooking?.getAvailableDoctorsUrl || '/Patient/Api/DoctorSearch/GetAvailableDoctors';
             // ✅ CRITICAL FIX: بهبود Error Handling با Retry Logic و Timeout
             this.ajaxWithRetry({
-                url: '/Patient/Api/DoctorSearch/GetAvailableDoctors',
+                url: getDoctorsUrl,
                 type: 'GET',
                 data: {
                     departmentId: departmentId || null,

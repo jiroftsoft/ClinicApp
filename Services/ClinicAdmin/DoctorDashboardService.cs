@@ -27,14 +27,17 @@ namespace ClinicApp.Services.ClinicAdmin
     {
         private readonly IDoctorDashboardRepository _dashboardRepository;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IAppSettings _appSettings;
         private readonly ILogger _logger;
 
         public DoctorDashboardService(
             IDoctorDashboardRepository dashboardRepository,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IAppSettings appSettings)
         {
             _dashboardRepository = dashboardRepository ?? throw new ArgumentNullException(nameof(dashboardRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _logger = Log.ForContext<DoctorDashboardService>();
         }
 
@@ -63,7 +66,21 @@ namespace ClinicApp.Services.ClinicAdmin
                 // دریافت داده‌های داشبورد
                 var dashboardData = await _dashboardRepository.GetDashboardDataAsync(clinicId, departmentId);
 
-                _logger.Information("داده‌های داشبورد اصلی با موفقیت دریافت شد. کلینیک: {ClinicId}, دپارتمان: {DepartmentId}", 
+                // پر کردن لیست مشاوره‌های آنلاین در انتظار (فقط اگر ماژول فعال باشد)
+                if (_appSettings.EnableOnlineConsultation)
+                {
+                    var pendingConsultations = await _dashboardRepository.GetPendingOnlineConsultationsAsync(null);
+                    var baseUrl = _appSettings.PaymentBaseUrl?.TrimEnd('/');
+                    foreach (var item in pendingConsultations)
+                    {
+                        item.JoinUrl = string.IsNullOrWhiteSpace(baseUrl)
+                            ? $"/Admin/OnlineConsultation/Join/{item.AppointmentId}"
+                            : $"{baseUrl}/Admin/OnlineConsultation/Join/{item.AppointmentId}";
+                    }
+                    dashboardData.PendingOnlineConsultations = pendingConsultations;
+                }
+
+                _logger.Information("داده‌های داشبورد اصلی با موفقیت دریافت شد. کلینیک: {ClinicId}, دپارتمان: {DepartmentId}",
                     clinicId?.ToString() ?? "همه", departmentId?.ToString() ?? "همه");
 
                 return ServiceResult<DoctorDashboardIndexViewModel>.Successful(dashboardData);
@@ -73,6 +90,22 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Error(ex, "خطا در دریافت داده‌های داشبورد اصلی");
                 return ServiceResult<DoctorDashboardIndexViewModel>.Failed("خطا در دریافت داده‌های داشبورد");
             }
+        }
+
+        /// <summary>
+        /// دریافت لیست نوبت‌های مشاوره آنلاین در انتظار (پرداخت‌شده) با لینک ورود
+        /// </summary>
+        public async Task<List<ViewModels.OnlineConsultation.PendingOnlineConsultationItemViewModel>> GetPendingOnlineConsultationsAsync(int? doctorId = null)
+        {
+            var list = await _dashboardRepository.GetPendingOnlineConsultationsAsync(doctorId);
+            var baseUrl = _appSettings.PaymentBaseUrl?.TrimEnd('/');
+            foreach (var item in list)
+            {
+                item.JoinUrl = string.IsNullOrWhiteSpace(baseUrl)
+                    ? $"/Admin/OnlineConsultation/Join/{item.AppointmentId}"
+                    : $"{baseUrl}/Admin/OnlineConsultation/Join/{item.AppointmentId}";
+            }
+            return list;
         }
 
         /// <summary>
@@ -422,7 +455,7 @@ namespace ClinicApp.Services.ClinicAdmin
                     {
                         ActionName = "AssignToServiceCategory",
                         ActionTitle = "انتساب به دسته‌بندی خدمات",
-                        ActionUrl = $"/Admin/DoctorServiceCategory/AssignToServiceCategory/{doctorId}",
+                        ActionUrl = $"/Admin/DoctorServiceCategory/AssignToServiceCategory?doctorId={doctorId}",
                         IconClass = "fas fa-certificate",
                         ColorClass = "btn-warning",
                         IsEnabled = true,

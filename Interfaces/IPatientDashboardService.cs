@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.Patient;
@@ -50,6 +51,11 @@ namespace ClinicApp.Interfaces
             int recentPageSize = 5,
             int upcomingPageSize = 5,
             int receptionsPageSize = 5);
+
+        /// <summary>
+        /// نوبت‌های مشاوره آنلاین قابل ورود (برای نوتیف زنگوله بیمار).
+        /// </summary>
+        Task<ServiceResult<List<OnlineConsultationNotificationItemViewModel>>> GetOnlineConsultationNotificationsAsync(int patientId);
     }
 }
 

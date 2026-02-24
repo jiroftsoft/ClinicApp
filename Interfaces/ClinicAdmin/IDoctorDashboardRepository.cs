@@ -31,6 +31,12 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         Task<DoctorDashboardIndexViewModel> GetDashboardDataAsync(int? clinicId = null, int? departmentId = null);
 
         /// <summary>
+        /// دریافت لیست نوبت‌های مشاوره آنلاین در انتظار (پرداخت‌شده)
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک (اختیاری)</param>
+        Task<List<ViewModels.OnlineConsultation.PendingOnlineConsultationItemViewModel>> GetPendingOnlineConsultationsAsync(int? doctorId = null);
+
+        /// <summary>
         /// دریافت جزئیات کامل پزشک
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>

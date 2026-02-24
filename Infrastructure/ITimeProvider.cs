@@ -138,16 +138,11 @@ namespace ClinicApp.Infrastructure
         public DateTime FromIranTime(DateTime iranTime)
         {
             // ✅ ENTERPRISE: تبدیل زمان ایران به UTC
-            if (iranTime.Kind == DateTimeKind.Unspecified)
-            {
-                // اگر Unspecified است، به عنوان Local در نظر می‌گیریم
-                var localDateTime = DateTime.SpecifyKind(iranTime, DateTimeKind.Local);
-                return TimeZoneInfo.ConvertTimeToUtc(localDateTime, _iranTimeZone);
-            }
-            else
-            {
-                return TimeZoneInfo.ConvertTimeToUtc(iranTime, _iranTimeZone);
-            }
+            // ConvertTimeToUtc(..., sourceTimeZone) فقط وقتی dateTime.Kind == Unspecified مجاز است؛ با Local/Utc استثنا می‌دهد.
+            var toConvert = iranTime.Kind == DateTimeKind.Unspecified
+                ? iranTime
+                : DateTime.SpecifyKind(iranTime, DateTimeKind.Unspecified);
+            return TimeZoneInfo.ConvertTimeToUtc(toConvert, _iranTimeZone);
         }
         
         public string FormatForIran(DateTime utcTime)

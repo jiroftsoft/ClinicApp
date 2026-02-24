@@ -128,6 +128,14 @@ namespace ClinicApp.Interfaces.Appointment
             AppointmentBookingRequestDto request);
 
         /// <summary>
+        /// دریافت لیست دسته‌بندی‌های خدمتی یک پزشک برای انتخاب نوع ویزیت (dropdown بیمار).
+        /// فقط دسته‌بندی‌های اختصاص‌یافته و فعال به آن پزشک برگردانده می‌شوند.
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>لیست ساده Id و Name برای استفاده در dropdown</returns>
+        Task<ServiceResult<List<ServiceCategoryLookupDto>>> GetServiceCategoriesForDoctorLookupAsync(int doctorId);
+
+        /// <summary>
         /// محاسبه قیمت نوبت (شامل تخفیف ایونت تبلیغاتی بر اساس تاریخ نوبت)
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>

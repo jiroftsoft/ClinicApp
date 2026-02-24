@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Extensions;
+using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Notification;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Notification;
@@ -23,6 +24,7 @@ namespace ClinicApp.Services.Notification
     {
         private readonly ApplicationDbContext _context;
         private readonly INotificationQueueRepository _queueRepository;
+        private readonly IAppSettings _appSettings;
         private readonly ILogger _logger;
 
         private const string ClinicName = "کلینیک شفا";
@@ -31,10 +33,12 @@ namespace ClinicApp.Services.Notification
         public NotificationService(
             ApplicationDbContext context,
             INotificationQueueRepository queueRepository,
+            IAppSettings appSettings,
             ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _queueRepository = queueRepository ?? throw new ArgumentNullException(nameof(queueRepository));
+            _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
             _logger = logger?.ForContext<NotificationService>() ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -54,6 +58,128 @@ namespace ClinicApp.Services.Notification
                 AppointmentNotificationType.PaymentConfirmation,
                 GetPaymentConfirmationTemplate(),
                 scheduledTime: null);
+        }
+
+        /// <summary>
+        /// بعد از پرداخت موفق نوبت مشاوره آنلاین — ارسال SMS به پزشک با لینک ورود به اتاق.
+        /// فقط وقتی ماژول فعال و نوبت IsOnlineConsultation و پزشک دارای شماره تلفن است.
+        /// </summary>
+        public async Task EnqueueOnlineConsultationRequestToDoctorAsync(int appointmentId)
+        {
+            if (!_appSettings.EnableOnlineConsultation)
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToDoctor: ماژول غیرفعال - AppointmentId: {AppointmentId}", appointmentId);
+                return;
+            }
+            var appointment = await GetAppointmentWithDetailsAsync(appointmentId);
+            if (appointment == null || !appointment.IsOnlineConsultation)
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToDoctor: نوبت یافت نشد یا مشاوره آنلاین نیست - AppointmentId: {AppointmentId}", appointmentId);
+                return;
+            }
+
+            var doctorPhone = appointment.Doctor?.PhoneNumber;
+            if (string.IsNullOrWhiteSpace(doctorPhone))
+            {
+                _logger.Warning("EnqueueOnlineConsultationRequestToDoctor: پزشک بدون شماره تلفن - AppointmentId: {AppointmentId}, DoctorId: {DoctorId}", appointmentId, appointment.DoctorId);
+                return;
+            }
+
+            var baseUrl = _appSettings.PaymentBaseUrl?.TrimEnd('/');
+            if (string.IsNullOrWhiteSpace(baseUrl))
+            {
+                _logger.Warning("EnqueueOnlineConsultationRequestToDoctor: PaymentBaseUrl تنظیم نشده - لینک ورود در SMS قرار نمی‌گیرد");
+            }
+
+            var joinUrl = string.IsNullOrWhiteSpace(baseUrl)
+                ? $"/Admin/OnlineConsultation/Join/{appointmentId}"
+                : $"{baseUrl}/Admin/OnlineConsultation/Join/{appointmentId}";
+            var patientName = GetPatientDisplayName(appointment.Patient);
+            var message = $"درخواست مشاوره آنلاین از {patientName}. لینک ورود به اتاق: {joinUrl}";
+
+            var key = $"A{appointmentId}_{AppointmentNotificationType.OnlineConsultationRequestToDoctor}_Sms";
+            if (await _queueRepository.ExistsByIdempotencyKeyAsync(key, NotificationStatus.Queued, NotificationStatus.Sending, NotificationStatus.Sent))
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToDoctor: اعلان قبلاً در صف - IdempotencyKey: {Key}", key);
+                return;
+            }
+
+            await _queueRepository.AddAsync(new NotificationQueueItem
+            {
+                AppointmentId = appointmentId,
+                UserId = null,
+                PatientId = null,
+                NotificationType = AppointmentNotificationType.OnlineConsultationRequestToDoctor,
+                Title = "درخواست مشاوره آنلاین",
+                Message = message,
+                Channel = NotificationChannelType.Sms,
+                Status = NotificationStatus.Queued,
+                RetryCount = 0,
+                MaxRetries = 3,
+                ScheduledTime = null,
+                IdempotencyKey = key,
+                Recipient = doctorPhone,
+                CreatedAt = DateTime.UtcNow
+            });
+            _logger.Information("اعلان مشاوره آنلاین به پزشک در صف قرار گرفت - AppointmentId: {AppointmentId}, DoctorId: {DoctorId}", appointmentId, appointment.DoctorId);
+        }
+
+        /// <summary>
+        /// بعد از پرداخت موفق نوبت مشاوره آنلاین — ارسال SMS به بیمار با لینک ورود به اتاق.
+        /// </summary>
+        public async Task EnqueueOnlineConsultationRequestToPatientAsync(int appointmentId)
+        {
+            if (!_appSettings.EnableOnlineConsultation)
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToPatient: ماژول غیرفعال - AppointmentId: {AppointmentId}", appointmentId);
+                return;
+            }
+            var appointment = await GetAppointmentWithDetailsAsync(appointmentId);
+            if (appointment == null || !appointment.IsOnlineConsultation || appointment.PatientId == null)
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToPatient: نوبت یافت نشد یا مشاوره آنلاین نیست - AppointmentId: {AppointmentId}", appointmentId);
+                return;
+            }
+
+            var patientPhone = appointment.Patient?.PhoneNumber;
+            if (string.IsNullOrWhiteSpace(patientPhone))
+            {
+                _logger.Warning("EnqueueOnlineConsultationRequestToPatient: بیمار بدون شماره تلفن - AppointmentId: {AppointmentId}", appointmentId);
+                return;
+            }
+
+            var baseUrl = _appSettings.PaymentBaseUrl?.TrimEnd('/');
+            var joinUrl = string.IsNullOrWhiteSpace(baseUrl)
+                ? $"/Patient/Consultation/Join/{appointmentId}"
+                : $"{baseUrl}/Patient/Consultation/Join/{appointmentId}";
+            var doctorName = appointment.Doctor?.FullName ?? "پزشک";
+            var message = $"پرداخت نوبت مشاوره آنلاین شما با دکتر {doctorName} با موفقیت انجام شد. لینک ورود به اتاق: {joinUrl}";
+
+            var key = $"A{appointmentId}_{AppointmentNotificationType.OnlineConsultationRequestToPatient}_Sms";
+            if (await _queueRepository.ExistsByIdempotencyKeyAsync(key, NotificationStatus.Queued, NotificationStatus.Sending, NotificationStatus.Sent))
+            {
+                _logger.Debug("EnqueueOnlineConsultationRequestToPatient: اعلان قبلاً در صف - IdempotencyKey: {Key}", key);
+                return;
+            }
+
+            await _queueRepository.AddAsync(new NotificationQueueItem
+            {
+                AppointmentId = appointmentId,
+                UserId = appointment.Patient?.ApplicationUserId,
+                PatientId = appointment.PatientId,
+                NotificationType = AppointmentNotificationType.OnlineConsultationRequestToPatient,
+                Title = "نوبت مشاوره آنلاین",
+                Message = message,
+                Channel = NotificationChannelType.Sms,
+                Status = NotificationStatus.Queued,
+                RetryCount = 0,
+                MaxRetries = 3,
+                ScheduledTime = null,
+                IdempotencyKey = key,
+                Recipient = patientPhone,
+                CreatedAt = DateTime.UtcNow
+            });
+            _logger.Information("اعلان مشاوره آنلاین به بیمار در صف قرار گرفت - AppointmentId: {AppointmentId}", appointmentId);
         }
 
         public async Task EnqueueAppointmentReminderAsync(int appointmentId, AppointmentNotificationType reminderType)

@@ -15,6 +15,12 @@ public interface IAppointmentNotificationQueueService
     /// <summary>بعد از Commit پرداخت موفق — اعلان تأیید پرداخت</summary>
     Task EnqueuePaymentConfirmationAsync(int appointmentId);
 
+    /// <summary>بعد از پرداخت موفق نوبت مشاوره آنلاین — ارسال SMS به پزشک با لینک ورود به اتاق</summary>
+    Task EnqueueOnlineConsultationRequestToDoctorAsync(int appointmentId);
+
+    /// <summary>بعد از پرداخت موفق نوبت مشاوره آنلاین — ارسال SMS به بیمار با لینک ورود به اتاق</summary>
+    Task EnqueueOnlineConsultationRequestToPatientAsync(int appointmentId);
+
     /// <summary>ثبت یک یادآوری زمان‌بندی‌شده (از Hangfire Job فراخوانی می‌شود — هر بار یک نوع: 24h، 3h، 30min)</summary>
     Task EnqueueAppointmentReminderAsync(int appointmentId, NotificationType reminderType);
 }

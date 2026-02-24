@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
@@ -224,6 +225,37 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
             {
                 _logger.Error(ex, "خطا در دریافت پذیرش‌های اخیر");
                 return ErrorJsonResult("خطا در دریافت پذیرش‌های اخیر");
+            }
+        }
+
+        /// <summary>
+        /// اعلان‌های ویزیت آنلاین (برای زنگوله بیمار).
+        /// GET: /Patient/Api/PatientDashboard/GetOnlineConsultationNotifications
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetOnlineConsultationNotifications()
+        {
+            try
+            {
+                var patientId = await GetCurrentPatientIdAsync();
+                if (patientId == null)
+                {
+                    return ErrorJsonResult("اطلاعات بیمار یافت نشد");
+                }
+
+                var result = await _dashboardService.GetOnlineConsultationNotificationsAsync(patientId.Value);
+                if (!result.Success)
+                {
+                    return ErrorJsonResult(result.Message ?? "خطا در دریافت اعلان‌ها");
+                }
+
+                var items = result.Data ?? new List<ViewModels.Patient.OnlineConsultationNotificationItemViewModel>();
+                return SuccessJsonResult(new { count = items.Count, items });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اعلان‌های ویزیت آنلاین");
+                return ErrorJsonResult("خطا در دریافت اعلان‌ها");
             }
         }
     }
