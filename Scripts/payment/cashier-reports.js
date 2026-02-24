@@ -68,37 +68,65 @@ var CashierReports = {
     setupQuickActions: function() {
         var self = this;
         
-        // Today Report
+        function getSelectedCashierId() {
+            var $sel = $('#CashierId');
+            return ($sel.length && $sel.val()) ? $sel.val() : null;
+        }
+        
+        // Today Report (نیاز به انتخاب منشی)
         $('#btn-today-report').on('click', function() {
+            var cashierId = getSelectedCashierId();
+            if (!cashierId) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'انتخاب منشی', text: 'لطفاً ابتدا یک منشی را انتخاب کنید.' });
+                } else {
+                    alert('لطفاً ابتدا یک منشی را انتخاب کنید.');
+                }
+                return;
+            }
             var today = new Date();
             var todayStr = self.formatDateForUrl(today);
-            window.location.href = self.config.apiBaseUrl + '/DailyReport?date=' + todayStr;
+            window.location.href = self.config.apiBaseUrl + '/DailyReport?cashierId=' + encodeURIComponent(cashierId) + '&date=' + todayStr;
         });
         
-        // This Week Report
+        // This Week Report (نیاز به انتخاب منشی)
         $('#btn-this-week-report').on('click', function() {
+            var cashierId = getSelectedCashierId();
+            if (!cashierId) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'انتخاب منشی', text: 'لطفاً ابتدا یک منشی را انتخاب کنید.' });
+                } else {
+                    alert('لطفاً ابتدا یک منشی را انتخاب کنید.');
+                }
+                return;
+            }
             var today = new Date();
             var weekStart = new Date(today);
-            weekStart.setDate(today.getDate() - today.getDay()); // Start of week
-            
+            weekStart.setDate(today.getDate() - today.getDay());
             var weekStartStr = self.formatDateForUrl(weekStart);
             var todayStr = self.formatDateForUrl(today);
-            
-            window.location.href = self.config.apiBaseUrl + '/RangeReport?fromDate=' + weekStartStr + '&toDate=' + todayStr;
+            window.location.href = self.config.apiBaseUrl + '/RangeReport?cashierId=' + encodeURIComponent(cashierId) + '&fromDate=' + weekStartStr + '&toDate=' + todayStr;
         });
         
-        // This Month Report
+        // This Month Report (نیاز به انتخاب منشی)
         $('#btn-this-month-report').on('click', function() {
+            var cashierId = getSelectedCashierId();
+            if (!cashierId) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({ icon: 'warning', title: 'انتخاب منشی', text: 'لطفاً ابتدا یک منشی را انتخاب کنید.' });
+                } else {
+                    alert('لطفاً ابتدا یک منشی را انتخاب کنید.');
+                }
+                return;
+            }
             var today = new Date();
             var monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-            
             var monthStartStr = self.formatDateForUrl(monthStart);
             var todayStr = self.formatDateForUrl(today);
-            
-            window.location.href = self.config.apiBaseUrl + '/RangeReport?fromDate=' + monthStartStr + '&toDate=' + todayStr;
+            window.location.href = self.config.apiBaseUrl + '/RangeReport?cashierId=' + encodeURIComponent(cashierId) + '&fromDate=' + monthStartStr + '&toDate=' + todayStr;
         });
         
-        // All Cashiers Summary
+        // All Cashiers Summary (بدون نیاز به منشی)
         $('#btn-all-cashiers-summary').on('click', function() {
             var today = new Date();
             var monthStart = new Date(today);

@@ -3,6 +3,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Payment;
 using ClinicApp.Models;
 using ClinicApp.Models.DTOs.Payment;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
 using OfficeOpenXml;
@@ -18,6 +19,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 using Color = System.Drawing.Color;
 
 namespace ClinicApp.Services.Payment
@@ -388,6 +390,133 @@ namespace ClinicApp.Services.Payment
             {
                 _logger.Error(ex, "❌ Error comparing cashiers from {FromDate} to {ToDate}", fromDate, toDate);
                 return ServiceResult<CashierPerformanceComparison>.Failed("خطا در مقایسه منشی‌ها", "EXCEPTION");
+            }
+        }
+
+        #endregion
+
+        #region GetRangeReportAsync
+
+        /// <summary>
+        /// گزارش بازه‌زمانی با تجمیع روزانه (برای نمایش در صفحه RangeReport)
+        /// </summary>
+        public async Task<ServiceResult<CashierDailyReport>> GetRangeReportAsync(string cashierId, DateTime fromDate, DateTime toDate)
+        {
+            try
+            {
+                _logger.Information("📊 Getting range report for Cashier: {CashierId}, From: {FromDate}, To: {ToDate}",
+                    cashierId, fromDate, toDate);
+
+                if (string.IsNullOrWhiteSpace(cashierId))
+                    return ServiceResult<CashierDailyReport>.Failed("شناسه منشی الزامی است.", "VALIDATION");
+                if (fromDate > toDate)
+                    return ServiceResult<CashierDailyReport>.Failed("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.", "VALIDATION");
+
+                var cashier = await _context.Users.FirstOrDefaultAsync(u => u.Id == cashierId);
+                if (cashier == null)
+                    return ServiceResult<CashierDailyReport>.Failed("منشی یافت نشد.", "NOT_FOUND");
+
+                var dailyReports = new List<CashierDailyReport>();
+                for (var date = fromDate.Date; date <= toDate.Date; date = date.AddDays(1))
+                {
+                    var dailyResult = await GetDailyReportAsync(cashierId, date);
+                    if (dailyResult.Success)
+                        dailyReports.Add(dailyResult.Data);
+                }
+
+                if (dailyReports.Count == 0)
+                {
+                    return ServiceResult<CashierDailyReport>.Successful(new CashierDailyReport
+                    {
+                        CashierId = cashierId,
+                        CashierName = cashier.UserName ?? cashier.Email ?? "نامشخص",
+                        Date = fromDate
+                    });
+                }
+
+                var totalTransactions = dailyReports.Sum(d => d.TotalTransactions);
+                var aggregated = new CashierDailyReport
+                {
+                    CashierId = cashierId,
+                    CashierName = cashier.UserName ?? cashier.Email ?? "نامشخص",
+                    Date = fromDate,
+                    SessionsOpened = dailyReports.Sum(d => d.SessionsOpened),
+                    SessionsClosed = dailyReports.Sum(d => d.SessionsClosed),
+                    TotalTransactions = totalTransactions,
+                    PosTransactions = dailyReports.Sum(d => d.PosTransactions),
+                    CashTransactions = dailyReports.Sum(d => d.CashTransactions),
+                    TotalAmount = dailyReports.Sum(d => d.TotalAmount),
+                    PosAmount = dailyReports.Sum(d => d.PosAmount),
+                    CashAmount = dailyReports.Sum(d => d.CashAmount),
+                    SuccessfulTransactions = dailyReports.Sum(d => d.SuccessfulTransactions),
+                    FailedTransactions = dailyReports.Sum(d => d.FailedTransactions),
+                    SuccessRate = totalTransactions > 0
+                        ? (decimal)(dailyReports.Sum(d => d.SuccessfulTransactions) * 100.0 / totalTransactions)
+                        : 0,
+                    AverageTransactionTime = totalTransactions > 0
+                        ? (decimal)dailyReports.Sum(d => d.AverageTransactionTime * d.TotalTransactions) / totalTransactions
+                        : 0,
+                    DiscrepancyCount = dailyReports.Sum(d => d.DiscrepancyCount),
+                    TotalDiscrepancy = dailyReports.Sum(d => d.TotalDiscrepancy),
+                    Sessions = dailyReports.SelectMany(d => d.Sessions ?? new List<CashSessionSummary>()).ToList(),
+                    Discrepancies = dailyReports.SelectMany(d => d.Discrepancies ?? new List<DiscrepancySummary>()).ToList()
+                };
+
+                _logger.Information("✅ Range report generated. Days: {Days}, Transactions: {Count}",
+                    dailyReports.Count, aggregated.TotalTransactions);
+
+                return ServiceResult<CashierDailyReport>.Successful(aggregated);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting range report for Cashier: {CashierId}", cashierId);
+                return ServiceResult<CashierDailyReport>.Failed("خطا در دریافت گزارش بازه زمانی", "EXCEPTION");
+            }
+        }
+
+        #endregion
+
+        #region GetCashiersListAsync
+
+        /// <summary>
+        /// لیست منشی‌ها (کاربران با نقش Receptionist) برای DropDown
+        /// </summary>
+        public async Task<List<SelectListItem>> GetCashiersListAsync()
+        {
+            try
+            {
+                var receptionistRoleId = await _context.Roles
+                    .Where(r => r.Name == AppRoles.Receptionist)
+                    .Select(r => r.Id)
+                    .FirstOrDefaultAsync();
+
+                if (string.IsNullOrEmpty(receptionistRoleId))
+                {
+                    _logger.Warning("⚠️ Receptionist role not found");
+                    return new List<SelectListItem>();
+                }
+
+                var cashiers = await _context.Users
+                    .Where(u => u.Roles.Any(r => r.RoleId == receptionistRoleId) && !u.IsDeleted)
+                    .OrderBy(u => u.UserName ?? u.Email)
+                    .Select(u => new { u.Id, u.UserName, u.Email })
+                    .ToListAsync();
+
+                var items = cashiers
+                    .Select(u => new SelectListItem
+                    {
+                        Value = u.Id,
+                        Text = u.UserName ?? u.Email ?? "نامشخص"
+                    })
+                    .ToList();
+
+                _logger.Information("✅ Retrieved {Count} cashiers for report", items.Count);
+                return items;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ Error getting cashiers list");
+                return new List<SelectListItem>();
             }
         }
 

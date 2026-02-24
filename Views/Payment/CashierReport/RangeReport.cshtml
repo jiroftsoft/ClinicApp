@@ -118,7 +118,7 @@
         </div>
 
         <!-- Sessions Table -->
-        @if (Model.Report.Sessions != null && Model.Report.Sessions.Any())
+        if (Model.Report.Sessions != null && Model.Report.Sessions.Any())
         {
             <div class="row mb-4">
                 <div class="col-12">

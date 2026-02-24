@@ -73,6 +73,16 @@ namespace ClinicApp.ViewModels.Payment
         public DateTime? EndDate { get; set; }
 
         /// <summary>
+        /// از تاریخ (شمسی) برای ارسال از فرم و نمایش — در کنترلر به StartDate تبدیل می‌شود.
+        /// </summary>
+        public string StartDateShamsi { get; set; }
+
+        /// <summary>
+        /// تا تاریخ (شمسی) برای ارسال از فرم و نمایش — در کنترلر به EndDate تبدیل می‌شود.
+        /// </summary>
+        public string EndDateShamsi { get; set; }
+
+        /// <summary>
         /// شناسه منشی
         /// </summary>
         [Display(Name = "منشی")]

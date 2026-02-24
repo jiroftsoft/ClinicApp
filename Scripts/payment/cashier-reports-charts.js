@@ -97,9 +97,18 @@ var CashierReportsCharts = {
     // Charts storage
     charts: {},
     
+    ensureChartLoaded: function() {
+        if (typeof Chart === 'undefined') {
+            console.warn('Chart.js is not loaded. Load ~/Scripts/chart.min.js before this script.');
+            return false;
+        }
+        return true;
+    },
+    
     // Create Pie Chart
     createPieChart: function(canvasId, data, options) {
         var self = this;
+        if (!self.ensureChartLoaded()) return null;
         
         // Destroy existing chart if exists
         if (self.charts[canvasId]) {
@@ -176,6 +185,7 @@ var CashierReportsCharts = {
     // Create Bar Chart
     createBarChart: function(canvasId, data, options) {
         var self = this;
+        if (!self.ensureChartLoaded()) return null;
         
         // Destroy existing chart if exists
         if (self.charts[canvasId]) {
@@ -239,6 +249,7 @@ var CashierReportsCharts = {
     // Create Line Chart
     createLineChart: function(canvasId, data, options) {
         var self = this;
+        if (!self.ensureChartLoaded()) return null;
         
         // Destroy existing chart if exists
         if (self.charts[canvasId]) {

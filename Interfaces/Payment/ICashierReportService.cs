@@ -3,6 +3,7 @@ using ClinicApp.Models.DTOs.Payment;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace ClinicApp.Interfaces.Payment
 {
@@ -36,6 +37,20 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="month">ماه (1-12)</param>
         /// <returns>گزارش ماهانه</returns>
         Task<ServiceResult<CashierMonthlyReport>> GetMonthlyReportAsync(string cashierId, int year, int month);
+
+        /// <summary>
+        /// دریافت گزارش بازه‌زمانی یک منشی (تجمیع روزانه)
+        /// </summary>
+        /// <param name="cashierId">شناسه منشی</param>
+        /// <param name="fromDate">از تاریخ</param>
+        /// <param name="toDate">تا تاریخ</param>
+        /// <returns>گزارش تجمیع‌شده بازه</returns>
+        Task<ServiceResult<CashierDailyReport>> GetRangeReportAsync(string cashierId, DateTime fromDate, DateTime toDate);
+
+        /// <summary>
+        /// دریافت لیست منشی‌ها برای DropDown (کاربران با نقش Receptionist)
+        /// </summary>
+        Task<List<SelectListItem>> GetCashiersListAsync();
 
         /// <summary>
         /// دریافت خلاصه عملکرد تمام منشی‌ها در بازه زمانی مشخص

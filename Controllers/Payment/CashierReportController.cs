@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -8,7 +7,6 @@ using ClinicApp.Controllers;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Payment;
-using ClinicApp.Models;
 using ClinicApp.Models.Core;
 using ClinicApp.ViewModels.Payment;
 using Serilog;
@@ -36,7 +34,6 @@ namespace ClinicApp.Controllers.Payment
 
         private readonly ICashierReportService _reportService;
         private readonly ICurrentUserService _currentUserService;
-        private readonly ApplicationDbContext _context;
 
         #endregion
 
@@ -45,12 +42,10 @@ namespace ClinicApp.Controllers.Payment
         public CashierReportController(
             ICashierReportService reportService,
             ICurrentUserService currentUserService,
-            ApplicationDbContext context,
             ILogger logger) : base(currentUserService, logger)
         {
             _reportService = reportService ?? throw new ArgumentNullException(nameof(reportService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-            _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         #endregion
@@ -67,15 +62,19 @@ namespace ClinicApp.Controllers.Payment
             {
                 _logger.Information("📊 Loading Cashier Reports Index for User: {UserId}", _currentUserService.UserId);
 
+                var filter = new CashierReportFilterViewModel
+                {
+                    StartDate = DateTime.Today.AddDays(-7),
+                    EndDate = DateTime.Today,
+                    ReportType = ReportType.Daily
+                };
+                filter.StartDateShamsi = PersianDateHelper.ToPersianDate(filter.StartDate.Value);
+                filter.EndDateShamsi = PersianDateHelper.ToPersianDate(filter.EndDate.Value);
+
                 var model = new CashierReportIndexViewModel
                 {
-                    Filter = new CashierReportFilterViewModel
-                    {
-                        StartDate = DateTime.Today.AddDays(-7),
-                        EndDate = DateTime.Today,
-                        ReportType = ReportType.Daily
-                    },
-                    Cashiers = await GetCashiersListAsync(),
+                    Filter = filter,
+                    Cashiers = await _reportService.GetCashiersListAsync(),
                     SelectedReportType = ReportType.Daily
                 };
 
@@ -154,10 +153,9 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                // Parse تاریخ از hidden input
-                var date = this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today;
+                var date = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today;
 
-                if (string.IsNullOrWhiteSpace(filter.CashierId))
+                if (string.IsNullOrWhiteSpace(filter?.CashierId))
                 {
                     NotificationHelper.SetWarning(TempData, "لطفاً منشی را انتخاب کنید");
                     return RedirectToAction("Index");
@@ -284,13 +282,16 @@ namespace ClinicApp.Controllers.Payment
                 var startDate = fromDate ?? DateTime.Today.AddDays(-7);
                 var endDate = toDate ?? DateTime.Today;
 
+                if (startDate > endDate)
+                {
+                    NotificationHelper.SetWarning(TempData, "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد");
+                    return RedirectToAction("Index");
+                }
+
                 _logger.Information("📊 Getting range report for Cashier: {CashierId}, From: {FromDate}, To: {ToDate}", 
                     cashierId, startDate, endDate);
 
-                // برای گزارش بازه زمانی، از GetDailyReportAsync استفاده می‌کنیم و داده‌ها را تجمیع می‌کنیم
-                // یا می‌توانیم یک متد جدید در Service ایجاد کنیم
-                // فعلاً از DailyReport استفاده می‌کنیم
-                var result = await _reportService.GetDailyReportAsync(cashierId, startDate);
+                var result = await _reportService.GetRangeReportAsync(cashierId, startDate, endDate);
                 if (!result.Success)
                 {
                     _logger.Warning("⚠️ Failed to get range report: {Message}", result.Message);
@@ -337,9 +338,8 @@ namespace ClinicApp.Controllers.Payment
                     return RedirectToAction("Index");
                 }
 
-                // Parse تاریخ‌ها از hidden input
-                var startDate = this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-7);
-                var endDate = this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
+                var startDate = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-7);
+                var endDate = ParseDateFromFilter(filter, useStart: false) ?? this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
 
                 if (startDate > endDate)
                 {
@@ -417,9 +417,8 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                // Parse تاریخ‌ها از hidden input
-                var startDate = this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-30);
-                var endDate = this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
+                var startDate = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-30);
+                var endDate = ParseDateFromFilter(filter, useStart: false) ?? this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
 
                 if (startDate > endDate)
                 {
@@ -456,15 +455,19 @@ namespace ClinicApp.Controllers.Payment
 
                 _logger.Information("📊 Getting compare cashiers from {FromDate} to {ToDate}", startDate, endDate);
 
+                var filter = new CashierReportFilterViewModel
+                {
+                    StartDate = startDate,
+                    EndDate = endDate,
+                    ReportType = ReportType.Compare
+                };
+                filter.StartDateShamsi = PersianDateHelper.ToPersianDate(filter.StartDate.Value);
+                filter.EndDateShamsi = PersianDateHelper.ToPersianDate(filter.EndDate.Value);
+
                 var model = new CashierCompareCashiersViewModel
                 {
-                    Filter = new CashierReportFilterViewModel
-                    {
-                        StartDate = startDate,
-                        EndDate = endDate,
-                        ReportType = ReportType.Compare
-                    },
-                    AvailableCashiers = await GetCashiersListAsync(),
+                    Filter = filter,
+                    AvailableCashiers = await _reportService.GetCashiersListAsync(),
                     SelectedCashierIds = cashierIds ?? new List<string>()
                 };
 
@@ -504,9 +507,9 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                // Parse تاریخ‌ها از hidden input
-                var startDate = this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-30);
-                var endDate = this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
+                var filter = model?.Filter;
+                var startDate = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-30);
+                var endDate = ParseDateFromFilter(filter, useStart: false) ?? this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
 
                 if (startDate > endDate)
                 {
@@ -538,16 +541,31 @@ namespace ClinicApp.Controllers.Payment
         #region Export
 
         /// <summary>
-        /// Export به Excel
+        /// Export به Excel (GET برای لینک مستقیم از صفحه گزارش؛ POST با توکن برای فرم)
         /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> ExportToExcel(string cashierId, DateTime? fromDate, DateTime? toDate, string reportType)
+        {
+            var from = fromDate ?? DateTime.Today.AddDays(-7);
+            var to = toDate ?? DateTime.Today;
+            return await ExportToExcelCore(cashierId ?? "", from, to);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ExportToExcel(string cashierId, DateTime fromDate, DateTime toDate, string reportType)
+        public async Task<ActionResult> ExportToExcelPost(string cashierId, DateTime? fromDate, DateTime? toDate)
+        {
+            var from = fromDate ?? DateTime.Today.AddDays(-7);
+            var to = toDate ?? DateTime.Today;
+            return await ExportToExcelCore(cashierId ?? "", from, to);
+        }
+
+        private async Task<ActionResult> ExportToExcelCore(string cashierId, DateTime fromDate, DateTime toDate)
         {
             try
             {
-                _logger.Information("📊 Exporting to Excel - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}, Type: {ReportType}", 
-                    cashierId, fromDate, toDate, reportType);
+                _logger.Information("📊 Exporting to Excel - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}", 
+                    cashierId, fromDate, toDate);
 
                 var result = await _reportService.ExportToExcelAsync(cashierId, fromDate, toDate);
                 if (!result.Success)
@@ -558,9 +576,7 @@ namespace ClinicApp.Controllers.Payment
                 }
 
                 var fileName = $"CashierReport_{cashierId}_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.xlsx";
-                
                 _logger.Information("✅ Excel export completed successfully");
-
                 return File(result.Data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
             }
             catch (Exception ex)
@@ -572,16 +588,31 @@ namespace ClinicApp.Controllers.Payment
         }
 
         /// <summary>
-        /// Export به PDF
+        /// Export به PDF (GET برای لینک مستقیم از صفحه گزارش)
         /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> ExportToPdf(string cashierId, DateTime? fromDate, DateTime? toDate, string reportType)
+        {
+            var from = fromDate ?? DateTime.Today.AddDays(-7);
+            var to = toDate ?? DateTime.Today;
+            return await ExportToPdfCore(cashierId ?? "", from, to);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> ExportToPdf(string cashierId, DateTime fromDate, DateTime toDate, string reportType)
+        public async Task<ActionResult> ExportToPdfPost(string cashierId, DateTime? fromDate, DateTime? toDate)
+        {
+            var from = fromDate ?? DateTime.Today.AddDays(-7);
+            var to = toDate ?? DateTime.Today;
+            return await ExportToPdfCore(cashierId ?? "", from, to);
+        }
+
+        private async Task<ActionResult> ExportToPdfCore(string cashierId, DateTime fromDate, DateTime toDate)
         {
             try
             {
-                _logger.Information("📊 Exporting to PDF - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}, Type: {ReportType}", 
-                    cashierId, fromDate, toDate, reportType);
+                _logger.Information("📊 Exporting to PDF - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}", 
+                    cashierId, fromDate, toDate);
 
                 var result = await _reportService.ExportToPdfAsync(cashierId, fromDate, toDate);
                 if (!result.Success)
@@ -592,9 +623,7 @@ namespace ClinicApp.Controllers.Payment
                 }
 
                 var fileName = $"CashierReport_{cashierId}_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.pdf";
-                
                 _logger.Information("✅ PDF export completed successfully");
-
                 return File(result.Data, "application/pdf", fileName);
             }
             catch (Exception ex)
@@ -607,6 +636,17 @@ namespace ClinicApp.Controllers.Payment
 
         #endregion
 
+        /// <summary>
+        /// پارس تاریخ شمسی از فیلتر (StartDateShamsi یا EndDateShamsi) برای استفاده در POST.
+        /// </summary>
+        private static DateTime? ParseDateFromFilter(CashierReportFilterViewModel filter, bool useStart)
+        {
+            if (filter == null) return null;
+            var shamsi = useStart ? filter.StartDateShamsi : filter.EndDateShamsi;
+            if (string.IsNullOrWhiteSpace(shamsi)) return null;
+            return PersianDateHelper.ParsePersianDate(shamsi);
+        }
+
         #region AJAX Actions
 
         /// <summary>
@@ -617,60 +657,13 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                _logger.Information("📊 Getting cashiers list");
-
-                var cashiers = await GetCashiersListAsync();
-                
+                var cashiers = await _reportService.GetCashiersListAsync();
                 return Json(new { success = true, data = cashiers }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ Error getting cashiers list");
                 return Json(new { success = false, message = "خطا در دریافت لیست منشی‌ها" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Private Helpers
-
-        /// <summary>
-        /// دریافت لیست منشی‌ها از Database
-        /// </summary>
-        private async Task<List<SelectListItem>> GetCashiersListAsync()
-        {
-            try
-            {
-                // دریافت منشی‌ها (کاربران با نقش Receptionist)
-                var receptionistRoleId = await _context.Roles
-                    .Where(r => r.Name == AppRoles.Receptionist)
-                    .Select(r => r.Id)
-                    .FirstOrDefaultAsync();
-
-                if (string.IsNullOrEmpty(receptionistRoleId))
-                {
-                    _logger.Warning("⚠️ Receptionist role not found");
-                    return new List<SelectListItem>();
-                }
-
-                var cashiers = await _context.Users
-                    .Where(u => u.Roles.Any(r => r.RoleId == receptionistRoleId) && !u.IsDeleted)
-                    .OrderBy(u => u.UserName ?? u.Email)
-                    .Select(u => new SelectListItem
-                    {
-                        Value = u.Id,
-                        Text = u.UserName ?? u.Email ?? "نامشخص"
-                    })
-                    .ToListAsync();
-
-                _logger.Information("✅ Retrieved {Count} cashiers", cashiers.Count);
-
-                return cashiers;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ Error getting cashiers list from database");
-                return new List<SelectListItem>();
             }
         }
 

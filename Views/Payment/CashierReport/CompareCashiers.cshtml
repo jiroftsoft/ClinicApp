@@ -62,7 +62,7 @@
                             <label class="form-label">از تاریخ</label>
                             @{
                                 ViewBag.PersianDatePickerId = "StartDatePicker";
-                                ViewBag.PersianDatePickerName = "StartDate";
+                                ViewBag.PersianDatePickerName = "Filter.StartDateShamsi";
                                 ViewBag.PersianDatePickerValue = Model.Filter.StartDate;
                                 ViewBag.PersianDatePickerLabel = "از تاریخ";
                                 ViewBag.PersianDatePickerPlaceholder = "از تاریخ را انتخاب کنید";
@@ -76,7 +76,7 @@
                             <label class="form-label">تا تاریخ</label>
                             @{
                                 ViewBag.PersianDatePickerId = "EndDatePicker";
-                                ViewBag.PersianDatePickerName = "EndDate";
+                                ViewBag.PersianDatePickerName = "Filter.EndDateShamsi";
                                 ViewBag.PersianDatePickerValue = Model.Filter.EndDate;
                                 ViewBag.PersianDatePickerLabel = "تا تاریخ";
                                 ViewBag.PersianDatePickerPlaceholder = "تا تاریخ را انتخاب کنید";
@@ -278,7 +278,7 @@
 @section Scripts {
     @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="~/Scripts/chart.min.js"></script>
     <script src="~/Scripts/payment/cashier-reports-charts.js"></script>
     
     <script>
