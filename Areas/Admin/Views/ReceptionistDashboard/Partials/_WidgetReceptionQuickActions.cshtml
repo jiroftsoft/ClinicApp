@@ -1,0 +1,30 @@
+@using System.Web.Mvc
+@model ClinicApp.ViewModels.Admin.ReceptionistDashboard.WidgetReceptionQuickActionsViewModel
+<div class="reception-dash-widget reception-dash-quick-actions">
+    <div class="reception-dash-widget-header">
+        <i class="fas fa-bolt text-primary"></i>
+        <span>عملیات سریع</span>
+    </div>
+    <div class="reception-dash-widget-body">
+        <div class="d-flex flex-wrap gap-2">
+            @if (Model?.ShowReceptionNew == true)
+            {
+                <a href="@Url.Action("Index", "ReceptionV2")" class="btn btn-primary btn-sm">
+                    <i class="fas fa-user-plus"></i> پذیرش جدید
+                </a>
+            }
+            @if (Model?.ShowReceptionList == true)
+            {
+                <a href="@Url.Content("~/ReceptionV2/ReceptionList")" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-list-ul"></i> لیست پذیرش‌ها
+                </a>
+            }
+            @if (Model?.ShowCashierDashboard == true)
+            {
+                <a href="@Url.Action("Index", "CashierDashboard", new { area = "Admin" })" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-cash-register"></i> داشبورد صندوق
+                </a>
+            }
+        </div>
+    </div>
+</div>

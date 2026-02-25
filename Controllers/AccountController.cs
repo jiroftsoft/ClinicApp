@@ -720,15 +720,19 @@ namespace ClinicApp.Controllers
         }
 
         /// <summary>
-        /// تعیین صفحهٔ پیش‌فرض پس از لاگین بر اساس نقش کاربر (مدیر/منشی → پنل ادمین، بیمار/سایر → صفحهٔ اصلی).
+        /// تعیین صفحهٔ پیش‌فرض پس از لاگین بر اساس نقش کاربر.
+        /// منشی → داشبورد مدیریت (پذیرش سریع در دسترس)، ادمین → داشبورد پزشکان، بیمار/سایر → صفحهٔ اصلی.
         /// </summary>
         private string GetDefaultLandingUrl()
         {
-            if (_authService.IsAuthenticated &&
-                (User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Receptionist)))
-            {
+            if (!_authService.IsAuthenticated)
+                return Url.Action("Index", "Home", new { area = "" });
+
+            if (User.IsInRole(AppRoles.Admin))
                 return Url.Action("Index", "DoctorDashboard", new { area = "Admin" });
-            }
+            if (User.IsInRole(AppRoles.Receptionist))
+                return Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" }); // داشبورد اختصاصی منشی
+
             return Url.Action("Index", "Home", new { area = "" });
         }
 

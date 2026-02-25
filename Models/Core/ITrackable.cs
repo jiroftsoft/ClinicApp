@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
@@ -27,7 +27,8 @@ public class ApplicationUserConfig : EntityTypeConfiguration<ApplicationUser>
 {
     public ApplicationUserConfig()
     {
-        ToTable("ApplicationUsers");
+        // نام جدول باید با دیتابیس (AspNetUsers از Identity/Migrations) یکسان باشد
+        ToTable("AspNetUsers");
         HasKey(u => u.Id);
 
 
@@ -151,6 +152,10 @@ public class ApplicationUserConfig : EntityTypeConfiguration<ApplicationUser>
         // ایندکس‌های ترکیبی برای گزارش‌گیری و جستجوهای رایج در سیستم‌های پزشکی
         HasIndex(u => new { u.IsActive, u.IsDeleted })
             .HasName("IX_ApplicationUser_IsActive_IsDeleted");
+
+        // پروداکشن: بهینه جستجوی لیست کاربران (فیلتر IsDeleted + مرتب‌سازی CreatedAt)
+        HasIndex(u => new { u.IsDeleted, u.CreatedAt })
+            .HasName("IX_ApplicationUser_IsDeleted_CreatedAt");
     }
 }
 

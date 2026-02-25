@@ -583,6 +583,7 @@
     <Compile Include="Areas\Admin\Controllers\OnlineConsultationController.cs" />
     <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\PromotionalEventController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ReceptionistDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Security\LoginHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
@@ -722,6 +723,7 @@
     <Compile Include="Filters\PatientRoleAuthorizationAttribute.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
     <Compile Include="Filters\RequestTimingFilter.cs" />
+    <Compile Include="Filters\UserManagementValidationRateLimitAttribute.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AgeCalculationHelper.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
@@ -1126,6 +1128,14 @@
     <Compile Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.cs" />
     <Compile Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.Designer.cs">
       <DependentUpon>202602240719299_DoctorSchedule.OnlineConsultationFee.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202602241625229_NewPerformance1205.cs" />
+    <Compile Include="Migrations\202602241625229_NewPerformance1205.Designer.cs">
+      <DependentUpon>202602241625229_NewPerformance1205.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.cs" />
+    <Compile Include="Migrations\202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.Designer.cs">
+      <DependentUpon>202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
@@ -1811,6 +1821,7 @@
     <Compile Include="ViewModels\Account\UserProfileEditViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentDetailsViewModel.cs" />
     <Compile Include="ViewModels\Admin\PaymentManagement\PaymentIndexViewModel.cs" />
+    <Compile Include="ViewModels\Admin\ReceptionistDashboard\ReceptionistDashboardPageViewModel.cs" />
     <Compile Include="ViewModels\Admin\Security\LoginHistoryIndexViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotDetailsViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotFilterViewModel.cs" />
@@ -5382,6 +5393,12 @@
     <Content Include="Areas\Admin\Views\Shared\_AsideMenu.cshtml" />
     <Content Include="Areas\Patient\Views\OnlineConsultation\Join.cshtml" />
     <Content Include="Areas\Admin\Views\CashierDashboard\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetPendingReceptions.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetReceptionQuickActions.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayAppointments.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayDoctors.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayStats.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -7778,6 +7795,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602240719299_DoctorSchedule.OnlineConsultationFee.resx">
       <DependentUpon>202602240719299_DoctorSchedule.OnlineConsultationFee.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602241625229_NewPerformance1205.resx">
+      <DependentUpon>202602241625229_NewPerformance1205.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.resx">
+      <DependentUpon>202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

@@ -24,7 +24,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// 
     /// Flow: HTTP Request -> Controller -> Service -> Repository -> Database
     /// </summary>
-    //[Authorize(Roles = AppRoles.Admin)]
+    [Authorize(Roles = AppRoles.Admin)]
     public class UserManagementController : Controller
     {
         #region Fields and Constructor
@@ -90,6 +90,84 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
+        #region DataTables API (سرور-ساید)
+
+        /// <summary>
+        /// دریافت داده‌های جدول کاربران برای DataTables (AJAX - سرور-ساید)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [OutputCache(Duration = 0, NoStore = true)]
+        public async Task<JsonResult> GetUsersData(UserManagementDataTablesRequest request)
+        {
+            try
+            {
+                if (request == null)
+                {
+                    return Json(new { draw = 0, recordsTotal = 0, recordsFiltered = 0, data = new object[0], error = "درخواست نامعتبر است" });
+                }
+
+                var filter = new UserSearchFilter
+                {
+                    SearchTerm = !string.IsNullOrWhiteSpace(request.FilterSearchTerm) ? request.FilterSearchTerm.Trim() : request.Search?.Value?.Trim(),
+                    IsActive = request.FilterIsActive,
+                    RoleName = request.FilterRoleName
+                };
+
+                var length = request.Length > 0 ? request.Length : 10;
+                _logger.Information("DataTables GetUsersData | Draw: {Draw}, Start: {Start}, Length: {Length}, SearchTerm: {SearchTerm}, IsActive: {IsActive}, RoleName: {RoleName}. User: {UserId}",
+                    request.Draw, request.Start, length, string.IsNullOrEmpty(filter.SearchTerm) ? "(empty)" : "***", filter.IsActive?.ToString() ?? "all", filter.RoleName ?? "all", _currentUserService.UserId);
+
+                var result = await _userService.GetUsersForDataTablesAsync(filter, request.Start, length);
+                if (!result.Success)
+                {
+                    return Json(new { draw = request.Draw, recordsTotal = 0, recordsFiltered = 0, data = new object[0], error = result.Message });
+                }
+
+                var (recordsTotal, recordsFiltered, list) = result.Data;
+                var data = list.Select(u => new
+                {
+                    userId = u.UserId,
+                    fullName = u.FullName,
+                    nationalCodeMasked = u.NationalCodeMasked,
+                    email = u.Email ?? "",
+                    phoneNumberMasked = u.PhoneNumberMasked,
+                    rolesDisplay = u.RolesDisplay,
+                    isActive = u.IsActive,
+                    isActiveDisplay = u.IsActive ? "فعال" : "غیرفعال",
+                    createdAtShamsi = u.CreatedAtShamsi ?? "",
+                    actionsHtml = BuildActionsHtml(u),
+                    hasDoctorRole = u.Roles != null && u.Roles.Contains(AppRoles.Doctor)
+                }).ToList();
+
+                return Json(new { draw = request.Draw, recordsTotal, recordsFiltered, data });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های DataTables کاربران. User: {UserId}", _currentUserService.UserId);
+                return Json(new { draw = request?.Draw ?? 0, recordsTotal = 0, recordsFiltered = 0, data = new object[0], error = "خطا در دریافت داده‌ها" });
+            }
+        }
+
+        private string BuildActionsHtml(UserListItemViewModel u)
+        {
+            var detailsUrl = Url.Action("Details", "UserManagement", new { area = "Admin", id = u.UserId });
+            var editUrl = Url.Action("Edit", "UserManagement", new { area = "Admin", id = u.UserId });
+            var sb = new System.Text.StringBuilder();
+            sb.Append("<div class='btn-group' role='group'>");
+            sb.Append("<a href='").Append(detailsUrl).Append("' class='btn btn-sm btn-info' title='مشاهده'><i class='fas fa-eye'></i></a>");
+            sb.Append("<a href='").Append(editUrl).Append("' class='btn btn-sm btn-warning' title='ویرایش'><i class='fas fa-edit'></i></a>");
+            if (u.IsActive)
+                sb.Append("<button type='button' class='btn btn-sm btn-secondary btn-deactivate' data-user-id='").Append(u.UserId).Append("' title='غیرفعال'><i class='fas fa-ban'></i></button>");
+            else
+                sb.Append("<button type='button' class='btn btn-sm btn-success btn-activate' data-user-id='").Append(u.UserId).Append("' title='فعال'><i class='fas fa-check'></i></button>");
+            sb.Append("<button type='button' class='btn btn-sm btn-danger btn-delete' data-user-id='").Append(u.UserId).Append("' data-user-name='").Append(u.FullName?.Replace("'", "&#39;") ?? "").Append("' title='حذف'><i class='fas fa-trash'></i></button>");
+            sb.Append("</div>");
+            return sb.ToString();
+        }
+
+        #endregion
+
         #region Create
 
         /// <summary>
@@ -140,7 +218,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             try
             {
                 _logger.Information("درخواست ایجاد کاربر - NationalCode: {NationalCode}, Email: {Email}. User: {UserId}",
-                    model?.NationalCode, model?.Email, _currentUserService.UserId);
+                    MaskNationalCode(model?.NationalCode), MaskEmail(model?.Email), _currentUserService.UserId);
 
                 // ✅ Validation
                 if (!ModelState.IsValid)
@@ -188,7 +266,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 _logger.Information("کاربر جدید با موفقیت ایجاد شد - UserId: {UserId}, NationalCode: {NationalCode}. CreatedBy: {CreatedBy}",
-                    result.Data?.Id, result.Data?.NationalCode, _currentUserService.UserId);
+                    result.Data?.Id, MaskNationalCode(result.Data?.NationalCode), _currentUserService.UserId);
 
                 NotificationHelper.SetSuccess(TempData, "کاربر با موفقیت ایجاد شد.");
                 return RedirectToAction("Index");
@@ -407,6 +485,14 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return RedirectToAction("Index");
                 }
 
+                // پروداکشن درمانی: جلوگیری از حذف حساب خود
+                if (string.Equals(id, _currentUserService.UserId, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.Warning("تلاش برای حذف حساب خود - UserId: {UserId}", _currentUserService.UserId);
+                    NotificationHelper.SetError(TempData, "امکان حذف حساب خودتان وجود ندارد.");
+                    return RedirectToAction("Index");
+                }
+
                 // ✅ حذف نرم
                 var result = await _userService.DeleteUserAsync(id);
 
@@ -493,7 +579,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (string.IsNullOrEmpty(id))
                 {
                     _logger.Warning("شناسه کاربر خالی است - RestoredBy: {RestoredBy}", _currentUserService.UserId);
-                    return Json(new { success = false, message = "شناسه کاربر معتبر نیست." }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "شناسه کاربر معتبر نیست." });
                 }
 
                 var result = await _userService.RestoreUserAsync(id);
@@ -501,25 +587,25 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (result == null)
                 {
                     _logger.Error("نتیجه Service null است - UserId: {UserId}", id);
-                    return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "خطای سیستمی رخ داد." });
                 }
 
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در بازگردانی کاربر - Message: {Message}, Code: {Code}. User: {UserId}",
                         result.Message, result.Code, _currentUserService.UserId);
-                    return Json(new { success = false, message = result.Message ?? "خطا در بازگردانی کاربر" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = result.Message ?? "خطا در بازگردانی کاربر" });
                 }
 
                 _logger.Information("کاربر با موفقیت بازگردانی شد - UserId: {UserId}, Message: {Message}. RestoredBy: {RestoredBy}",
                     id, result.Message, _currentUserService.UserId);
 
-                return Json(new { success = true, message = result.Message ?? "کاربر با موفقیت بازگردانی شد." }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = true, message = result.Message ?? "کاربر با موفقیت بازگردانی شد." });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بازگردانی کاربر - UserId: {UserId}", id);
-                return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطای سیستمی رخ داد." });
             }
         }
 
@@ -647,7 +733,14 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (string.IsNullOrEmpty(id))
                 {
                     _logger.Warning("شناسه کاربر خالی است - DeactivatedBy: {DeactivatedBy}", _currentUserService.UserId);
-                    return Json(new { success = false, message = "شناسه کاربر معتبر نیست." }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "شناسه کاربر معتبر نیست." });
+                }
+
+                // پروداکشن درمانی: جلوگیری از غیرفعال‌سازی حساب خود
+                if (string.Equals(id, _currentUserService.UserId, StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.Warning("تلاش برای غیرفعال‌سازی حساب خود - UserId: {UserId}", _currentUserService.UserId);
+                    return Json(new { success = false, message = "امکان غیرفعال‌سازی حساب خودتان وجود ندارد." });
                 }
 
                 var result = await _userService.DeactivateUserAsync(id);
@@ -655,25 +748,25 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (result == null)
                 {
                     _logger.Error("نتیجه Service null است - UserId: {UserId}", id);
-                    return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "خطای سیستمی رخ داد." });
                 }
 
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در غیرفعال‌سازی کاربر - Message: {Message}, Code: {Code}. User: {UserId}",
                         result.Message, result.Code, _currentUserService.UserId);
-                    return Json(new { success = false, message = result.Message ?? "خطا در غیرفعال‌سازی کاربر" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = result.Message ?? "خطا در غیرفعال‌سازی کاربر" });
                 }
 
                 _logger.Information("کاربر با موفقیت غیرفعال شد - UserId: {UserId}, Message: {Message}. DeactivatedBy: {DeactivatedBy}",
                     id, result.Message, _currentUserService.UserId);
 
-                return Json(new { success = true, message = result.Message ?? "کاربر با موفقیت غیرفعال شد." }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = true, message = result.Message ?? "کاربر با موفقیت غیرفعال شد." });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در غیرفعال‌سازی کاربر - UserId: {UserId}", id);
-                return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطای سیستمی رخ داد." });
             }
         }
 
@@ -682,9 +775,11 @@ namespace ClinicApp.Areas.Admin.Controllers
         #region Validation (AJAX)
 
         /// <summary>
-        /// بررسی معتبر بودن کد ملی (AJAX)
+        /// بررسی معتبر بودن کد ملی (AJAX) — پروداکشن: با AntiForgery و Rate Limit
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ClinicApp.Filters.UserManagementValidationRateLimit(30, 1)]
         public async Task<JsonResult> ValidateNationalCode(string nationalCode, string excludeUserId = null)
         {
             try
@@ -694,15 +789,17 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی کد ملی - NationalCode: {NationalCode}", nationalCode);
+                _logger.Error(ex, "خطا در بررسی کد ملی - NationalCode: {NationalCode}", MaskNationalCode(nationalCode));
                 return Json(new { valid = false, message = "خطای سیستمی رخ داد." });
             }
         }
 
         /// <summary>
-        /// بررسی معتبر بودن ایمیل (AJAX)
+        /// بررسی معتبر بودن ایمیل (AJAX) — پروداکشن: با AntiForgery و Rate Limit
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ClinicApp.Filters.UserManagementValidationRateLimit(30, 1)]
         public async Task<JsonResult> ValidateEmail(string email, string excludeUserId = null)
         {
             try
@@ -712,9 +809,28 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی ایمیل - Email: {Email}", email);
+                _logger.Error(ex, "خطا در بررسی ایمیل - Email: {Email}", MaskEmail(email));
                 return Json(new { valid = false, message = "خطای سیستمی رخ داد." });
             }
+        }
+
+        #endregion
+
+        #region Logging Helpers (PII Masking برای پروداکشن درمانی)
+
+        private static string MaskNationalCode(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "***";
+            if (value.Length < 4) return "****";
+            return value.Substring(0, 2) + "***" + value.Substring(value.Length - 2);
+        }
+
+        private static string MaskEmail(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "***";
+            var idx = value.IndexOf('@');
+            if (idx <= 0) return "***@***";
+            return value[0] + "***@" + (idx + 1 < value.Length ? value.Substring(idx + 1) : "***");
         }
 
         #endregion

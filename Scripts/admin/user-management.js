@@ -1,6 +1,6 @@
 /**
  * User Management JavaScript
- * مدیریت تعاملات و عملیات مدیریت کاربران
+ * مدیریت تعاملات و عملیات مدیریت کاربران — بهینه‌سازی برای پروداکشن درمانی
  * 
  * طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md, DEVELOPMENT_CONTRACT.md
  * 
@@ -11,33 +11,33 @@
  * - مدیریت Role Assignment
  * - Real-time Validation
  * - AJAX Calls
+ * - بدون لوگ حساس در پروداکشن (فقط در حالت DEBUG)
  */
 
-var UserManagement = {
-    // تنظیمات
+var UserManagement = (function() {
+    var DEBUG = typeof window.USER_MANAGEMENT_DEBUG !== 'undefined' && window.USER_MANAGEMENT_DEBUG;
+
+    function log() {
+        if (DEBUG && typeof console !== 'undefined' && console.log) {
+            console.log.apply(console, arguments);
+        }
+    }
+
+    return {
     config: {
         apiBaseUrl: '/Admin/UserManagement',
-        debounceTime: 300 // ms
+        debounceTime: 300
     },
 
-    // Initialize
     init: function() {
         var self = this;
-
-        console.log('✅ Initializing User Management...');
-
-        // Setup event listeners
+        log('Initializing User Management...');
         this.setupEventListeners();
-
-        console.log('✅ User Management initialized successfully');
+        log('User Management initialized');
     },
 
-    // Initialize Restore functionality
     initRestore: function() {
-        var self = this;
-
-        console.log('✅ Initializing Restore functionality...');
-
+        log('Initializing Restore functionality...');
         // ✅ Restore Button
         $(document).off('click.userManagementRestore', '.btn-restore-user').on('click.userManagementRestore', '.btn-restore-user', function(e) {
             e.preventDefault();
@@ -46,8 +46,7 @@ var UserManagement = {
             var userName = $(this).data('user-name') || 'کاربر';
             self.handleRestore(userId, userName);
         });
-
-        console.log('✅ Restore functionality initialized');
+        log('Restore functionality initialized');
     },
 
     // Setup Event Listeners
@@ -98,7 +97,7 @@ var UserManagement = {
         var self = this;
 
         if (!userId) {
-            console.error('❌ UserManagement: UserId برای حذف موجود نیست');
+            if (DEBUG) console.error('UserManagement: UserId برای حذف موجود نیست');
             toastr.error('شناسه کاربر برای حذف موجود نیست', 'خطا');
             return;
         }
@@ -125,7 +124,7 @@ var UserManagement = {
     performDelete: function(userId) {
         var self = this;
 
-        console.log('🗑️ UserManagement: حذف کاربر - UserId:', userId);
+        log('حذف کاربر در حال انجام');
 
         // ✅ Show loading
         Swal.fire({
@@ -164,7 +163,7 @@ var UserManagement = {
                     errorMessage = xhr.responseJSON.message;
                 }
                 toastr.error(errorMessage, 'خطا');
-                console.error('❌ UserManagement: خطا در حذف کاربر:', error);
+                if (DEBUG) console.error('UserManagement: خطا در حذف کاربر', error);
             }
         });
     },
@@ -174,17 +173,14 @@ var UserManagement = {
         var self = this;
 
         if (!userId) {
-            console.error('❌ UserManagement: UserId برای فعال‌سازی موجود نیست');
+            if (DEBUG) console.error('UserManagement: UserId برای فعال‌سازی موجود نیست');
             toastr.error('شناسه کاربر برای فعال‌سازی موجود نیست', 'خطا');
             return;
         }
 
-        console.log('✅ UserManagement: فعال‌سازی کاربر - UserId:', userId);
-
-        // ✅ AJAX Call
         var token = $('input[name="__RequestVerificationToken"]').first().val();
         if (!token) {
-            console.error('❌ UserManagement: AntiForgeryToken یافت نشد');
+            if (DEBUG) console.error('UserManagement: AntiForgeryToken یافت نشد');
             toastr.error('خطا در دریافت توکن امنیتی', 'خطا');
             return;
         }
@@ -198,26 +194,18 @@ var UserManagement = {
             },
             dataType: 'json',
             success: function(response) {
-                console.log('✅ UserManagement: Response received:', response);
-                
-                // ✅ بررسی دقیق response
                 if (response && response.success === true) {
                     var message = response.message || 'کاربر با موفقیت فعال شد';
-                    console.log('✅ UserManagement: فعال‌سازی موفق - Message:', message);
                     toastr.success(message, 'موفقیت');
                     setTimeout(function() {
                         window.location.reload();
                     }, 1500);
                 } else {
                     var errorMessage = (response && response.message) ? response.message : 'خطا در فعال‌سازی کاربر';
-                    console.error('❌ UserManagement: فعال‌سازی ناموفق - Response:', response);
                     toastr.error(errorMessage, 'خطا');
                 }
             },
             error: function(xhr, status, error) {
-                console.error('❌ UserManagement: AJAX Error - Status:', status, 'Error:', error);
-                console.error('❌ UserManagement: Response Text:', xhr.responseText);
-                
                 var errorMessage = 'خطا در فعال‌سازی کاربر';
                 try {
                     if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -228,10 +216,7 @@ var UserManagement = {
                             errorMessage = parsed.message;
                         }
                     }
-                } catch (e) {
-                    console.error('❌ UserManagement: خطا در parse کردن response:', e);
-                }
-                
+                } catch (e) { /* نادیده در پروداکشن */ }
                 toastr.error(errorMessage, 'خطا');
             }
         });
@@ -242,7 +227,7 @@ var UserManagement = {
         var self = this;
 
         if (!userId) {
-            console.error('❌ UserManagement: UserId برای غیرفعال‌سازی موجود نیست');
+            if (DEBUG) console.error('UserManagement: UserId برای غیرفعال‌سازی موجود نیست');
             toastr.error('شناسه کاربر برای غیرفعال‌سازی موجود نیست', 'خطا');
             return;
         }
@@ -269,12 +254,9 @@ var UserManagement = {
     performDeactivate: function(userId) {
         var self = this;
 
-        console.log('⚠️ UserManagement: غیرفعال‌سازی کاربر - UserId:', userId);
-
-        // ✅ AJAX Call
         var token = $('input[name="__RequestVerificationToken"]').first().val();
         if (!token) {
-            console.error('❌ UserManagement: AntiForgeryToken یافت نشد');
+            if (DEBUG) console.error('UserManagement: AntiForgeryToken یافت نشد');
             toastr.error('خطا در دریافت توکن امنیتی', 'خطا');
             return;
         }
@@ -288,26 +270,18 @@ var UserManagement = {
             },
             dataType: 'json',
             success: function(response) {
-                console.log('✅ UserManagement: Response received:', response);
-                
-                // ✅ بررسی دقیق response
                 if (response && response.success === true) {
                     var message = response.message || 'کاربر با موفقیت غیرفعال شد';
-                    console.log('✅ UserManagement: غیرفعال‌سازی موفق - Message:', message);
                     toastr.success(message, 'موفقیت');
                     setTimeout(function() {
                         window.location.reload();
                     }, 1500);
                 } else {
                     var errorMessage = (response && response.message) ? response.message : 'خطا در غیرفعال‌سازی کاربر';
-                    console.error('❌ UserManagement: غیرفعال‌سازی ناموفق - Response:', response);
                     toastr.error(errorMessage, 'خطا');
                 }
             },
             error: function(xhr, status, error) {
-                console.error('❌ UserManagement: AJAX Error - Status:', status, 'Error:', error);
-                console.error('❌ UserManagement: Response Text:', xhr.responseText);
-                
                 var errorMessage = 'خطا در غیرفعال‌سازی کاربر';
                 try {
                     if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -318,20 +292,14 @@ var UserManagement = {
                             errorMessage = parsed.message;
                         }
                     }
-                } catch (e) {
-                    console.error('❌ UserManagement: خطا در parse کردن response:', e);
-                }
-                
+                } catch (e) { /* نادیده در پروداکشن */ }
                 toastr.error(errorMessage, 'خطا');
             }
         });
     },
 
-    // ✅ Handle Restore
     handleRestore: function(userId, userName) {
         var self = this;
-
-        console.log('🔄 UserManagement: درخواست بازگردانی کاربر - UserId:', userId, 'UserName:', userName);
 
         // ✅ Confirmation با SweetAlert2
         Swal.fire({
@@ -351,17 +319,12 @@ var UserManagement = {
         }).then(function(result) {
             if (result.isConfirmed) {
                 self.executeRestore(userId, userName);
-            } else {
-                console.log('❌ UserManagement: بازگردانی لغو شد');
             }
         });
     },
 
-    // ✅ Execute Restore (AJAX)
     executeRestore: function(userId, userName) {
         var self = this;
-
-        console.log('🔄 UserManagement: اجرای بازگردانی - UserId:', userId);
 
         // ✅ نمایش Loading
         Swal.fire({
@@ -378,7 +341,7 @@ var UserManagement = {
         // ✅ دریافت AntiForgeryToken
         var token = $('input[name="__RequestVerificationToken"]').first().val();
         if (!token) {
-            console.error('❌ UserManagement: AntiForgeryToken یافت نشد');
+            if (DEBUG) console.error('UserManagement: AntiForgeryToken یافت نشد');
             Swal.fire({
                 title: 'خطا',
                 text: 'خطا در دریافت توکن امنیتی. لطفاً صفحه را نوسازی کنید.',
@@ -399,11 +362,8 @@ var UserManagement = {
             },
             dataType: 'json',
             success: function(response) {
-                console.log('📥 UserManagement: پاسخ بازگردانی دریافت شد:', response);
-
                 if (response && response.success === true) {
                     var message = response.message || 'کاربر با موفقیت بازگردانی شد';
-                    console.log('✅ UserManagement: بازگردانی موفق - Message:', message);
 
                     Swal.fire({
                         title: 'موفقیت',
@@ -417,8 +377,7 @@ var UserManagement = {
                     });
                 } else {
                     var errorMessage = response ? (response.message || 'خطا در بازگردانی کاربر') : 'پاسخ نامعتبر از سرور';
-                    console.error('❌ UserManagement: خطا در بازگردانی کاربر - Message:', errorMessage, 'Response:', response);
-                    
+
                     Swal.fire({
                         title: 'خطا',
                         text: errorMessage,
@@ -429,8 +388,6 @@ var UserManagement = {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('❌ UserManagement: خطا در AJAX بازگردانی - Status:', status, 'Error:', error, 'Response:', xhr.responseText);
-
                 var errorMessage = 'خطا در ارتباط با سرور';
                 try {
                     if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -441,9 +398,7 @@ var UserManagement = {
                             errorMessage = parsed.message;
                         }
                     }
-                } catch (e) {
-                    console.error('❌ UserManagement: خطا در parse کردن response:', e);
-                }
+                } catch (e) { /* نادیده در پروداکشن */ }
 
                 Swal.fire({
                     title: 'خطا',
@@ -455,8 +410,8 @@ var UserManagement = {
             }
         });
     }
-};
+    };
+})();
 
-// ✅ Export to window
 window.UserManagement = UserManagement;
 

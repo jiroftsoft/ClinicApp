@@ -170,6 +170,17 @@
     </div>
 </div>
 
+@{
+    var notification = ClinicApp.Helpers.NotificationHelper.GetFirstAvailable(TempData);
+}
+@if (notification != null)
+{
+    <div class="alert alert-@(notification.Type == ClinicApp.Helpers.NotificationType.Success ? "success" : notification.Type == ClinicApp.Helpers.NotificationType.Error ? "danger" : "info") alert-dismissible fade show mb-3" role="alert">
+        <strong>@notification.Title:</strong> @notification.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+    </div>
+}
+
 <div class="info-badge">
     <i class="fas fa-shield-alt"></i>
     <strong>امنیت:</strong> تمام عملیات بازگردانی در سیستم ثبت و قابل ردیابی هستند.
@@ -274,10 +285,16 @@
 
         if (Model?.PagingInfo != null && Model.PagingInfo.TotalPages > 1)
         {
+            var routeBase = new System.Web.Routing.RouteValueDictionary {
+                { "area", "Admin" },
+                { "filter.SearchTerm", Model.Filter?.SearchTerm },
+                { "filter.RoleName", Model.Filter?.RoleName }
+            };
             <div class="pagination-wrapper">
                 @if (Model.PagingInfo.CurrentPage > 1)
                 {
-                    <a href="@Url.Action("DeletedUsers", "UserManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage - 1, filter = Model.Filter })" 
+                    routeBase["page"] = Model.PagingInfo.CurrentPage - 1;
+                    <a href="@Url.Action("DeletedUsers", "UserManagement", routeBase)" 
                        class="btn btn-outline-primary">
                         <i class="fas fa-chevron-right"></i> قبلی
                     </a>
@@ -290,7 +307,8 @@
                 
                 @if (Model.PagingInfo.CurrentPage < Model.PagingInfo.TotalPages)
                 {
-                    <a href="@Url.Action("DeletedUsers", "UserManagement", new { area = "Admin", page = Model.PagingInfo.CurrentPage + 1, filter = Model.Filter })" 
+                    routeBase["page"] = Model.PagingInfo.CurrentPage + 1;
+                    <a href="@Url.Action("DeletedUsers", "UserManagement", routeBase)" 
                        class="btn btn-outline-primary">
                         بعدی <i class="fas fa-chevron-left"></i>
                     </a>

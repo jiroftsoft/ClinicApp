@@ -133,6 +133,20 @@ namespace ClinicApp.Interfaces.UserManagement
         /// <returns>True اگر کاربر در این نقش باشد</returns>
         Task<bool> IsInRoleAsync(string userId, string roleName);
 
+        /// <summary>
+        /// دریافت نقش‌های چند کاربر در یک درخواست (بهینه‌سازی N+1)
+        /// </summary>
+        /// <param name="userIds">شناسه کاربران</param>
+        /// <returns>Dictionary: UserId → لیست نام نقش‌ها</returns>
+        Task<Dictionary<string, List<string>>> GetRolesForUserIdsAsync(IEnumerable<string> userIds);
+
+        /// <summary>
+        /// تعداد کاربران فعال (غیرحذف‌شده) در یک نقش
+        /// </summary>
+        /// <param name="roleName">نام نقش</param>
+        /// <returns>تعداد کاربران فعال در نقش</returns>
+        Task<int> GetActiveUsersCountInRoleAsync(string roleName);
+
         #endregion
 
         #region Statistics

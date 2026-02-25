@@ -156,7 +156,8 @@ namespace ClinicApp
                 // ثبت UserStore و ApplicationUserManager
                 container.RegisterType<IUserStore<ApplicationUser>, UserStore<ApplicationUser>>();
 
-                container.RegisterType<ApplicationUserManager>(new HierarchicalLifetimeManager(),
+                // پروداکشن درمانی: PerRequest تا هر درخواست UserManager با DbContext همان درخواست استفاده شود
+                container.RegisterType<ApplicationUserManager>(new PerRequestLifetimeManager(),
                     new InjectionFactory(c =>
                     {
                         var context = c.Resolve<ApplicationDbContext>();
@@ -352,7 +353,8 @@ namespace ClinicApp
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
-                container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
+                // پروداکشن: PerRequest تا هر درخواست AuthService با UserManager/DbContext همان درخواست استفاده شود (جلوگیری از DbContext disposed)
+                container.RegisterType<IAuthService, AuthService>(new PerRequestLifetimeManager());
 
                 // ✅ ثبت User Management Repository و Service
                 container.RegisterType<Interfaces.UserManagement.IUserRepository, Repositories.UserManagement.UserRepository>(new PerRequestLifetimeManager());
@@ -361,8 +363,8 @@ namespace ClinicApp
                 // ✅ ثبت User Profile Service (برای ویرایش پروفایل خود کاربر)
                 container.RegisterType<IUserProfileService, UserProfileService>(new PerRequestLifetimeManager());
 
-                // ✅ ثبت RoleManager برای User Management
-                container.RegisterType<RoleManager<IdentityRole>>(new HierarchicalLifetimeManager(),
+                // پروداکشن درمانی: PerRequest تا هر درخواست RoleManager با DbContext همان درخواست استفاده شود
+                container.RegisterType<RoleManager<IdentityRole>>(new PerRequestLifetimeManager(),
                     new InjectionFactory(c =>
                     {
                         var context = c.Resolve<ApplicationDbContext>();
@@ -378,7 +380,7 @@ namespace ClinicApp
                 // Image Upload Service
                 container.RegisterType<IImageUploadService, ImageUploadService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDocumentUploadService, DocumentUploadService>(new PerRequestLifetimeManager());
-                container.RegisterType<ApplicationUserManager>();
+                // ApplicationUserManager قبلاً با PerRequest+Factory در بخش Identity ثبت شده؛ ثبت مجدد حذف شد تا از تداخل جلوگیری شود
 
                 // ثبت سرویس‌های تریاژ
                 container.RegisterType<ITriageService, TriageService>(new PerRequestLifetimeManager());

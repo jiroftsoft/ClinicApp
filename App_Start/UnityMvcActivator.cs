@@ -23,8 +23,8 @@ namespace ClinicApp
 
             DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container));
 
-            // TODO: Uncomment if you want to use PerRequestLifetimeManager
-            // Microsoft.Web.Infrastructure.DynamicModuleHelper.DynamicModuleUtility.RegisterModule(typeof(UnityPerRequestHttpModule));
+            // پروداکشن: Dispose صحیح اشیای Per-Request در پایان هر درخواست
+            Microsoft.Web.Infrastructure.DynamicModuleHelper.DynamicModuleUtility.RegisterModule(typeof(UnityPerRequestHttpModule));
         }
 
         /// <summary>

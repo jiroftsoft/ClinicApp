@@ -1,0 +1,27 @@
+@model ClinicApp.ViewModels.Admin.ReceptionistDashboard.WidgetTodayDoctorsViewModel
+@{
+    var count = Model?.Count ?? 0;
+    var items = Model?.Items ?? new List<ClinicApp.ViewModels.Admin.ReceptionistDashboard.TodayDoctorItemViewModel>();
+}
+<div class="reception-dash-widget reception-dash-today-doctors">
+    <div class="reception-dash-widget-header">
+        <i class="fas fa-user-md text-success"></i>
+        <span>پزشکان حاضر امروز</span>
+    </div>
+    <div class="reception-dash-widget-body">
+        <p class="mb-2"><strong class="fs-4">@count</strong> پزشک</p>
+        @if (items.Any())
+        {
+            <ul class="list-unstyled small mb-0">
+                @foreach (var item in items.Take(8))
+                {
+                    <li class="py-1">@(item.DoctorName ?? "—") — @(item.DepartmentName ?? "—")</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">در فاز بعد از برنامه پزشکان پر می‌شود.</p>
+        }
+    </div>
+</div>

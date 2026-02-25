@@ -7,8 +7,7 @@ using Serilog;
 namespace ClinicApp.Areas.Admin.Controllers
 {
     /// <summary>
-    /// داشبورد مرکزی پلتفرم ادمین — گرید ویجت‌ها، آمادهٔ اتصال به سرویس‌ها در فاز بعد
-    /// طبق Docs/ADMIN_PLATFORM_ARCHITECTURE.md
+    /// داشبورد مرکزی پلتفرم ادمین — فقط نقش Admin. منشی به داشبورد اختصاصی خود هدایت می‌شود.
     /// </summary>
     [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     public class DashboardController : Controller
@@ -16,11 +15,17 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ILogger _logger = Log.ForContext<DashboardController>();
 
         /// <summary>
-        /// صفحهٔ اصلی داشبورد با ویجت‌های نمایشی؛ دادهٔ واقعی در فاز بعد از سرویس‌ها پر می‌شود.
+        /// صفحهٔ اصلی داشبورد ادمین. منشی اجازهٔ دسترسی ندارد → ریدایرکت به داشبورد منشی.
         /// </summary>
         [HttpGet]
         public ActionResult Index()
         {
+            if (User.IsInRole(AppRoles.Receptionist) && !User.IsInRole(AppRoles.Admin))
+            {
+                _logger.Information("منشی به داشبورد ادمین دسترسی ندارد؛ هدایت به داشبورد منشی.");
+                return RedirectToAction("Index", "ReceptionistDashboard", new { area = "Admin" });
+            }
+
             try
             {
                 _logger.Information("درخواست نمایش داشبورد پلتفرم ادمین توسط کاربر {User}", User?.Identity?.Name);

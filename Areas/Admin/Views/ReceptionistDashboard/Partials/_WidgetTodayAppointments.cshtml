@@ -1,0 +1,30 @@
+@model ClinicApp.ViewModels.Admin.ReceptionistDashboard.WidgetTodayAppointmentsReceptionViewModel
+@{
+    var count = Model?.Count ?? 0;
+    var items = Model?.Items ?? new List<ClinicApp.ViewModels.Admin.ReceptionistDashboard.TodayAppointmentReceptionItemViewModel>();
+}
+<div class="reception-dash-widget reception-dash-today-appointments">
+    <div class="reception-dash-widget-header">
+        <i class="fas fa-calendar-day text-info"></i>
+        <span>نوبت‌های امروز</span>
+    </div>
+    <div class="reception-dash-widget-body">
+        <p class="mb-2"><strong class="fs-4">@count</strong> نوبت</p>
+        @if (items.Any())
+        {
+            <ul class="list-unstyled small mb-0">
+                @foreach (var item in items.Take(5))
+                {
+                    <li class="d-flex justify-content-between py-1">
+                        <span>@(item.PatientName ?? "—")</span>
+                        <span>@(item.Time ?? "—") @(item.DoctorName)</span>
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">در فاز بعد از سرویس نوبت پر می‌شود.</p>
+        }
+    </div>
+</div>

@@ -6,6 +6,7 @@ using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Models.Core;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
 
@@ -13,14 +14,10 @@ namespace ClinicApp.Controllers.ReceptionV2
 {
     /// <summary>
     /// Controller V2 برای فرم پذیرش - Zero Cache, Production-Grade
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. Zero Cache برای محیط درمانی
-    /// 2. API-محور و اتمیک
-    /// 3. UX بهینه برای مانیتورهای 24-27 اینچ
-    /// 4. SRP و Clean Architecture
+    /// فقط کاربران با نقش Admin یا Receptionist (منشی).
     /// </summary>
     [RoutePrefix("ReceptionV2")]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     [NoCache]
     public class ReceptionV2Controller : Controller
     {

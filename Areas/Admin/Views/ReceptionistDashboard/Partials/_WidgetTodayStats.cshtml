@@ -1,0 +1,17 @@
+@model ClinicApp.ViewModels.Admin.ReceptionistDashboard.WidgetTodayStatsViewModel
+<div class="reception-dash-widget reception-dash-stats">
+    <div class="reception-dash-widget-header">
+        <i class="fas fa-chart-line text-primary"></i>
+        <span>آمار امروز</span>
+    </div>
+    <div class="reception-dash-widget-body">
+        <div class="d-flex justify-content-between mb-2">
+            <span>تعداد پذیرش</span>
+            <strong>@(Model?.ReceptionsToday ?? 0)</strong>
+        </div>
+        <div class="d-flex justify-content-between">
+            <span>درآمد (تومان)</span>
+            <strong>@((Model?.RevenueToday ?? 0).ToString("N0"))</strong>
+        </div>
+    </div>
+</div>

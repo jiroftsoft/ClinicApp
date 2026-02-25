@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewBag.Title = "ورود / ثبت‌نام";
     Layout = "~/Views/Shared/_LoginLayout.cshtml";
 }
@@ -260,26 +260,28 @@
 
             submitAjax(form, response => {
                 console.log('✅ DEBUG: AJAX Success Response:', response);
-                
-                if(response.success && response.redirectUrl) {
-                    console.log('✅ DEBUG: Login successful, redirecting to:', response.redirectUrl);
-                    toastr.success(response.message || "عملیات موفقیت‌آمیز بود!");
-                    
-                    // ✅ ENHANCED FIX: Add delay to ensure cookie is fully set before redirect
-                    // This gives OWIN middleware time to process the authentication cookie
+                var ok = response && (response.success === true || response.Success === true);
+                if (ok && (response.redirectUrl || response.RedirectUrl)) {
+                    var redirectUrl = response.redirectUrl || response.RedirectUrl;
+                    console.log('✅ DEBUG: Login successful, redirecting to:', redirectUrl);
+                    toastr.success(response.message || response.Message || "عملیات موفقیت‌آمیز بود!");
                     setTimeout(function() {
-                        console.log('🔄 DEBUG: Executing redirect NOW to:', response.redirectUrl);
-                        // ✅ Use window.location.href for cleaner redirect
-                        // This ensures browser fully processes the cookie before loading new page
-                        window.location.href = response.redirectUrl;
-                    }, 800); // Increased delay to 800ms for better reliability
+                        window.location.href = redirectUrl;
+                    }, 800);
                 } else {
                     console.error('❌ DEBUG: Response missing success or redirectUrl:', response);
                 }
             }, response => {
-                console.error('❌ DEBUG: AJAX Error Response:', response);
-                ui.otpError.text(response.message);
-                ui.otpInputs.val('').first().focus();
+                console.error('❌ DEBUG: AJAX Error Response (کد اشتباه - قابل اصلاح):', response);
+                var msg = response && (response.message || response.Message);
+                ui.otpError.text(msg || 'کد وارد شده اشتباه است.');
+                ui.otpInputs.val('');
+                ui.hiddenOtpInput.val('');
+                ui.otpInputs.first().focus();
+                // ✅ پس از خطا، وضعیت اعتبارسنجی فرم را پاک کن تا ارسال مجدد (دکمه یا خودکار) کار کند
+                if (form.data('validator')) {
+                    form.validate().resetForm();
+                }
             });
         }
 
@@ -324,20 +326,25 @@
                 url: '@Url.Action("SendLoginOtp", "Account")',
                 type: 'POST',
                 data: data,
+                dataType: 'json',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 },
                 success: function(response) {
                     console.log('📥 DEBUG: SendLoginOtp Response Received:', response);
                     showButtonSpinner(button, false);
-                    if(response && response.success) {
+                    if (typeof response === 'string') {
+                        try { response = JSON.parse(response); } catch (err) { response = null; }
+                    }
+                    var isSuccess = response && (response.success === true || response.Success === true);
+                    if (isSuccess) {
                         $('#otp-prompt').text("کد ورود به شماره موبایل ثبت شده شما ارسال شد.");
                         ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
                         ui.showPanel(ui.panels.otp);
                         ui.otpInputs.first().focus();
                         startCountdown();
                     } else {
-                        const errorMessage = response && response.message ? response.message : "خطا در ارسال کد ورود.";
+                        const errorMessage = response && (response.message || response.Message) ? (response.message || response.Message) : "خطا در ارسال کد ورود.";
                         console.error('❌ DEBUG: SendLoginOtp failed', {response, errorMessage});
                         toastr.error(errorMessage);
                     }
@@ -364,10 +371,13 @@
         }
 
         function submitAjax(form, onSuccess, onError) {
-            // ✅ CRITICAL FIX: بررسی validation قبل از ارسال
-            if (!form.valid()) {
-                console.warn('⚠️ DEBUG: Form validation failed', form.validate().errorList);
-                return;
+            // ✅ فرم OTP اعتبارسنجی جداگانه دارد (handleVerifyOtpSubmit: طول ۶ رقم)؛ وابسته به jQuery Validate نکن تا بعد از خطای اول، ارسال مجدد قطعاً کار کند
+            var isOtpForm = form.attr('id') === 'form-verify-otp';
+            if (!isOtpForm) {
+                if (!form.valid()) {
+                    console.warn('⚠️ DEBUG: Form validation failed', form.validate().errorList);
+                    return;
+                }
             }
             const button = form.find('button[type="submit"]');
             showButtonSpinner(button, true);
@@ -385,13 +395,19 @@
                 url: ajaxUrl,
                 type: 'POST',
                 data: ajaxData,
+                dataType: 'json',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'  // ✅ CRITICAL FIX: Ensure Request.IsAjaxRequest() returns true
                 },
                 success: function(response) {
                     console.log('📥 DEBUG: AJAX Response Received:', response);
                     showButtonSpinner(button, false); // ✅ CRITICAL FIX: بستن spinner در success
-                    if (response && response.success) {
+                    // ✅ نرمال‌سازی: اگر پاسخ به صورت رشته برگشته، پارس کن؛ هم success و هم Success (PascalCase) را بررسی کن
+                    if (typeof response === 'string') {
+                        try { response = JSON.parse(response); } catch (err) { response = null; }
+                    }
+                    var isSuccess = response && (response.success === true || response.Success === true);
+                    if (isSuccess) {
                         if (onSuccess) {
                             onSuccess(response);
                         } else {
@@ -401,7 +417,7 @@
                         if (onError) {
                             onError(response);
                         } else {
-                            toastr.error(response && response.message ? response.message : "خطایی رخ داده است.");
+                            toastr.error(response && (response.message || response.Message) ? (response.message || response.Message) : "خطایی رخ داده است.");
                         }
                     }
                 },

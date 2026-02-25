@@ -274,21 +274,12 @@ namespace ClinicApp.Repositories.UserManagement
                     query = query.Where(u => u.IsActive == isActive.Value);
                 }
 
-                // ✅ فیلتر Role
+                // ✅ فیلتر Role (یک کوئری با JOIN به‌جای دو round-trip)
                 if (!string.IsNullOrWhiteSpace(roleName))
                 {
-                    // دریافت نقش
                     var role = await _roleManager.FindByNameAsync(roleName);
                     if (role != null)
-                    {
-                        // دریافت کاربران با نقش خاص
-                        var usersInRole = await _context.Users
-                            .Where(u => u.Roles.Any(r => r.RoleId == role.Id))
-                            .Select(u => u.Id)
-                            .ToListAsync();
-
-                        query = query.Where(u => usersInRole.Contains(u.Id));
-                    }
+                        query = query.Where(u => u.Roles.Any(r => r.RoleId == role.Id));
                 }
 
                 // ✅ شمارش کل
@@ -554,6 +545,67 @@ namespace ClinicApp.Repositories.UserManagement
             {
                 _logger.Error(ex, "خطا در بررسی نقش کاربر - UserId: {UserId}, Role: {Role}", userId, roleName);
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت نقش‌های چند کاربر در یک درخواست (رفع N+1)
+        /// </summary>
+        public async Task<Dictionary<string, List<string>>> GetRolesForUserIdsAsync(IEnumerable<string> userIds)
+        {
+            var userIdsList = userIds?.ToList() ?? new List<string>();
+            var result = new Dictionary<string, List<string>>();
+            if (userIdsList.Count == 0)
+                return result;
+
+            try
+            {
+                var pairs = await (from ur in _context.UserRoles
+                                  where userIdsList.Contains(ur.UserId)
+                                  join r in _context.Roles on ur.RoleId equals r.Id
+                                  select new { ur.UserId, r.Name })
+                             .ToListAsync();
+
+                foreach (var g in pairs.GroupBy(x => x.UserId))
+                    result[g.Key] = g.Select(x => x.Name).ToList();
+
+                foreach (var id in userIdsList)
+                {
+                    if (!result.ContainsKey(id))
+                        result[id] = new List<string>();
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت نقش‌های دسته‌ای کاربران");
+                foreach (var id in userIdsList)
+                    result[id] = new List<string>();
+                return result;
+            }
+        }
+
+        /// <summary>
+        /// تعداد کاربران فعال (غیرحذف‌شده) در یک نقش
+        /// </summary>
+        public async Task<int> GetActiveUsersCountInRoleAsync(string roleName)
+        {
+            if (string.IsNullOrWhiteSpace(roleName))
+                return 0;
+            try
+            {
+                var role = await _roleManager.FindByNameAsync(roleName);
+                if (role == null)
+                    return 0;
+                return await _context.Users
+                    .AsNoTracking()
+                    .CountAsync(u => !u.IsDeleted && u.Roles.Any(r => r.RoleId == role.Id));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در شمارش کاربران نقش {RoleName}", roleName);
+                return 0;
             }
         }
 

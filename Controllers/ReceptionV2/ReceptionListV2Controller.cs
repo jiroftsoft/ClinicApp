@@ -9,6 +9,7 @@ using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Enums;
 using ReceptionEntity = ClinicApp.Models.Entities.Reception.Reception;
 using ClinicApp.ViewModels.Reception;
@@ -28,8 +29,10 @@ namespace ClinicApp.Controllers.ReceptionV2
     /// 3. پرداخت مجدد با POS
     /// 4. چاپ قبض و بیمه تکمیلی
     /// 5. مدیریت بدهی‌ها
+    /// فقط کاربران با نقش Admin یا Receptionist (منشی).
     /// </summary>
     [RoutePrefix("ReceptionV2/ReceptionList")]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     [NoCache]
     public class ReceptionListV2Controller : BaseController
     {

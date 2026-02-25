@@ -62,6 +62,16 @@
 }
 
 <div class="container-fluid px-0">
+    @{
+        var notification = ClinicApp.Helpers.NotificationHelper.GetFirstAvailable(TempData);
+    }
+    @if (notification != null)
+    {
+        <div class="alert alert-@(notification.Type == ClinicApp.Helpers.NotificationType.Success ? "success" : notification.Type == ClinicApp.Helpers.NotificationType.Error ? "danger" : "info") alert-dismissible fade show mb-3 mx-3 mt-3" role="alert">
+            <strong>@notification.Title:</strong> @notification.Message
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+        </div>
+    }
     <div class="form-container">
         <!-- Header -->
         <div class="medical-form-header">
@@ -245,9 +255,11 @@
             });
 
             function validateNationalCode(nationalCode, excludeUserId) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
                 $.post('@Url.Action("ValidateNationalCode", "UserManagement", new { area = "Admin" })', {
                     nationalCode: nationalCode,
-                    excludeUserId: excludeUserId
+                    excludeUserId: excludeUserId,
+                    __RequestVerificationToken: token
                 }, function(response) {
                     var $msg = $('#nationalCodeValidation');
                     if (response.valid) {
@@ -259,9 +271,11 @@
             }
 
             function validateEmail(email, excludeUserId) {
+                var token = $('input[name="__RequestVerificationToken"]').val();
                 $.post('@Url.Action("ValidateEmail", "UserManagement", new { area = "Admin" })', {
                     email: email,
-                    excludeUserId: excludeUserId
+                    excludeUserId: excludeUserId,
+                    __RequestVerificationToken: token
                 }, function(response) {
                     var $msg = $('#emailValidation');
                     if (response.valid) {

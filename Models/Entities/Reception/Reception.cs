@@ -546,6 +546,10 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
         HasIndex(r => new { r.DoctorId, r.ReceptionDate, r.Status })
             .HasName("IX_Reception_DoctorId_Date_Status");
 
+        // ✅ PERFORMANCE (قلب سیستم): کوئری Duplicate-Draft در CreateDraftAsync
+        HasIndex(r => new { r.Status, r.CreatedByUserId, r.CreatedAt })
+            .HasName("IX_Reception_Status_CreatedByUserId_CreatedAt");
+
         // ایندکس ترکیبی InsuranceId حذف شد
     }
 }

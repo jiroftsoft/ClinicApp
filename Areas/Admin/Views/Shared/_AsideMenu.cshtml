@@ -2,14 +2,19 @@
     منوی یکپارچه ادمین — حداکثر ۲ سطح، مبتنی بر سناریو کاری
     Level 1: دسته (داشبورد، پذیرش و نوبت‌دهی، ...)
     Level 2: آیتم‌های منو
+    منشی: فقط بخش‌های مجاز (بدون کاربران، CMS، تنظیمات سیستم)
     طبق UX حرفه‌ای HIS/Clinic ERP
 *@
 @using System.Web.Mvc
+@using ClinicApp.Models.Core
 @{
     var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var path = Request.Url?.AbsolutePath ?? "";
     var isInCms = path.IndexOf("/Admin/CMS", StringComparison.OrdinalIgnoreCase) >= 0;
+    var isAdmin = User.IsInRole(AppRoles.Admin);
+    var isReceptionist = User.IsInRole(AppRoles.Receptionist);
+    var isReceptionistOnly = isReceptionist && !isAdmin;
     var cmsHomeUrl = Url.RouteUrl("Admin_CMS_Home");
     if (string.IsNullOrEmpty(cmsHomeUrl)) { cmsHomeUrl = "/Admin/CMS"; }
     var adminDashboardUrl = Url.RouteUrl("Admin_default", new { controller = "Dashboard", action = "Index" });
@@ -28,7 +33,7 @@
     {
         switch (key)
         {
-            case "dashboard": return controllerName.Equals("Dashboard", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("DoctorDashboard", StringComparison.OrdinalIgnoreCase);
+            case "dashboard": return controllerName.Equals("Dashboard", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("DoctorDashboard", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("ReceptionistDashboard", StringComparison.OrdinalIgnoreCase);
             case "reception": return controllerName.Equals("ReceptionV2", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("EmergencyBooking", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("AppointmentAvailability", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("PromotionalEvent", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("ScheduleOptimization", StringComparison.OrdinalIgnoreCase);
             case "doctors": return new[] { "Doctor", "Specialization", "DoctorSchedule", "DoctorAssignment", "DoctorReporting", "DoctorDashboard" }.Any(c => string.Equals(c, controllerName, StringComparison.OrdinalIgnoreCase));
             case "services": return new[] { "Service", "ServiceComponent", "ServiceTemplate", "SharedService", "ServiceManagement" }.Any(c => string.Equals(c, controllerName, StringComparison.OrdinalIgnoreCase));
@@ -45,6 +50,7 @@
     var sections = new[]
     {
         new { Key = "dashboard", Title = "داشبورد", Icon = "fa-tachometer-alt", Items = new[] {
+            new { Title = "داشبورد منشی", Url = Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" }), Controller = "ReceptionistDashboard", Action = (string)null },
             new { Title = "داشبورد مدیریت", Url = adminDashboardUrl, Controller = "Dashboard", Action = (string)null },
             new { Title = "داشبورد پزشکان", Url = adminDoctorDashboardUrl, Controller = "DoctorDashboard", Action = (string)null }
         }},
@@ -109,29 +115,41 @@
 <nav class="aside-menu" role="navigation" aria-label="منوی اصلی مدیریت">
     @foreach (var section in sections)
     {
-        var expanded = sectionHasActive(section.Key);
-        var sectionId = "aside-section-" + section.Key;
-        <div class="aside-menu-section @(expanded ? "expanded" : "")" data-section="@(section.Key)">
-            <button type="button" class="aside-menu-section-header" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@(sectionId)" id="btn-@(sectionId)" data-aside-toggle>
-                <i class="fas @(section.Icon) aside-menu-section-icon" aria-hidden="true"></i>
-                <span class="aside-menu-section-title">@(section.Title)</span>
-                <i class="fas fa-chevron-down aside-menu-section-chevron" aria-hidden="true"></i>
-            </button>
-            <ul class="aside-menu-list" id="@(sectionId)" role="group" aria-label="@(section.Title)">
-                @foreach (var item in section.Items)
-                {
-                    var itemActive = item.Title == "مدیریت محتوا (CMS)" ? isInCms : isActive(item.Controller, item.Action ?? "", section.Key);
-                    var href = item.Title == "مدیریت محتوا (CMS)" ? cmsHomeUrl : item.Url;
-                    if (string.IsNullOrEmpty(href)) { href = "#"; }
-                    <li class="aside-menu-item">
-                        <a href="@href" class="aside-menu-link @(itemActive ? "active" : "")" aria-current="@(itemActive ? "page" : null)">
-                            <span class="aside-menu-link-text">@item.Title</span>
-                            @if (itemActive) { <i class="fas fa-chevron-left aside-menu-link-indicator" aria-hidden="true"></i> }
-                        </a>
-                    </li>
-                }
-            </ul>
-        </div>
+        @* منشی فقط بخش‌های مجاز را ببیند (بدون کاربران، CMS، تنظیمات سیستم) *@
+        if (isReceptionistOnly && (section.Key == "users" || section.Key == "cms" || section.Key == "settings"))
+        {
+            @* skip rendering *@
+        }
+        else
+        {
+            var expanded = sectionHasActive(section.Key);
+            var sectionId = "aside-section-" + section.Key;
+            <div class="aside-menu-section @(expanded ? "expanded" : "")" data-section="@(section.Key)">
+                <button type="button" class="aside-menu-section-header" aria-expanded="@(expanded ? "true" : "false")" aria-controls="@(sectionId)" id="btn-@(sectionId)" data-aside-toggle>
+                    <i class="fas @(section.Icon) aside-menu-section-icon" aria-hidden="true"></i>
+                    <span class="aside-menu-section-title">@(section.Title)</span>
+                    <i class="fas fa-chevron-down aside-menu-section-chevron" aria-hidden="true"></i>
+                </button>
+                <ul class="aside-menu-list" id="@(sectionId)" role="group" aria-label="@(section.Title)">
+                    @foreach (var item in section.Items)
+                    {
+                        var showItem = !isReceptionistOnly || section.Key != "dashboard" || item.Controller.Equals("ReceptionistDashboard", StringComparison.OrdinalIgnoreCase);
+                        if (showItem)
+                        {
+                            var itemActive = item.Title == "مدیریت محتوا (CMS)" ? isInCms : isActive(item.Controller, item.Action ?? "", section.Key);
+                            var href = item.Title == "مدیریت محتوا (CMS)" ? cmsHomeUrl : item.Url;
+                            if (string.IsNullOrEmpty(href)) { href = "#"; }
+                            <li class="aside-menu-item">
+                                <a href="@href" class="aside-menu-link @(itemActive ? "active" : "")" aria-current="@(itemActive ? "page" : null)">
+                                    <span class="aside-menu-link-text">@item.Title</span>
+                                    @if (itemActive) { <i class="fas fa-chevron-left aside-menu-link-indicator" aria-hidden="true"></i> }
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </div>
+        }
     }
 </nav>
 

@@ -182,13 +182,18 @@
                     <i class="fas fa-user-circle" aria-hidden="true"></i>
                     <span class="reception-header__username">@currentUser</span>
                 </div>
-                <a href="@Url.Action("LogOff","Account")"
-                   class="reception-header__logout"
-                   title="خروج از سیستم"
-                   aria-label="خروج از سیستم">
-                    <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
-                    <span>خروج</span>
-                </a>
+                @using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "reception-logout-form", style = "display:inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit"
+                            class="reception-header__logout"
+                            style="border:none;cursor:pointer"
+                            title="خروج از سیستم"
+                            aria-label="خروج از سیستم">
+                        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+                        <span>خروج</span>
+                    </button>
+                }
             </div>
         </div>
     </header>

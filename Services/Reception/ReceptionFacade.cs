@@ -183,88 +183,25 @@ namespace ClinicApp.Services.Reception
                     }
                     else
                     {
-                        _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, DeptClinicId: {DeptClinicId}, Now: {Now}", 
-                            deptId.Value, department.Name, department.ClinicId, now);
+                        _logger.Information("🔍 FACADE: بارگذاری پزشکان برای DepartmentId: {DeptId}, DeptName: {DeptName}, Now: {Now}", 
+                            deptId.Value, department.Name, now);
                         
-                        // 🎯 رویکرد حرفه‌ای: فیلترها را به ترتیب اعمال کن و لاگ کن
-                        // Step 1: فقط DepartmentId
-                        var step1 = await _context.DoctorDepartments
-                            .AsNoTracking()
-                            .Where(dd => dd.DepartmentId == deptId.Value)
-                            .CountAsync();
-                        
-                        _logger.Information("🔍 FACADE: Step 1 - فقط DepartmentId: {Count}", step1);
-                        
-                        // Step 2: + Doctor IsActive/IsDeleted
-                        var step2 = await _context.DoctorDepartments
+                        // ✅ PERFORMANCE (قلب سیستم): یک کوئری به‌جای ۴ Count + ۱ ToList؛ همان فیلتر نهایی
+                        var doctorDepartments = await _context.DoctorDepartments
                             .AsNoTracking()
                             .Include(dd => dd.Doctor)
-                            .Where(dd => dd.DepartmentId == deptId.Value &&
-                                       !dd.Doctor.IsDeleted &&
-                                       dd.Doctor.IsActive)
-                            .CountAsync();
-                        
-                        _logger.Information("🔍 FACADE: Step 2 - + Doctor IsActive/IsDeleted: {Count}", step2);
-                        
-                        // Step 3: + DoctorDepartment IsActive/IsDeleted
-                        var step3 = await _context.DoctorDepartments
-                            .AsNoTracking()
-                            .Include(dd => dd.Doctor)
-                            .Where(dd => dd.DepartmentId == deptId.Value &&
-                                       !dd.Doctor.IsDeleted &&
-                                       dd.Doctor.IsActive &&
-                                       !dd.IsDeleted &&
-                                       dd.IsActive)
-                            .CountAsync();
-                        
-                        _logger.Information("🔍 FACADE: Step 3 - + DoctorDepartment IsActive/IsDeleted: {Count}", step3);
-                        
-                        // Step 4: + Date Range
-                        // 🎯 طبق قرارداد: StartDate می‌تواند null باشد (یعنی از ابتدا فعال) یا در گذشته/حال/آینده باشد
-                        // 🎯 منطق: اگر StartDate در آینده است، یعنی یک انتساب پیش‌رو است و باید نمایش داده شود
-                        // 🎯 EndDate: اگر null باشد یعنی فعال است، اگر در گذشته باشد یعنی غیرفعال شده
-                        // ✅ اصلاح: فقط EndDate را چک کن (اگر EndDate != null && EndDate <= now، یعنی غیرفعال شده)
-                        var step4 = await _context.DoctorDepartments
-                            .AsNoTracking()
-                            .Include(dd => dd.Doctor)
+                            .Include(dd => dd.Department)
+                            .Include(dd => dd.Doctor.DoctorSpecializations)
+                            .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
                             .Where(dd => dd.DepartmentId == deptId.Value &&
                                        !dd.Doctor.IsDeleted &&
                                        dd.Doctor.IsActive &&
                                        !dd.IsDeleted &&
                                        dd.IsActive &&
-                                       (dd.EndDate == null || dd.EndDate > now)) // ✅ فقط EndDate را چک کن (اگر EndDate در گذشته باشد، ignore کن)
-                            .CountAsync();
+                                       (dd.EndDate == null || dd.EndDate > now))
+                            .ToListAsync();
                         
-                        _logger.Information("🔍 FACADE: Step 4 - + Date Range (only EndDate check): {Count}", step4);
-                        
-                        // 🎯 Query نهایی: اگر Step 4 صفر است، اما Step 3 > 0 است، فیلتر تاریخ را ignore کن
-                        var doctorDepartments = new List<Models.Entities.Doctor.DoctorDepartment>();
-                        
-                        // 🎯 Query نهایی: فقط EndDate را چک کن (اگر EndDate در گذشته باشد، ignore کن)
-                        // ✅ StartDate را ignore می‌کنیم چون ممکن است در آینده باشد (انتساب پیش‌رو)
-                        if (step3 > 0)
-                        {
-                            doctorDepartments = await _context.DoctorDepartments
-                                .AsNoTracking()
-                                .Include(dd => dd.Doctor)
-                                .Include(dd => dd.Department)
-                                .Include(dd => dd.Doctor.DoctorSpecializations)
-                                .Include(dd => dd.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
-                                .Where(dd => dd.DepartmentId == deptId.Value &&
-                                           !dd.Doctor.IsDeleted &&
-                                           dd.Doctor.IsActive &&
-                                           !dd.IsDeleted &&
-                                           dd.IsActive &&
-                                           (dd.EndDate == null || dd.EndDate > now)) // ✅ فقط EndDate را چک کن
-                                .ToListAsync();
-                            
-                            _logger.Information("✅ FACADE: Query نهایی - Count: {Count} (فقط EndDate چک شده است، StartDate ignore شده)", doctorDepartments.Count);
-                        }
-                        else
-                        {
-                            _logger.Warning("⚠️ FACADE: هیچ پزشکی برای DepartmentId {DeptId} پیدا نشد (Step 3 = 0)", deptId.Value);
-                            doctorDepartments = new List<Models.Entities.Doctor.DoctorDepartment>();
-                        }
+                        _logger.Information("✅ FACADE: پزشکان دپارتمان - Count: {Count}", doctorDepartments.Count);
                         
                         // Map به DoctorDto (بعد از materialize شدن برای استفاده از computed property)
                         var doctors = doctorDepartments.Select(dd => new DoctorDto
@@ -318,17 +255,23 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // 6. بارگذاری تنظیمات ضرایب (FactorSetting) برای سال مالی جاری
+                // ✅ PERFORMANCE (قلب سیستم): بارگذاری موازی به‌جای ۴ round-trip متوالی
                 var financialYear = _financialYearService.GetCurrentYear();
                 try
                 {
-                    var techFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    var taskTech = _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
                         ServiceComponentType.Technical, false, financialYear);
-                    var techFactorHashtagged = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    var taskTechHash = _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
                         ServiceComponentType.Technical, true, financialYear);
-                    var profFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    var taskProf = _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
                         ServiceComponentType.Professional, false, financialYear);
-                    var profFactorHashtagged = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    var taskProfHash = _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
                         ServiceComponentType.Professional, true, financialYear);
+                    await Task.WhenAll(taskTech, taskTechHash, taskProf, taskProfHash).ConfigureAwait(false);
+                    var techFactor = await taskTech;
+                    var techFactorHashtagged = await taskTechHash;
+                    var profFactor = await taskProf;
+                    var profFactorHashtagged = await taskProfHash;
 
                     // تبدیل به bool برای جلوگیری از خطای CS0019
                     var techFactorIsActive = techFactor?.IsActive ?? false;
@@ -2300,6 +2243,16 @@ namespace ClinicApp.Services.Reception
 
                 var qty = request.Quantity <= 0 ? 1 : request.Quantity;
 
+                // ✅ CRITICAL: سقف تعداد برای جلوگیری از سوءاستفاده و خطای ورودی (قلب سیستم)
+                const int MaxQuantity = 999;
+                if (qty > MaxQuantity)
+                {
+                    _logger.Warning("⚠️ FACADE: تعداد بیش از حد مجاز - ServiceId: {ServiceId}, Qty: {Qty}, Max: {Max}", request.ServiceId, qty, MaxQuantity);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed(
+                        $"حداکثر تعداد مجاز برای هر خدمت {MaxQuantity} است. مقدار ارسالی: {qty}.",
+                        "QUANTITY_EXCEEDED");
+                }
+
                 // ✅ بهینه‌سازی: بررسی تعیین ست بیمه‌ای قبل از افزودن خدمت
                 if (draft.BasePlanId.HasValue || draft.SupplementaryPlanId.HasValue)
                 {
@@ -2543,31 +2496,44 @@ namespace ClinicApp.Services.Reception
                     SnapshotJson = Newtonsoft.Json.JsonConvert.SerializeObject(snapshot)
                 };
                 
-                _context.ReceptionItems.Add(item);
-                await _context.SaveChangesAsync();
-
-                // 🚨 PROFESSIONAL FIX: InsuranceCalculation از quoteResult ساخته شده است (خط 1963-1976)
-                // دیگر نیازی به محاسبه مجدد نیست
-
-                // بازمحاسبه - حتی اگر خطا رخ داده باشد، آیتم‌های موجود را برگردان
-                await _context.Entry(draft).Collection(x => x.ReceptionItems).LoadAsync();
-                var recalculateResult = await RecalculateDraftAsync(draft, insuranceCalculation != null 
-                    ? new Dictionary<int, ItemInsuranceCalculationDto> 
-                    { 
-                        { service.ServiceId, insuranceCalculation } 
-                    }
-                    : null);
-                
-                // 🚨 PROFESSIONAL FIX: حتی اگر محاسبه بیمه ناموفق بود، آیتم‌ها را برگردان
-                if (!recalculateResult.Success)
+                // ✅ CRITICAL: تراکنش برای یکپارچگی داده (قلب سیستم) - افزودن آیتم + بازمحاسبه اتمیک
+                using (var transaction = _context.Database.BeginTransaction())
                 {
-                    _logger.Warning("⚠️ FACADE: خطا در بازمحاسبه، اما آیتم ذخیره شده است - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}", 
-                        draft.ReceptionId, service.ServiceId);
-                    // بازگرداندن آیتم‌های موجود حتی با خطا
-                    return await RecalculateDraftAsync(draft, null);
+                    try
+                    {
+                        _context.ReceptionItems.Add(item);
+                        await _context.SaveChangesAsync();
+
+                        await _context.Entry(draft).Collection(x => x.ReceptionItems).LoadAsync();
+                        var recalculateResult = await RecalculateDraftAsync(draft, insuranceCalculation != null
+                            ? new Dictionary<int, ItemInsuranceCalculationDto>
+                            {
+                                { service.ServiceId, insuranceCalculation }
+                            }
+                            : null);
+
+                        if (!recalculateResult.Success)
+                        {
+                            transaction.Rollback();
+                            _logger.Warning("⚠️ FACADE: خطا در بازمحاسبه، برگردانی تراکنش - ReceptionId: {ReceptionId}, ServiceId: {ServiceId}",
+                                draft.ReceptionId, service.ServiceId);
+                            var draftReload = await _context.Receptions
+                                .Include(d => d.ReceptionItems)
+                                .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+                            return draftReload != null
+                                ? await RecalculateDraftAsync(draftReload, null)
+                                : ServiceResult<ItemsAndTotalsDto>.Failed("خطا در بازمحاسبه", "RECALC_FAILED");
+                        }
+
+                        transaction.Commit();
+                        return recalculateResult;
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
-                
-                return recalculateResult;
             }
             catch (Exception ex)
             {
@@ -2598,7 +2564,7 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
-        /// حذف آیتم از پیش‌نویس
+        /// حذف آیتم از پیش‌نویس (فقط وضعیت Pending - قلب سیستم)
         /// </summary>
         public async Task<ServiceResult<ItemsAndTotalsDto>> RemoveItemAsync(RemoveItemRequest request)
         {
@@ -2606,20 +2572,37 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: حذف آیتم از پیش‌نویس");
 
+                // ✅ CRITICAL: فقط پیش‌نویس Pending قابل ویرایش است
+                var draft = await _context.Receptions
+                    .Include(d => d.ReceptionItems)
+                    .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
+
+                if (draft == null)
+                {
+                    _logger.Warning("⚠️ FACADE: پیش‌نویس یافت نشد یا نهایی شده - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<ItemsAndTotalsDto>.Failed(
+                        "پیش‌نویس یافت نشد یا نهایی شده است. امکان حذف آیتم وجود ندارد.",
+                        "DRAFT_NOT_FOUND");
+                }
+
                 var item = await _context.ReceptionItems
                     .FirstOrDefaultAsync(i => i.ReceptionId == request.ReceptionId && i.ServiceId == request.ServiceId);
-                
+
                 if (item == null)
                     return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto { Totals = new TotalsDto() });
 
                 _context.ReceptionItems.Remove(item);
                 await _context.SaveChangesAsync();
 
-                var draft = await _context.Receptions
+                // ✅ CRITICAL: FirstOrDefaultAsync برای جلوگیری از استثنا در صورت حذف همزمان پذیرش
+                var draftAfter = await _context.Receptions
                     .Include(d => d.ReceptionItems)
-                    .FirstAsync(x => x.ReceptionId == request.ReceptionId);
-                
-                return await RecalculateDraftAsync(draft);
+                    .FirstOrDefaultAsync(x => x.ReceptionId == request.ReceptionId && x.Status == ReceptionStatus.Pending);
+
+                if (draftAfter == null)
+                    return ServiceResult<ItemsAndTotalsDto>.Successful(new ItemsAndTotalsDto { Totals = new TotalsDto() });
+
+                return await RecalculateDraftAsync(draftAfter);
             }
             catch (Exception ex)
             {
@@ -3032,17 +3015,22 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: نهایی‌سازی با POS");
 
-                // بررسی وجود پرداخت قبلی (Idempotency Check)
-                if (!string.IsNullOrEmpty(request.IdempotencyKey))
+                // ✅ CRITICAL: کلید یکتایی اجباری برای جلوگیری از پرداخت دوباره (قلب سیستم)
+                if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
                 {
-                    var exists = await _context.PaymentTransactions
-                        .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
-                    if (exists)
-                    {
-                        _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", 
-                            request.IdempotencyKey);
-                        return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
-                    }
+                    _logger.Warning("⚠️ FACADE: IdempotencyKey ارسال نشده - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<FinalizeResponse>.Failed(
+                        "کلید یکتایی پرداخت ارسال نشده است. لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.",
+                        "IDEMPOTENCY_KEY_REQUIRED");
+                }
+
+                // بررسی وجود پرداخت قبلی (Idempotency Check)
+                var existsByKey = await _context.PaymentTransactions
+                    .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
+                if (existsByKey)
+                {
+                    _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", request.IdempotencyKey);
+                    return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است", "DUPLICATE_PAYMENT");
                 }
 
                 var draft = await _context.Receptions
@@ -3050,7 +3038,17 @@ namespace ClinicApp.Services.Reception
                     .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
                 
                 if (draft == null)
-                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+                {
+                    // ✅ CRITICAL: احتمال نهایی شدن توسط درخواست دیگر (race)
+                    var alreadyFinalized = await _context.PaymentTransactions
+                        .AnyAsync(p => p.ReceptionId == request.ReceptionId && !p.IsDeleted);
+                    if (alreadyFinalized)
+                    {
+                        _logger.Warning("⚠️ FACADE: پذیرش قبلاً نهایی شده - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        return ServiceResult<FinalizeResponse>.Failed("این پذیرش قبلاً نهایی شده است.", "ALREADY_FINALIZED");
+                    }
+                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد", "DRAFT_NOT_FOUND");
+                }
 
                 // ✅ گام 7 - Finalize Validation: اعتبارسنجی کامل Draft
                 var validationResult = await ValidateDraftForFinalizeAsync(draft);
@@ -3429,17 +3427,22 @@ namespace ClinicApp.Services.Reception
             {
                 _logger.Information("🏥 FACADE: نهایی‌سازی با نقدی");
 
-                // بررسی وجود پرداخت قبلی (Idempotency Check)
-                if (!string.IsNullOrEmpty(request.IdempotencyKey))
+                // ✅ CRITICAL: کلید یکتایی اجباری برای جلوگیری از پرداخت دوباره (قلب سیستم)
+                if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
                 {
-                    var exists = await _context.PaymentTransactions
-                        .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
-                    if (exists)
-                    {
-                        _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", 
-                            request.IdempotencyKey);
-                        return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است");
-                    }
+                    _logger.Warning("⚠️ FACADE: IdempotencyKey ارسال نشده - ReceptionId: {ReceptionId}", request.ReceptionId);
+                    return ServiceResult<FinalizeResponse>.Failed(
+                        "کلید یکتایی پرداخت ارسال نشده است. لطفاً صفحه را نوسازی کنید و مجدداً تلاش کنید.",
+                        "IDEMPOTENCY_KEY_REQUIRED");
+                }
+
+                // بررسی وجود پرداخت قبلی (Idempotency Check)
+                var existsByKey = await _context.PaymentTransactions
+                    .AnyAsync(p => p.IdempotencyKey == request.IdempotencyKey && !p.IsDeleted);
+                if (existsByKey)
+                {
+                    _logger.Warning("⚠️ FACADE: پرداخت تکراری شناسایی شد - IdempotencyKey: {Key}", request.IdempotencyKey);
+                    return ServiceResult<FinalizeResponse>.Failed("پرداخت قبلاً انجام شده است", "DUPLICATE_PAYMENT");
                 }
 
                 var draft = await _context.Receptions
@@ -3447,7 +3450,17 @@ namespace ClinicApp.Services.Reception
                     .FirstOrDefaultAsync(d => d.ReceptionId == request.ReceptionId && d.Status == ReceptionStatus.Pending);
                 
                 if (draft == null)
-                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد");
+                {
+                    // ✅ CRITICAL: احتمال نهایی شدن توسط درخواست دیگر (race)
+                    var alreadyFinalized = await _context.PaymentTransactions
+                        .AnyAsync(p => p.ReceptionId == request.ReceptionId && !p.IsDeleted);
+                    if (alreadyFinalized)
+                    {
+                        _logger.Warning("⚠️ FACADE: پذیرش قبلاً نهایی شده - ReceptionId: {ReceptionId}", request.ReceptionId);
+                        return ServiceResult<FinalizeResponse>.Failed("این پذیرش قبلاً نهایی شده است.", "ALREADY_FINALIZED");
+                    }
+                    return ServiceResult<FinalizeResponse>.Failed("پیش‌نویس یافت نشد", "DRAFT_NOT_FOUND");
+                }
 
                 // ✅ گام 7 - Finalize Validation: اعتبارسنجی کامل Draft
                 var validationResult = await ValidateDraftForFinalizeAsync(draft);
@@ -3712,8 +3725,57 @@ namespace ClinicApp.Services.Reception
         }
 
         /// <summary>
-        /// بازمحاسبه پیش‌نویس
+        /// ✅ PERFORMANCE (قلب سیستم): ساخت ItemInsuranceCalculationDto از SnapshotJson برای حذف N+1 به QuoteAsync.
+        /// در صورت نبود یا خطای Snapshot برمی‌گرداند null تا fallback به QuoteAsync انجام شود.
         /// </summary>
+        private static ItemInsuranceCalculationDto TryBuildInsuranceFromSnapshot(Models.Entities.Reception.ReceptionItem item)
+        {
+            if (item == null || string.IsNullOrEmpty(item.SnapshotJson))
+                return null;
+            try
+            {
+                var snapshot = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(item.SnapshotJson);
+                if (snapshot == null)
+                    return null;
+                decimal primaryPays = 0, suppPays = 0, patientShare = item.PatientShareAmount;
+                decimal primaryPercent = 0, suppPercent = 0;
+                if (snapshot.PrimaryPays != null)
+                    primaryPays = (decimal)snapshot.PrimaryPays;
+                if (snapshot.SupplementaryPays != null)
+                    suppPays = (decimal)snapshot.SupplementaryPays;
+                if (snapshot.PatientShare != null)
+                    patientShare = (decimal)snapshot.PatientShare;
+                if (snapshot.BaseInsuranceCoverage != null)
+                    primaryPercent = (decimal)snapshot.BaseInsuranceCoverage;
+                if (snapshot.SupplementaryCoverage != null)
+                    suppPercent = (decimal)snapshot.SupplementaryCoverage;
+                var totalCoverage = primaryPays + suppPays;
+                var itemTotal = item.UnitPrice * item.Quantity;
+                string coverageStatus;
+                if (totalCoverage >= itemTotal)
+                    coverageStatus = "پوشش کامل";
+                else if (totalCoverage > 0)
+                    coverageStatus = "پوشش ناقص";
+                else
+                    coverageStatus = "بدون پوشش";
+                return new ItemInsuranceCalculationDto
+                {
+                    PrimaryCoverage = primaryPays,
+                    SupplementaryCoverage = suppPays,
+                    TotalInsuranceCoverage = totalCoverage,
+                    PatientShare = patientShare < 0 ? 0 : patientShare,
+                    CoverageStatus = coverageStatus,
+                    PrimaryCoveragePercent = primaryPercent,
+                    SupplementaryCoveragePercent = suppPercent,
+                    TotalCoveragePercent = primaryPercent + suppPercent
+                };
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         /// <summary>
         /// بازمحاسبه پیش‌نویس - استفاده از ReceptionPricingService برای محاسبه دقیق
         /// 🏥 MEDICAL: به‌روزرسانی PatientCoPay, TotalAmount, و InsurerShareAmount در Reception entity
@@ -3988,16 +4050,23 @@ namespace ClinicApp.Services.Reception
                     
                     foreach (var item in draft.ReceptionItems.Where(i => !i.IsDeleted))
                     {
-                        // 🚨 PROFESSIONAL: اگر قبلاً محاسبه نشده، محاسبه کن
                         if (!insuranceCalculations.ContainsKey(item.ServiceId))
                         {
+                            // ✅ PERFORMANCE (قلب سیستم): اول از SnapshotJson استفاده کن؛ فقط در صورت نبود/خطا QuoteAsync
+                            var fromSnapshot = TryBuildInsuranceFromSnapshot(item);
+                            if (fromSnapshot != null)
+                            {
+                                insuranceCalculations[item.ServiceId] = fromSnapshot;
+                                _logger.Debug("✅ FACADE: محاسبه بیمه از SnapshotJson - ServiceId: {ServiceId}", item.ServiceId);
+                                continue;
+                            }
+
                             try
                             {
                                 var itemTotal = item.UnitPrice * item.Quantity;
-                                _logger.Information("🏥 FACADE: محاسبه بیمه real-time برای آیتم - ServiceId: {ServiceId}, ItemTotal: {ItemTotal}, BasePlanId: {BasePlanId}, SuppPlanId: {SuppPlanId}", 
-                                    item.ServiceId, itemTotal, draft.BasePlanId, draft.SupplementaryPlanId);
+                                _logger.Information("🏥 FACADE: محاسبه بیمه real-time برای آیتم (fallback QuoteAsync) - ServiceId: {ServiceId}, ItemTotal: {ItemTotal}", 
+                                    item.ServiceId, itemTotal);
                                 
-                                // 🚨 PROFESSIONAL FIX: استفاده از PricingEngine (مثل AddItemAsync)
                                 var quoteRequest = new Services.Pricing.Models.QuoteRequestDto
                                 {
                                     ClinicId = draft.ClinicId,
@@ -4023,20 +4092,13 @@ namespace ClinicApp.Services.Reception
                                     var patientShare = itemTotal - totalCoverage;
                                     if (patientShare < 0) patientShare = 0;
                                     
-                                    // تعیین وضعیت پوشش
                                     string coverageStatus;
                                     if (totalCoverage >= itemTotal)
-                                    {
                                         coverageStatus = "پوشش کامل";
-                                    }
                                     else if (totalCoverage > 0)
-                                    {
                                         coverageStatus = "پوشش ناقص";
-                                    }
                                     else
-                                    {
                                         coverageStatus = "بدون پوشش";
-                                    }
                                     
                                     var insuranceDto = new ItemInsuranceCalculationDto
                                     {
@@ -4051,14 +4113,12 @@ namespace ClinicApp.Services.Reception
                                     };
                                     
                                     insuranceCalculations[item.ServiceId] = insuranceDto;
-                                    _logger.Information("✅ FACADE: محاسبه بیمه real-time موفق (از PricingEngine) - ServiceId: {ServiceId}, TotalCoverage: {TotalCoverage}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, PatientShare: {PatientShare}", 
-                                        item.ServiceId, insuranceDto.TotalInsuranceCoverage, insuranceDto.PrimaryCoverage, 
-                                        insuranceDto.SupplementaryCoverage, insuranceDto.PatientShare);
+                                    _logger.Information("✅ FACADE: محاسبه بیمه real-time موفق (از PricingEngine) - ServiceId: {ServiceId}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}", 
+                                        item.ServiceId, insuranceDto.TotalInsuranceCoverage, insuranceDto.PatientShare);
                                 }
                                 else
                                 {
-                                    _logger.Warning("⚠️ FACADE: محاسبه بیمه real-time ناموفق (PricingEngine) - ServiceId: {ServiceId}, QuoteResult: {QuoteResult}", 
-                                        item.ServiceId, quoteResult == null ? "null" : "Invalid");
+                                    _logger.Warning("⚠️ FACADE: محاسبه بیمه real-time ناموفق (PricingEngine) - ServiceId: {ServiceId}", item.ServiceId);
                                 }
                             }
                             catch (Exception ex)
@@ -4068,7 +4128,7 @@ namespace ClinicApp.Services.Reception
                         }
                         else
                         {
-                            _logger.Debug("🏥 FACADE: محاسبه بیمه برای ServiceId {ServiceId} قبلاً انجام شده - استفاده از محاسبه موجود", item.ServiceId);
+                            _logger.Debug("🏥 FACADE: محاسبه بیمه برای ServiceId {ServiceId} قبلاً انجام شده", item.ServiceId);
                         }
                     }
                     

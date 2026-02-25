@@ -1,8 +1,10 @@
 @using System.Web.Mvc
+@using ClinicApp.Models.Core
 @{
     var controllerName = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var actionName = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
     var areaName = ViewContext.RouteData.DataTokens["area"]?.ToString() ?? "";
+    var isReceptionistOnly = User.IsInRole(AppRoles.Receptionist) && !User.IsInRole(AppRoles.Admin);
     
     // تعریف نام‌های فارسی برای Controller ها
     var controllerNames = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -22,6 +24,7 @@
         { "EmergencyContact", "تماس اضطراری" },
         { "ClinicWorkingHours", "ساعات کاری" },
         { "Dashboard", "داشبورد" },
+        { "ReceptionistDashboard", "داشبورد منشی" },
         { "Home", "صفحه اصلی" },
         { "UserManagement", "مدیریت کاربران" },
         { "PaymentManagement", "مدیریت پرداخت‌ها" },
@@ -56,16 +59,16 @@
         Icon = "fa-home"
     });
     
-    // Admin
+    // Admin / داشبورد منشی برای نقش منشی
     breadcrumbItems.Add(new BreadcrumbItem
     {
-        Text = "پنل مدیریت",
-        Url = Url.Action("Index", "Dashboard", new { area = "Admin" }),
+        Text = isReceptionistOnly ? "داشبورد منشی" : "پنل مدیریت",
+        Url = isReceptionistOnly ? Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" }) : Url.Action("Index", "Dashboard", new { area = "Admin" }),
         Icon = "fa-tachometer-alt"
     });
-    
-    // Category based on Controller
-    if (areaName == "Admin" && controllerName != "Dashboard")
+
+    // Category based on Controller (برای منشی داشبورد مرجع = ReceptionistDashboard)
+    if (areaName == "Admin" && controllerName != "Dashboard" && (!isReceptionistOnly || controllerName != "ReceptionistDashboard"))
     {
         string categoryText = "";
         string categoryIcon = "";

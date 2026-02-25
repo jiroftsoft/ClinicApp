@@ -12,6 +12,7 @@ using ClinicApp.Interfaces.Finance;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.DTOs.Insurance;
 using ClinicApp.Extensions;
 using ClinicApp.Models.Enums;
@@ -24,9 +25,10 @@ namespace ClinicApp.Controllers.Api
     /// Controller V1 برای API پذیرش - حداقل لازم + Health & Draft/Create
     /// 
     /// این کنترلر فقط برای مسیرهای /api/v1/reception/ است تا v1 واقعی داشته باشیم
-    /// و 404/500 از بین برود. بعداً می‌تونیم بقیه اکشن‌ها رو هم بهش اضافه کنیم یا به فاساد وصل کنیم.
+    /// فقط کاربران با نقش Admin یا Receptionist (منشی).
     /// </summary>
     [RoutePrefix("api/v1/reception")]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     [OutputCache(NoStore = true, Duration = 0, VaryByParam = "*")]
     [ReceptionV2Controller.NoCache]
     public class ReceptionApiV1Controller : Controller
@@ -171,8 +173,15 @@ namespace ClinicApp.Controllers.Api
         {
             try
             {
+                // ✅ CRITICAL: جلوگیری از NullReferenceException در قلب سیستم
+                if (request == null)
+                {
+                    _logger?.Warning("⚠️ V1 API: Create Draft - request is null");
+                    return Json(ServiceResult.Failed("اطلاعات پذیرش ارسال نشده است.", "INVALID_REQUEST"));
+                }
+
                 _logger?.Information("🏥 V1 API: Create Draft - PatientId: {PatientId}, ClinicId: {ClinicId}, DeptId: {DeptId}, DoctorId: {DoctorId}",
-                    request?.PatientId, request?.ClinicId, request?.DepartmentId, request?.DoctorId);
+                    request.PatientId, request.ClinicId, request.DepartmentId, request.DoctorId);
 
                 if (_facade != null)
                 {

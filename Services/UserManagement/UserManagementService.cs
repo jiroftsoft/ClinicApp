@@ -90,10 +90,14 @@ namespace ClinicApp.Services.UserManagement
                     pageNumber,
                     pageSize);
 
+                // ✅ دریافت نقش‌های همه کاربران صفحه در یک درخواست (رفع N+1)
+                var userIds = pagedResult.Items.Select(u => u.Id).ToList();
+                var rolesByUserId = await _userRepository.GetRolesForUserIdsAsync(userIds);
+
                 // ✅ تبدیل به ViewModel
-                var users = pagedResult.Items.Select(u => 
+                var users = pagedResult.Items.Select(u =>
                 {
-                    var userRoles = _userManager.GetRoles(u.Id).ToList();
+                    var userRoles = rolesByUserId.TryGetValue(u.Id, out var roles) ? roles : new List<string>();
                     return new UserListItemViewModel
                     {
                         UserId = u.Id,
@@ -103,7 +107,7 @@ namespace ClinicApp.Services.UserManagement
                         NationalCode = u.NationalCode,
                         Email = u.Email,
                         PhoneNumber = u.PhoneNumber,
-                        Roles = userRoles.Select(r => RoleHelper.GetPersianName(r)).ToList(), // ✅ تبدیل به فارسی
+                        Roles = userRoles.Select(r => RoleHelper.GetPersianName(r)).ToList(),
                         IsActive = u.IsActive,
                         CreatedAt = u.CreatedAt,
                         CreatedAtShamsi = u.CreatedAt.ToPersianDateTime(),
@@ -152,6 +156,34 @@ namespace ClinicApp.Services.UserManagement
             {
                 _logger.Error(ex, "خطا در بازیابی لیست کاربران. User: {UserId}", _currentUserService.UserId);
                 return ServiceResult<UserIndexViewModel>.Failed("خطا در بازیابی اطلاعات کاربران.", "DB_ERROR");
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست کاربران برای DataTables (سرور-ساید)
+        /// </summary>
+        public async Task<ServiceResult<(int RecordsTotal, int RecordsFiltered, List<UserListItemViewModel> Data)>> GetUsersForDataTablesAsync(
+            UserSearchFilter filter,
+            int start,
+            int length)
+        {
+            try
+            {
+                if (length < 1) length = 10;
+                var pageNumber = (start / length) + 1;
+                var result = await GetUsersAsync(filter ?? new UserSearchFilter(), pageNumber, length);
+                if (!result.Success)
+                    return ServiceResult<(int, int, List<UserListItemViewModel>)>.Failed(result.Message, result.Code ?? "ERROR");
+
+                var recordsTotal = await _userRepository.GetTotalUsersCountAsync();
+                var recordsFiltered = result.Data.PagingInfo.TotalCount;
+                var data = result.Data.Users ?? new List<UserListItemViewModel>();
+                return ServiceResult<(int, int, List<UserListItemViewModel>)>.Successful((recordsTotal, recordsFiltered, data));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست کاربران برای DataTables. User: {UserId}", _currentUserService.UserId);
+                return ServiceResult<(int, int, List<UserListItemViewModel>)>.Failed("خطا در دریافت داده‌ها.", "DB_ERROR");
             }
         }
 
@@ -299,7 +331,7 @@ namespace ClinicApp.Services.UserManagement
             try
             {
                 _logger.Information("درخواست ایجاد کاربر - NationalCode: {NationalCode}, Email: {Email}. User: {UserId}",
-                    model?.NationalCode, model?.Email, _currentUserService.UserId);
+                    MaskNationalCode(model?.NationalCode), MaskEmail(model?.Email), _currentUserService.UserId);
 
                 // ✅ Validation
                 var validationResult = await ValidateUserModelAsync(model, isEdit: false);
@@ -313,7 +345,7 @@ namespace ClinicApp.Services.UserManagement
                 if (existsByNationalCode)
                 {
                     _logger.Warning("کد ملی تکراری - NationalCode: {NationalCode}. User: {UserId}",
-                        model.NationalCode, _currentUserService.UserId);
+                        MaskNationalCode(model.NationalCode), _currentUserService.UserId);
                     return ServiceResult<ApplicationUser>.Failed("کاربری با این کد ملی قبلاً ثبت شده است.", "DUPLICATE_NATIONAL_CODE");
                 }
 
@@ -322,7 +354,7 @@ namespace ClinicApp.Services.UserManagement
                 if (existsByEmail)
                 {
                     _logger.Warning("ایمیل تکراری - Email: {Email}. User: {UserId}",
-                        model.Email, _currentUserService.UserId);
+                        MaskEmail(model.Email), _currentUserService.UserId);
                     return ServiceResult<ApplicationUser>.Failed("کاربری با این ایمیل قبلاً ثبت شده است.", "DUPLICATE_EMAIL");
                 }
 
@@ -354,7 +386,7 @@ namespace ClinicApp.Services.UserManagement
                             transaction.Rollback();
                             var errors = string.Join(", ", identityResult.Errors.Select(e => e));
                             _logger.Error("خطا در ایجاد کاربر Identity - NationalCode: {NationalCode}, Errors: {Errors}. User: {UserId}",
-                                model.NationalCode, errors, _currentUserService.UserId);
+                                MaskNationalCode(model.NationalCode), errors, _currentUserService.UserId);
                             return ServiceResult<ApplicationUser>.Failed($"خطا در ایجاد کاربر: {errors}", "IDENTITY_ERROR");
                         }
 
@@ -382,7 +414,7 @@ namespace ClinicApp.Services.UserManagement
                         transaction.Commit();
 
                         _logger.Information("کاربر جدید با موفقیت ایجاد شد - UserId: {UserId}, NationalCode: {NationalCode}. CreatedBy: {CreatedBy}",
-                            user.Id, user.NationalCode, _currentUserService.UserId);
+                            user.Id, MaskNationalCode(user.NationalCode), _currentUserService.UserId);
 
                         return ServiceResult<ApplicationUser>.Successful(user, "کاربر با موفقیت ایجاد شد.");
                     }
@@ -396,7 +428,7 @@ namespace ClinicApp.Services.UserManagement
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در ایجاد کاربر - NationalCode: {NationalCode}. User: {UserId}",
-                    model?.NationalCode, _currentUserService.UserId);
+                    MaskNationalCode(model?.NationalCode), _currentUserService.UserId);
                 return ServiceResult<ApplicationUser>.Failed("خطای سیستمی در ایجاد کاربر رخ داد.", "DB_ERROR");
             }
         }
@@ -435,7 +467,7 @@ namespace ClinicApp.Services.UserManagement
                 if (existsByNationalCode)
                 {
                     _logger.Warning("کد ملی تکراری - NationalCode: {NationalCode}, ExcludeUserId: {UserId}. User: {UserId}",
-                        model.NationalCode, model.UserId, _currentUserService.UserId);
+                        MaskNationalCode(model.NationalCode), model.UserId, _currentUserService.UserId);
                     return ServiceResult<ApplicationUser>.Failed("کاربری با این کد ملی قبلاً ثبت شده است.", "DUPLICATE_NATIONAL_CODE");
                 }
 
@@ -444,7 +476,7 @@ namespace ClinicApp.Services.UserManagement
                 if (existsByEmail)
                 {
                     _logger.Warning("ایمیل تکراری - Email: {Email}, ExcludeUserId: {UserId}. User: {UserId}",
-                        model.Email, model.UserId, _currentUserService.UserId);
+                        MaskEmail(model.Email), model.UserId, _currentUserService.UserId);
                     return ServiceResult<ApplicationUser>.Failed("کاربری با این ایمیل قبلاً ثبت شده است.", "DUPLICATE_EMAIL");
                 }
 
@@ -471,6 +503,18 @@ namespace ClinicApp.Services.UserManagement
 
                         // ✅ حذف نقش‌های حذف شده
                         var rolesToRemove = currentRoles.Except(model.SelectedRoles ?? new List<string>()).ToList();
+
+                        // پروداکشن درمانی: جلوگیری از حذف آخرین نقش Admin
+                        if (rolesToRemove.Contains(AppRoles.Admin))
+                        {
+                            var activeAdminsCount = await _userRepository.GetActiveUsersCountInRoleAsync(AppRoles.Admin);
+                            if (activeAdminsCount <= 1)
+                            {
+                                _logger.Warning("تلاش برای حذف نقش مدیر از تنها مدیر در ویرایش کاربر - UserId: {UserId}", user.Id);
+                                return ServiceResult<ApplicationUser>.Failed("امکان حذف نقش مدیر از تنها مدیر سیستم وجود ندارد.");
+                            }
+                        }
+
                         foreach (var roleName in rolesToRemove)
                         {
                             var removeResult = await _userManager.RemoveFromRoleAsync(user.Id, roleName);
@@ -669,6 +713,17 @@ namespace ClinicApp.Services.UserManagement
                     return ServiceResult<bool>.Failed("کاربر این نقش را ندارد.");
                 }
 
+                // پروداکشن درمانی: جلوگیری از حذف آخرین نقش Admin (lockout)
+                if (string.Equals(roleName, AppRoles.Admin, StringComparison.OrdinalIgnoreCase))
+                {
+                    var activeAdminsCount = await _userRepository.GetActiveUsersCountInRoleAsync(AppRoles.Admin);
+                    if (activeAdminsCount <= 1)
+                    {
+                        _logger.Warning("تلاش برای حذف نقش مدیر از تنها مدیر - UserId: {UserId}", userId);
+                        return ServiceResult<bool>.Failed("امکان حذف نقش مدیر از تنها مدیر سیستم وجود ندارد.");
+                    }
+                }
+
                 // ✅ حذف نقش
                 var result = await _userManager.RemoveFromRoleAsync(userId, roleName);
                 if (!result.Succeeded)
@@ -780,7 +835,6 @@ namespace ClinicApp.Services.UserManagement
                 user.UpdatedByUserId = _currentUserService.UserId;
 
                 await _userRepository.UpdateAsync(user);
-                await _context.SaveChangesAsync();
 
                 _logger.Information("کاربر با موفقیت فعال شد - UserId: {UserId}. ActivatedBy: {ActivatedBy}",
                     userId, _currentUserService.UserId);
@@ -826,7 +880,6 @@ namespace ClinicApp.Services.UserManagement
                 user.UpdatedByUserId = _currentUserService.UserId;
 
                 await _userRepository.UpdateAsync(user);
-                await _context.SaveChangesAsync();
 
                 _logger.Information("کاربر با موفقیت غیرفعال شد - UserId: {UserId}. DeactivatedBy: {DeactivatedBy}",
                     userId, _currentUserService.UserId);
@@ -871,7 +924,7 @@ namespace ClinicApp.Services.UserManagement
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی کد ملی - NationalCode: {NationalCode}", nationalCode);
+                _logger.Error(ex, "خطا در بررسی کد ملی - NationalCode: {NationalCode}", MaskNationalCode(nationalCode));
                 return ServiceResult<bool>.Failed("خطا در بررسی کد ملی.", "VALIDATION_ERROR");
             }
         }
@@ -903,7 +956,7 @@ namespace ClinicApp.Services.UserManagement
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی ایمیل - Email: {Email}", email);
+                _logger.Error(ex, "خطا در بررسی ایمیل - Email: {Email}", MaskEmail(email));
                 return ServiceResult<bool>.Failed("خطا در بررسی ایمیل.", "VALIDATION_ERROR");
             }
         }
@@ -1067,13 +1120,15 @@ namespace ClinicApp.Services.UserManagement
                     .Take(pageSize)
                     .ToList();
 
-                // ✅ تبدیل به ViewModel (با await برای جلوگیری از deadlock)
-                var users = new List<UserListItemViewModel>();
-                foreach (var u in pagedUsers)
+                // ✅ دریافت نقش‌های همه کاربران صفحه در یک درخواست (رفع N+1)
+                var deletedUserIds = pagedUsers.Select(u => u.Id).ToList();
+                var rolesByUserId = await _userRepository.GetRolesForUserIdsAsync(deletedUserIds);
+
+                // ✅ تبدیل به ViewModel
+                var users = pagedUsers.Select(u =>
                 {
-                    // ✅ دریافت نقش‌ها از Repository (برای کاربران حذف شده)
-                    var userRoles = await _userRepository.GetUserRolesAsync(u.Id);
-                    users.Add(new UserListItemViewModel
+                    var userRoles = rolesByUserId.TryGetValue(u.Id, out var roles) ? roles : new List<string>();
+                    return new UserListItemViewModel
                     {
                         UserId = u.Id,
                         FirstName = u.FirstName,
@@ -1090,8 +1145,8 @@ namespace ClinicApp.Services.UserManagement
                         LastLoginDateShamsi = u.LastLoginDate.HasValue ? u.LastLoginDate.Value.ToPersianDateTime() : null,
                         DeletedAt = u.DeletedAt,
                         DeletedAtShamsi = u.DeletedAt.HasValue ? u.DeletedAt.Value.ToPersianDateTime() : null
-                    });
-                }
+                    };
+                }).ToList();
 
                 // ✅ ساخت ViewModel
                 var viewModel = new UserIndexViewModel
@@ -1163,6 +1218,25 @@ namespace ClinicApp.Services.UserManagement
                 _logger.Error(ex, "خطا در بازگردانی کاربر - UserId: {UserId}", userId);
                 return ServiceResult<bool>.Failed("خطای سیستمی در بازگردانی کاربر رخ داد.", "DB_ERROR");
             }
+        }
+
+        #endregion
+
+        #region Logging Helpers (PII Masking برای پروداکشن درمانی)
+
+        private static string MaskNationalCode(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "***";
+            if (value.Length < 4) return "****";
+            return value.Substring(0, 2) + "***" + value.Substring(value.Length - 2);
+        }
+
+        private static string MaskEmail(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "***";
+            var idx = value.IndexOf('@');
+            if (idx <= 0) return "***@***";
+            return value[0] + "***@" + (idx + 1 < value.Length ? value.Substring(idx + 1) : "***");
         }
 
         #endregion

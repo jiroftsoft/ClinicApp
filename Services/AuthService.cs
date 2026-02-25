@@ -476,6 +476,9 @@ namespace ClinicApp.Services
         {
             try
             {
+                if (string.IsNullOrWhiteSpace(nationalCode))
+                    return ServiceResult.Failed("کد ملی را وارد کنید.", "INVALID_NATIONAL_CODE", ErrorCategory.Validation);
+
                 var normalizedCode = PersianNumberHelper.ToEnglishNumbers(nationalCode);
                 if (!IranianNationalCodeValidator.IsValid(normalizedCode))
                 {
@@ -506,7 +509,10 @@ namespace ClinicApp.Services
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در بررسی وجود کاربر با کد ملی {NationalCode}", nationalCode);
+                _log.Error(ex, "خطا در بررسی وجود کاربر با کد ملی {NationalCode} | Exception: {ExceptionType} - {Message}",
+                    nationalCode != null ? MaskHelper.MaskNationalCode(nationalCode) : "(null)",
+                    ex.GetType().Name,
+                    ex.Message);
                 return ServiceResult.Failed("خطای سیستم.", "SYSTEM_ERROR", ErrorCategory.System, SecurityLevel.High);
             }
         }

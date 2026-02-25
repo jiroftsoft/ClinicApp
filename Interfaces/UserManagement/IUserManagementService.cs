@@ -31,6 +31,14 @@ namespace ClinicApp.Interfaces.UserManagement
             int pageSize);
 
         /// <summary>
+        /// دریافت لیست کاربران برای DataTables (سرور-ساید)
+        /// </summary>
+        Task<ServiceResult<(int RecordsTotal, int RecordsFiltered, List<UserListItemViewModel> Data)>> GetUsersForDataTablesAsync(
+            UserSearchFilter filter,
+            int start,
+            int length);
+
+        /// <summary>
         /// دریافت جزئیات کاربر
         /// </summary>
         Task<ServiceResult<UserDetailsViewModel>> GetUserDetailsAsync(string userId);

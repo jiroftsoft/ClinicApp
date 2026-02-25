@@ -5,6 +5,7 @@
 }
 
 @section Styles {
+    <link href="~/Content/js/plugins/DataTables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
     <style>
         :root {
             --user-primary: #2c5aa0;
@@ -169,9 +170,30 @@
         }
 
         .badge-role.badge-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--user-primary);
             color: white;
             border: none;
+        }
+
+        .btn-reset-filters {
+            border-radius: 8px;
+            font-weight: 500;
+        }
+        .btn-reset-filters:hover {
+            background: var(--user-light);
+            border-color: var(--user-primary);
+            color: var(--user-primary);
+        }
+        .input-group .search-input.border-start-0 { border-left: 0; }
+        .input-group .input-group-text.border-end-0 { border-right: 0; }
+        .input-group:focus-within .input-group-text { border-color: var(--user-primary); }
+
+        /* Production HIS: Loading overlay بالای همه المان‌ها */
+        .dataTables_wrapper .dataTables_processing {
+            z-index: 10000;
+            border: 1px solid var(--user-primary);
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(44, 90, 160, 0.2);
         }
 
         .badge-active {
@@ -200,6 +222,16 @@
 }
 
 <div class="container-fluid">
+    @{
+        var notification = ClinicApp.Helpers.NotificationHelper.GetFirstAvailable(TempData);
+    }
+    @if (notification != null)
+    {
+        <div class="alert alert-@(notification.Type == ClinicApp.Helpers.NotificationType.Success ? "success" : notification.Type == ClinicApp.Helpers.NotificationType.Error ? "danger" : "info") alert-dismissible fade show mb-3" role="alert">
+            <strong>@notification.Title:</strong> @notification.Message
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+        </div>
+    }
     <!-- Header -->
     <div class="medical-header mb-4">
         <div class="d-flex justify-content-between align-items-center">
@@ -281,208 +313,192 @@
     <!-- Search & Filter Panel -->
     <div class="medical-search">
         <form method="get" action="@Url.Action("Index", "UserManagement", new { area = "Admin" })" id="searchForm">
-            <div class="row">
+            <div class="row align-items-end">
                 <div class="col-md-4">
                     <label class="form-label">جستجو</label>
-                    <input type="text" 
-                           name="filter.SearchTerm" 
-                           class="form-control search-input" 
-                           placeholder="نام، نام خانوادگی، کد ملی، ایمیل..."
-                           value="@(Model?.Filter?.SearchTerm ?? "")">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text"
+                               name="filter.SearchTerm"
+                               id="filterSearchTerm"
+                               class="form-control search-input border-start-0"
+                               placeholder="نام، نام خانوادگی، کد ملی، ایمیل..."
+                               value="@(Model?.Filter?.SearchTerm ?? "")"
+                               autocomplete="off">
+                        @if (!string.IsNullOrWhiteSpace(Model?.Filter?.SearchTerm))
+                        {
+                            <button type="button" class="btn btn-outline-secondary clear-search" title="پاک کردن جستجو" aria-label="پاک کردن">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        }
+                    </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">وضعیت</label>
-                    <select name="filter.IsActive" class="form-control search-input">
+                    <select name="filter.IsActive" class="form-control search-input" id="filterIsActive">
                         <option value="">همه</option>
-                        <option value="true" selected="@(Model?.Filter?.IsActive == true)">فعال</option>
-                        <option value="false" selected="@(Model?.Filter?.IsActive == false)">غیرفعال</option>
+                        <option value="true" @(Model?.Filter?.IsActive == true ? "selected" : "")>فعال</option>
+                        <option value="false" @(Model?.Filter?.IsActive == false ? "selected" : "")>غیرفعال</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">نقش</label>
-                    <select name="filter.RoleName" class="form-control search-input">
-                        <option value="">همه</option>
+                    <select name="filter.RoleName" class="form-control search-input" id="filterRoleName">
+                        <option value="">همه نقش‌ها</option>
                         @if (Model?.Filter?.AvailableRoles != null)
                         {
                             foreach (var role in Model.Filter.AvailableRoles)
                             {
-                                <option value="@role.Value" selected="@role.Selected">@role.Text</option>
+                                <option value="@(role.Value)" @(role.Selected ? "selected" : "")>@role.Text</option>
                             }
                         }
                     </select>
                 </div>
-                <div class="col-md-2">
-                    <label class="form-label">&nbsp;</label>
-                    <button type="submit" class="btn btn-medical w-100">
+                <div class="col-md-4 d-flex gap-2 flex-wrap align-items-end">
+                    <button type="submit" class="btn btn-medical">
                         <i class="fas fa-search"></i>
                         جستجو
                     </button>
+                    <a href="@Url.Action("Index", "UserManagement", new { area = "Admin" })"
+                       class="btn btn-outline-secondary btn-reset-filters"
+                       title="بازنشانی فیلترها">
+                        <i class="fas fa-undo"></i>
+                        بازنشانی فیلترها
+                    </a>
                 </div>
             </div>
         </form>
     </div>
 
-    <!-- Users Table -->
-    <div class="medical-card">
+    <div id="user-list-container">
         @Html.AntiForgeryToken()
-        <div class="table-responsive">
-            <table class="table medical-table mb-0">
-                <thead>
-                    <tr>
-                        <th>نام و نام خانوادگی</th>
-                        <th>کد ملی</th>
-                        <th>ایمیل</th>
-                        <th>شماره تلفن</th>
-                        <th>نقش‌ها</th>
-                        <th>وضعیت</th>
-                        <th>تاریخ ایجاد</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model?.Users != null && Model.Users.Any())
-                    {
-                        foreach (var user in Model.Users)
-                        {
-                            <tr>
-                                <td>
-                                    <strong>@user.FullName</strong>
-                                </td>
-                                <td>
-                                    <code>@user.NationalCodeMasked</code>
-                                </td>
-                                <td>@user.Email</td>
-                                <td>@user.PhoneNumberMasked</td>
-                                <td>
-                                    @if (user.Roles != null && user.Roles.Any())
-                                    {
-                                        <div class="d-flex flex-wrap" style="gap: 0.25rem;">
-                                            @foreach (var role in user.Roles)
-                                            {
-                                                <span class="badge badge-role badge-primary">@role</span>
-                                            }
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small"><i class="fas fa-minus-circle"></i> بدون نقش</span>
-                                    }
-                                </td>
-                                <td>
-                                    @if (user.IsActive)
-                                    {
-                                        <span class="badge badge-role badge-active">فعال</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge badge-role badge-inactive">غیرفعال</span>
-                                    }
-                                </td>
-                                <td>
-                                    <small>@user.CreatedAtShamsi</small>
-                                </td>
-                                <td>
-                                    <div class="btn-group" role="group">
-                                        <a href="@Url.Action("Details", "UserManagement", new { area = "Admin", id = user.UserId })" 
-                                           class="btn btn-sm btn-info" 
-                                           title="مشاهده جزئیات">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <a href="@Url.Action("Edit", "UserManagement", new { area = "Admin", id = user.UserId })" 
-                                           class="btn btn-sm btn-warning" 
-                                           title="ویرایش">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                        @if (user.IsActive)
-                                        {
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-secondary btn-deactivate" 
-                                                    data-user-id="@user.UserId"
-                                                    title="غیرفعال‌سازی">
-                                                <i class="fas fa-ban"></i>
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-success btn-activate" 
-                                                    data-user-id="@user.UserId"
-                                                    title="فعال‌سازی">
-                                                <i class="fas fa-check"></i>
-                                            </button>
-                                        }
-                                        @using (Html.BeginForm("Delete", "UserManagement", new { area = "Admin", id = user.UserId }, FormMethod.Post, new { @class = "d-inline", id = $"deleteForm_{user.UserId}" }))
-                                        {
-                                            @Html.AntiForgeryToken()
-                                            <button type="button" 
-                                                    class="btn btn-sm btn-danger btn-delete" 
-                                                    data-user-id="@user.UserId"
-                                                    data-user-name="@user.FullName"
-                                                    title="حذف">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        }
-                                    </div>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
+        <div class="medical-card">
+            <div class="table-responsive">
+                <table id="usersTable" class="table medical-table mb-0 table-striped" style="width:100%">
+                    <thead>
                         <tr>
-                            <td colspan="8" class="text-center py-5">
-                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">هیچ کاربری یافت نشد</p>
-                            </td>
+                            <th>نام و نام خانوادگی</th>
+                            <th>کد ملی</th>
+                            <th>ایمیل</th>
+                            <th>شماره تلفن</th>
+                            <th>نقش‌ها</th>
+                            <th>وضعیت</th>
+                            <th>تاریخ ایجاد</th>
+                            <th class="no-sort">عملیات</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Pagination -->
-        @if (Model?.PagingInfo != null && Model.PagingInfo.ShowPagination)
-        {
-            <div class="p-3 border-top">
-                <nav aria-label="صفحه‌بندی">
-                    <ul class="pagination justify-content-center mb-0">
-                        @if (Model.PagingInfo.HasPreviousPage)
-                        {
-                            <li class="page-item">
-                                <a class="page-link" href="@Url.Action("Index", "UserManagement", new { area = "Admin", page = Model.PagingInfo.PreviousPage, filter = Model.Filter })">
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </li>
-                        }
-                        @for (int i = Model.PagingInfo.StartPage; i <= Model.PagingInfo.EndPage; i++)
-                        {
-                            <li class="page-item @(i == Model.PagingInfo.CurrentPage ? "active" : "")">
-                                <a class="page-link" href="@Url.Action("Index", "UserManagement", new { area = "Admin", page = i, filter = Model.Filter })">@i</a>
-                            </li>
-                        }
-                        @if (Model.PagingInfo.HasNextPage)
-                        {
-                            <li class="page-item">
-                                <a class="page-link" href="@Url.Action("Index", "UserManagement", new { area = "Admin", page = Model.PagingInfo.NextPage, filter = Model.Filter })">
-                                    <i class="fas fa-chevron-left"></i>
-                                </a>
-                            </li>
-                        }
-                    </ul>
-                </nav>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
-        }
+        </div>
     </div>
 </div>
 
 @section Scripts {
+    <script src="~/Content/js/plugins/DataTables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/js/plugins/DataTables/js/dataTables.bootstrap4.min.js"></script>
     <script src="~/Scripts/admin/user-management.js"></script>
     <script>
-        $(document).ready(function() {
-            // Initialize User Management
-            if (typeof window.UserManagement !== 'undefined') {
-                window.UserManagement.init();
-            }
+        $(function() {
+            var getUsersDataUrl = '@Url.Action("GetUsersData", "UserManagement", new { area = "Admin" })';
+
+            // کانفیگ Production HIS: سرعت، پایداری، UX منشی
+            var usersTable = $('#usersTable').DataTable({
+                processing: true,
+                serverSide: true,
+                deferRender: true,
+
+                ajax: {
+                    url: getUsersDataUrl,
+                    type: 'POST',
+                    data: function(d) {
+                        d.FilterSearchTerm = $('#filterSearchTerm').val();
+                        d.FilterIsActive = $('#filterIsActive').val() || null;
+                        d.FilterRoleName = $('#filterRoleName').val() || null;
+                        d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                    }
+                },
+
+                pageLength: 25,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+
+                searching: true,
+                ordering: true,
+                searchDelay: 500,
+
+                order: [[6, 'desc']],
+
+                stateSave: true,
+                stateSaveParams: function(settings, data) {
+                    data.filterSearchTerm = $('#filterSearchTerm').val();
+                    data.filterIsActive = $('#filterIsActive').val();
+                    data.filterRoleName = $('#filterRoleName').val();
+                },
+                stateLoadParams: function(settings, data) {
+                    if (data.filterSearchTerm) $('#filterSearchTerm').val(data.filterSearchTerm);
+                    if (data.filterIsActive !== undefined) $('#filterIsActive').val(data.filterIsActive);
+                    if (data.filterRoleName) $('#filterRoleName').val(data.filterRoleName);
+                },
+
+                responsive: true,
+                autoWidth: false,
+
+                language: {
+                    url: '/Content/js/plugins/DataTables/js/fa.json',
+                    emptyTable: 'هیچ کاربری یافت نشد',
+                    processing: 'در حال بارگذاری...',
+                    zeroRecords: 'نتیجه‌ای یافت نشد'
+                },
+
+                dom: "<'row'<'col-md-6'l><'col-md-6'f>>" +
+                     "<'row'<'col-md-12'tr>>" +
+                     "<'row'<'col-md-5'i><'col-md-7'p>>",
+
+                columns: [
+                    { data: 'fullName', title: 'نام و نام خانوادگی', render: function(v) { return '<strong>' + (v || '') + '</strong>'; } },
+                    { data: 'nationalCodeMasked', title: 'کد ملی', render: function(v) { return '<code>' + (v || '') + '</code>'; } },
+                    { data: 'email', title: 'ایمیل' },
+                    { data: 'phoneNumberMasked', title: 'شماره تلفن' },
+                    { data: 'rolesDisplay', title: 'نقش‌ها' },
+                    { data: 'isActiveDisplay', title: 'وضعیت', render: function(v, t, row) {
+                        return row.isActive ? '<span class="badge badge-role badge-active">فعال</span>' : '<span class="badge badge-role badge-inactive">غیرفعال</span>';
+                    }},
+                    { data: 'createdAtShamsi', title: 'تاریخ ایجاد', render: function(v) { return '<small>' + (v || '') + '</small>'; } },
+                    { data: 'actionsHtml', title: 'عملیات', orderable: false, searchable: false, className: 'text-nowrap', render: function(v) { return v || ''; } }
+                ],
+
+                rowCallback: function(row, data) {
+                    if (data && data.isActive === false)
+                        $(row).addClass('table-danger');
+                    if (data && data.hasDoctorRole === true)
+                        $(row).addClass('table-info');
+                },
+
+                drawCallback: function() {
+                    if (typeof window.UserManagement !== 'undefined') {
+                        window.UserManagement.init();
+                    }
+                }
+            });
+
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                usersTable.ajax.reload(null, false);
+            });
+
+            $('.btn-reset-filters').on('click', function(e) {
+                e.preventDefault();
+                $('#filterSearchTerm').val('');
+                $('#filterIsActive').val('');
+                $('#filterRoleName').val('');
+                usersTable.state.clear();
+                usersTable.ajax.reload(null, false);
+            });
+
+            $(document).on('click', '.clear-search', function() {
+                $('#filterSearchTerm').val('');
+                usersTable.ajax.reload(null, false);
+            });
         });
     </script>
 }

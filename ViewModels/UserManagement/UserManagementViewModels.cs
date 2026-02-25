@@ -72,6 +72,49 @@ namespace ClinicApp.ViewModels.UserManagement
         public List<SelectListItem> AvailableRoles { get; set; } = new List<SelectListItem>();
     }
 
+    /// <summary>
+    /// درخواست DataTables برای لیست کاربران (سرور-ساید)
+    /// </summary>
+    public class UserManagementDataTablesRequest
+    {
+        public int Draw { get; set; }
+        public int Start { get; set; }
+        public int Length { get; set; }
+        public DataTablesSearch Search { get; set; } = new DataTablesSearch();
+        public List<DataTablesOrder> Order { get; set; } = new List<DataTablesOrder>();
+        public string FilterSearchTerm { get; set; }
+        public bool? FilterIsActive { get; set; }
+        public string FilterRoleName { get; set; }
+    }
+
+    public class DataTablesSearch
+    {
+        public string Value { get; set; }
+        public bool Regex { get; set; }
+    }
+
+    public class DataTablesOrder
+    {
+        public int Column { get; set; }
+        public string Dir { get; set; }
+    }
+
+    /// <summary>
+    /// خروجی DataTables برای یک ردیف کاربر
+    /// </summary>
+    public class UserManagementDataTablesRow
+    {
+        public string UserId { get; set; }
+        public string FullName { get; set; }
+        public string NationalCodeMasked { get; set; }
+        public string Email { get; set; }
+        public string PhoneNumberMasked { get; set; }
+        public string RolesDisplay { get; set; }
+        public bool IsActive { get; set; }
+        public string CreatedAtShamsi { get; set; }
+        public string ActionsHtml { get; set; }
+    }
+
     #endregion
 
     #region User Create/Edit ViewModel

@@ -1,0 +1,30 @@
+@model ClinicApp.ViewModels.Admin.ReceptionistDashboard.WidgetPendingReceptionsViewModel
+@{
+    var count = Model?.Count ?? 0;
+    var items = Model?.Items ?? new List<ClinicApp.ViewModels.Admin.ReceptionistDashboard.PendingReceptionItemViewModel>();
+}
+<div class="reception-dash-widget reception-dash-pending">
+    <div class="reception-dash-widget-header">
+        <i class="fas fa-hourglass-half text-warning"></i>
+        <span>پذیرش‌های در انتظار پرداخت</span>
+    </div>
+    <div class="reception-dash-widget-body">
+        <p class="mb-2"><strong class="fs-4">@count</strong> مورد</p>
+        @if (items.Any())
+        {
+            <ul class="list-unstyled small mb-0">
+                @foreach (var item in items.Take(5))
+                {
+                    <li class="py-1">
+                        <a href="@Url.Action("Index", "ReceptionV2", new { area = "" })">@(item.ReceptionNo ?? "—")</a> — @(item.PatientName ?? "—")
+                    </li>
+                }
+            </ul>
+            <a href="@Url.Content("~/ReceptionV2/ReceptionList")" class="btn btn-link btn-sm p-0 mt-2">مشاهده همه</a>
+        }
+        else
+        {
+            <p class="text-muted small mb-0">پذیرش در انتظار پرداختی نیست.</p>
+        }
+    </div>
+</div>
