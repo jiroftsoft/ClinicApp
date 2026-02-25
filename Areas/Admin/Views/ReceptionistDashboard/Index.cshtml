@@ -3,12 +3,34 @@
     ViewBag.Title = "داشبورد منشی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
-<div class="receptionist-dashboard">
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <h1 class="h4 mb-0">
-            <i class="fas fa-user-nurse text-primary me-2"></i>داشبورد منشی
-        </h1>
+<div class="receptionist-dashboard receptionist-dashboard--pro">
+    <div class="receptionist-dashboard__top">
+        <div class="receptionist-dashboard__title">
+            <h1 class="receptionist-dashboard__h1"><i class="fas fa-user-nurse text-primary me-2"></i>داشبورد منشی</h1>
+        </div>
+        @Html.Partial("Partials/_ReceptionistProfileCard")
     </div>
+
+    <section class="receptionist-dashboard__quick-actions" aria-label="عملیات سریع">
+        <a href="@Url.Content("~/ReceptionV2")" class="receptionist-quick-action receptionist-quick-action--primary">
+            <i class="fas fa-user-plus"></i>
+            <span>پذیرش بیمار جدید</span>
+        </a>
+        <a href="@Url.Content("~/ReceptionV2/ReceptionList")" class="receptionist-quick-action">
+            <i class="fas fa-calendar-day"></i>
+            <span>نوبت امروز</span>
+        </a>
+        <a href="@Url.Content("~/ReceptionV2")" class="receptionist-quick-action" data-focus-patient="true">
+            <i class="fas fa-search"></i>
+            <span>جستجوی بیمار</span>
+        </a>
+        <a href="@Url.Action("Index", "CashierDashboard", new { area = "Admin" })" class="receptionist-quick-action">
+            <i class="fas fa-credit-card"></i>
+            <span>ثبت پرداخت</span>
+        </a>
+    </section>
+
+    <h2 class="receptionist-dashboard__section-title"><i class="fas fa-th-large me-2"></i>خلاصه امروز</h2>
     <div class="receptionist-dashboard-grid">
         <div class="receptionist-dashboard-item receptionist-dashboard-item--wide">
             @Html.Partial("Partials/_WidgetReceptionQuickActions", Model?.QuickActions)
@@ -28,9 +50,23 @@
     </div>
 </div>
 <style>
+    .receptionist-dashboard--pro { max-width: 1400px; margin: 0 auto; }
+    .receptionist-dashboard__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+    .receptionist-dashboard__h1 { font-size: 1.35rem; font-weight: 700; color: #1e293b; margin: 0; }
+    .receptionist-dashboard__quick-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .receptionist-quick-action { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; color: #475569; font-weight: 500; font-size: 0.9rem; text-decoration: none; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .receptionist-quick-action:hover { border-color: #2563eb; color: #1e40af; background: #f8fafc; text-decoration: none; }
+    .receptionist-quick-action--primary { background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); border-color: transparent; color: #fff; }
+    .receptionist-quick-action--primary:hover { opacity: 0.95; color: #fff; }
+    .receptionist-dashboard__section-title { font-size: 1rem; font-weight: 600; color: #64748b; margin-bottom: 1rem; }
     .receptionist-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
     .receptionist-dashboard-item--wide { grid-column: 1 / -1; }
-    .reception-dash-widget { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .reception-dash-widget { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
     .reception-dash-widget-header { padding: 0.75rem 1rem; background: #f8fafc; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
     .reception-dash-widget-body { padding: 1rem; }
+    .receptionist-profile-card { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; }
+    .receptionist-profile-card__avatar { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #1a6b1a 0%, #22c55e 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+    .receptionist-profile-card__name { font-weight: 600; color: #1e293b; }
+    .receptionist-profile-card__role { font-size: 0.8rem; color: #1a6b1a; display: flex; align-items: center; gap: 0.35rem; margin-top: 0.2rem; }
+    .receptionist-profile-card__meta { font-size: 0.75rem; color: #64748b; margin-top: 0.25rem; }
 </style>

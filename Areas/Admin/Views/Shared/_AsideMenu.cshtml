@@ -55,7 +55,7 @@
             new { Title = "داشبورد پزشکان", Url = adminDoctorDashboardUrl, Controller = "DoctorDashboard", Action = (string)null }
         }},
         new { Key = "reception", Title = "پذیرش و نوبت‌دهی", Icon = "fa-calendar-check", Items = new[] {
-            new { Title = "پذیرش بیمار", Url = Url.Action("Index", "ReceptionV2"), Controller = "ReceptionV2", Action = (string)null },
+            new { Title = "پذیرش بیمار", Url = Url.Content("~/ReceptionV2"), Controller = "ReceptionV2", Action = (string)null },
             new { Title = "نوبت‌های اضطراری", Url = Url.Action("Index", "EmergencyBooking", new { area = "Admin" }), Controller = "EmergencyBooking", Action = (string)null },
             new { Title = "دسترس‌پذیری نوبت", Url = Url.Action("Index", "AppointmentAvailability", new { area = "Admin" }), Controller = "AppointmentAvailability", Action = (string)null },
             new { Title = "ایونت‌های تبلیغاتی", Url = Url.Action("Index", "PromotionalEvent", new { area = "Admin" }), Controller = "PromotionalEvent", Action = (string)null },

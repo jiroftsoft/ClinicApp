@@ -25,6 +25,11 @@
         { "ClinicWorkingHours", "ساعات کاری" },
         { "Dashboard", "داشبورد" },
         { "ReceptionistDashboard", "داشبورد منشی" },
+        { "CashierDashboard", "داشبورد صندوق" },
+        { "CashierReport", "گزارشات صندوق" },
+        { "EmergencyBooking", "نوبت‌های اضطراری" },
+        { "AppointmentAvailability", "دسترس‌پذیری نوبت" },
+        { "PromotionalEvent", "ایونت‌های تبلیغاتی" },
         { "Home", "صفحه اصلی" },
         { "UserManagement", "مدیریت کاربران" },
         { "PaymentManagement", "مدیریت پرداخت‌ها" },
@@ -104,16 +109,47 @@
             categoryText = "مدیریت بیمه";
             categoryIcon = "fa-shield-alt";
         }
+        else if (controllerName == "CashierDashboard" || controllerName == "CashierReport" || controllerName == "PaymentManagement")
+        {
+            categoryText = "مالی و صندوق";
+            categoryIcon = "fa-credit-card";
+        }
+        else if (controllerName == "EmergencyBooking" || controllerName == "AppointmentAvailability" || controllerName == "PromotionalEvent" || controllerName == "ScheduleOptimization")
+        {
+            categoryText = "پذیرش و نوبت‌دهی";
+            categoryIcon = "fa-calendar-check";
+        }
+        else if (controllerName == "ReceptionistDashboard")
+        {
+            categoryText = "داشبورد منشی";
+            categoryIcon = "fa-user-nurse";
+        }
         else
         {
             categoryText = "مدیریت محتوا";
             categoryIcon = "fa-sitemap";
         }
         
+        var categoryUrl = "#";
+        if (isReceptionistOnly)
+        {
+            if (controllerName == "CashierDashboard" || controllerName == "CashierReport" || controllerName == "PaymentManagement")
+            {
+                categoryUrl = Url.Action("Index", "CashierDashboard", new { area = "Admin" });
+            }
+            else if (controllerName == "EmergencyBooking" || controllerName == "AppointmentAvailability" || controllerName == "PromotionalEvent" || controllerName == "ScheduleOptimization")
+            {
+                categoryUrl = Url.Action("Index", "EmergencyBooking", new { area = "Admin" });
+            }
+            else if (controllerName == "ReceptionistDashboard")
+            {
+                categoryUrl = Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" });
+            }
+        }
         breadcrumbItems.Add(new BreadcrumbItem
         {
             Text = categoryText,
-            Url = "#",
+            Url = categoryUrl,
             Icon = categoryIcon,
             IsActive = false
         });
@@ -163,6 +199,18 @@
         else if (controllerName == "InsurancePlan")
         {
             controllerIcon = "fa-shield-alt";
+        }
+        else if (controllerName == "CashierDashboard" || controllerName == "CashierReport")
+        {
+            controllerIcon = "fa-cash-register";
+        }
+        else if (controllerName == "EmergencyBooking" || controllerName == "AppointmentAvailability")
+        {
+            controllerIcon = "fa-calendar-check";
+        }
+        else if (controllerName == "ReceptionistDashboard")
+        {
+            controllerIcon = "fa-user-nurse";
         }
         
         breadcrumbItems.Add(new BreadcrumbItem

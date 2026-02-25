@@ -1,0 +1,300 @@
+/**
+ * لایوت منشی — رنگ‌های درمانی و تایپوگرافی خوانا
+ * Medical-grade palette, WCAG-friendly contrast
+ */
+
+/* ========== پالت رنگی درمانی ========== */
+body.layout-receptionist {
+    --rec-primary: #0d9488;
+    --rec-primary-dark: #0f766e;
+    --rec-primary-light: #2dd4bf;
+    --rec-primary-bg: #f0fdfa;
+    --rec-primary-border: #99f6e4;
+    --rec-accent: #059669;
+    --rec-accent-bg: #d1fae5;
+    --rec-text: #0f172a;
+    --rec-text-secondary: #475569;
+    --rec-text-muted: #64748b;
+    --rec-bg: #f8fafc;
+    --rec-bg-card: #ffffff;
+    --rec-border: #e2e8f0;
+    --rec-border-strong: #cbd5e1;
+    --rec-success: #047857;
+    --rec-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    --rec-shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07);
+    --rec-radius: 8px;
+    --rec-radius-lg: 12px;
+    /* تایپوگرافی خوانا */
+    --rec-font: 'Vazirmatn', 'Vazir', 'Shabnam', 'Tahoma', sans-serif;
+    --rec-fs-base: 0.9375rem;
+    --rec-fs-menu: 0.9375rem;
+    --rec-fs-title: 1.125rem;
+    --rec-fs-heading: 1.35rem;
+    --rec-lh: 1.6;
+    --rec-lh-tight: 1.4;
+    --rec-fw-normal: 400;
+    --rec-fw-medium: 500;
+    --rec-fw-semibold: 600;
+    --rec-fw-bold: 700;
+}
+
+/* ========== پایه: بدنه و تایپوگرافی ========== */
+body.layout-receptionist {
+    font-family: var(--rec-font);
+    font-size: var(--rec-fs-base);
+    line-height: var(--rec-lh);
+    color: var(--rec-text);
+    background: var(--rec-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body.layout-receptionist .main-content {
+    background: var(--rec-bg-card);
+    color: var(--rec-text);
+    font-size: var(--rec-fs-base);
+    line-height: var(--rec-lh);
+    box-shadow: var(--rec-shadow);
+    border: 1px solid var(--rec-border);
+}
+
+/* ========== هدر منشی ========== */
+body.layout-receptionist .header {
+    background: var(--rec-bg-card);
+    border-bottom: 1px solid var(--rec-border);
+    box-shadow: var(--rec-shadow);
+}
+
+body.layout-receptionist .logo {
+    color: var(--rec-primary-dark);
+    font-weight: var(--rec-fw-bold);
+    font-size: var(--rec-fs-title);
+}
+
+body.layout-receptionist .admin-header-user-name {
+    color: var(--rec-text);
+    font-size: var(--rec-fs-menu);
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .admin-header-user-avatar {
+    background: linear-gradient(135deg, var(--rec-primary-dark) 0%, var(--rec-primary) 100%);
+    font-weight: var(--rec-fw-bold);
+    font-size: 1rem;
+}
+
+body.layout-receptionist .admin-header-user-role--receptionist {
+    background: var(--rec-accent-bg);
+    color: var(--rec-success);
+    font-size: 0.75rem;
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .btn-logout {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-base);
+}
+body.layout-receptionist .btn-logout:hover {
+    color: #dc2626;
+}
+
+/* ========== سایدبار و منو ========== */
+body.layout-receptionist .sidebar {
+    background: var(--rec-bg-card);
+    border: 1px solid var(--rec-border);
+    box-shadow: var(--rec-shadow);
+    border-radius: var(--rec-radius-lg);
+}
+
+body.layout-receptionist .aside-menu {
+    padding: 0.25rem 0;
+}
+
+body.layout-receptionist .aside-menu-section {
+    border-radius: var(--rec-radius);
+    border: 1px solid var(--rec-border);
+    margin-bottom: 0.35rem;
+    overflow: hidden;
+}
+
+body.layout-receptionist .aside-menu-section-header {
+    padding: 0.85rem 1rem;
+    background: var(--rec-bg);
+    color: var(--rec-text);
+    font-size: var(--rec-fs-menu);
+    font-weight: var(--rec-fw-semibold);
+    font-family: var(--rec-font);
+    letter-spacing: 0.01em;
+    transition: background 0.2s, color 0.2s;
+}
+
+body.layout-receptionist .aside-menu-section-header:hover {
+    background: var(--rec-primary-bg);
+    color: var(--rec-primary-dark);
+}
+
+body.layout-receptionist .aside-menu-section.expanded .aside-menu-section-header {
+    background: linear-gradient(135deg, var(--rec-primary-dark) 0%, var(--rec-primary) 100%);
+    color: #fff;
+}
+
+body.layout-receptionist .aside-menu-section.expanded .aside-menu-section-header:hover {
+    background: linear-gradient(135deg, #115e59 0%, var(--rec-primary-dark) 100%);
+    color: #fff;
+}
+
+body.layout-receptionist .aside-menu-link {
+    padding: 0.65rem 1rem 0.65rem 2rem;
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-menu);
+    font-weight: var(--rec-fw-medium);
+    line-height: var(--rec-lh-tight);
+    font-family: var(--rec-font);
+    border-right: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+body.layout-receptionist .aside-menu-link:hover {
+    background: var(--rec-primary-bg);
+    color: var(--rec-primary-dark);
+    text-decoration: none;
+}
+
+body.layout-receptionist .aside-menu-link.active {
+    background: rgba(13, 148, 136, 0.08);
+    color: var(--rec-primary-dark);
+    border-right-color: var(--rec-primary);
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .aside-menu-link-indicator {
+    color: var(--rec-primary);
+}
+
+body.layout-receptionist .nav-section-title {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-base);
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .nav-action-btn {
+    font-size: var(--rec-fs-base);
+    font-weight: var(--rec-fw-medium);
+}
+
+body.layout-receptionist .btn-primary.nav-action-btn {
+    background: linear-gradient(135deg, var(--rec-primary-dark) 0%, var(--rec-primary) 100%);
+    border: none;
+}
+
+body.layout-receptionist .system-info .info-item {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-base);
+}
+
+/* ========== داشبورد منشی ========== */
+body.layout-receptionist .receptionist-dashboard__h1 {
+    color: var(--rec-text);
+    font-size: var(--rec-fs-heading);
+    font-weight: var(--rec-fw-bold);
+}
+
+body.layout-receptionist .receptionist-dashboard__section-title {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-title);
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .receptionist-quick-action {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-base);
+    font-weight: var(--rec-fw-medium);
+    border-color: var(--rec-border);
+}
+
+body.layout-receptionist .receptionist-quick-action:hover {
+    border-color: var(--rec-primary);
+    color: var(--rec-primary-dark);
+}
+
+body.layout-receptionist .receptionist-quick-action--primary {
+    background: linear-gradient(135deg, var(--rec-primary-dark) 0%, var(--rec-primary) 100%);
+    color: #fff;
+    border: none;
+}
+
+body.layout-receptionist .receptionist-quick-action--primary:hover {
+    opacity: 0.95;
+    color: #fff;
+}
+
+body.layout-receptionist .reception-dash-widget {
+    border-color: var(--rec-border);
+    box-shadow: var(--rec-shadow);
+}
+
+body.layout-receptionist .reception-dash-widget-header {
+    background: var(--rec-bg);
+    color: var(--rec-text);
+    font-size: var(--rec-fs-base);
+    font-weight: var(--rec-fw-semibold);
+}
+
+body.layout-receptionist .reception-dash-widget-body {
+    color: var(--rec-text-secondary);
+    font-size: var(--rec-fs-base);
+    line-height: var(--rec-lh);
+}
+
+body.layout-receptionist .receptionist-profile-card {
+    border-color: var(--rec-border);
+    background: var(--rec-bg-card);
+}
+
+body.layout-receptionist .receptionist-profile-card__avatar {
+    background: linear-gradient(135deg, var(--rec-primary-dark) 0%, var(--rec-primary) 100%);
+}
+
+body.layout-receptionist .receptionist-profile-card__name {
+    color: var(--rec-text);
+    font-weight: var(--rec-fw-semibold);
+    font-size: var(--rec-fs-base);
+}
+
+body.layout-receptionist .receptionist-profile-card__role {
+    color: var(--rec-success);
+    font-size: var(--rec-fs-base);
+    font-weight: var(--rec-fw-medium);
+}
+
+/* ========== Breadcrumb ========== */
+body.layout-receptionist .breadcrumb-nav {
+    background: var(--rec-bg);
+    border-color: var(--rec-border);
+}
+
+body.layout-receptionist .breadcrumb-link {
+    color: var(--rec-primary-dark);
+    font-weight: var(--rec-fw-medium);
+}
+
+body.layout-receptionist .breadcrumb-current {
+    color: var(--rec-text);
+    font-weight: var(--rec-fw-semibold);
+}
+
+/* ========== جستجو در هدر ========== */
+body.layout-receptionist .search-input {
+    border-color: var(--rec-border);
+    color: var(--rec-text);
+    font-size: var(--rec-fs-base);
+}
+
+body.layout-receptionist .search-input::placeholder {
+    color: var(--rec-text-muted);
+}
+
+body.layout-receptionist .search-input:focus {
+    border-color: var(--rec-primary);
+    outline: none;
+}

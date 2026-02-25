@@ -1,10 +1,15 @@
 @using Org.BouncyCastle.Asn1.Ocsp
+@using ClinicApp.Models.Core
+@using ClinicApp.Helpers
 @{
     var appName = "کلینیک درمانی شفا";
     var title = ViewBag.Title ?? "داشبورد مدیریت";
     var metaDescription = ViewBag.MetaDescription ?? "کلینیک درمانی شفا - ارائه خدمات پزشکی تخصصی";
-    var currentUser = User.Identity.Name;
+    var displayName = (User.Identity != null ? User.Identity.GetFullName() : null)?.Trim();
+    if (string.IsNullOrEmpty(displayName)) { displayName = "کاربر سیستم"; }
+    var userInitial = displayName.Length > 0 ? displayName[0].ToString().ToUpperInvariant() : "U";
     var currentTime = DateTime.Now;
+    var isReceptionistOnly = User.IsInRole(AppRoles.Receptionist) && !User.IsInRole(AppRoles.Admin);
 }
 
 <!DOCTYPE html>
@@ -136,8 +141,12 @@
         }
     }
     </script>
+    @if (isReceptionistOnly)
+    {
+        <link href="~/Content/css/receptionist-layout.css" rel="stylesheet" />
+    }
 </head>
-<body>
+<body class="@(isReceptionistOnly ? "layout-receptionist" : "")">
     @Html.AntiForgeryToken()
     <!-- Skip Link for Accessibility -->
     <a href="#main-content" class="skip-link sr-only" aria-label="پرش به محتوای اصلی">پرش به محتوای اصلی</a>
@@ -185,12 +194,20 @@
                         <i class="fas fa-bars" aria-hidden="true"></i>
                     </button>
 
-                    <!-- User Menu -->
-                    <div class="user-menu">
-                        <span class="user-name" aria-label="کاربر فعلی">
-                            <i class="fas fa-user me-1" aria-hidden="true"></i>
-                            @currentUser
-                        </span>
+                    <!-- User: نام نمایشی فقط (بدون کد ملی/شناسه حساس) — Production Security -->
+                    <div class="admin-header-user">
+                        <div class="admin-header-user-avatar" aria-hidden="true">@userInitial</div>
+                        <div class="admin-header-user-info">
+                            <span class="admin-header-user-name" aria-label="نام کاربر">@displayName</span>
+                            @if (isReceptionistOnly)
+                            {
+                                <span class="admin-header-user-role admin-header-user-role--receptionist" aria-label="نقش: منشی">منشی</span>
+                            }
+                            else if (User.IsInRole(AppRoles.Admin))
+                            {
+                                <span class="admin-header-user-role admin-header-user-role--admin" aria-label="نقش: مدیر">مدیر</span>
+                            }
+                        </div>
                         <a href="@Url.Action("LogOff", "Account", new { area = "" })"
                            class="btn btn-logout"
                            aria-label="خروج از سیستم"
@@ -200,6 +217,15 @@
                             خروج
                         </a>
                     </div>
+                    <style>
+                        .admin-header-user { display: flex; align-items: center; gap: 0.6rem; }
+                        .admin-header-user-avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; }
+                        .admin-header-user-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.4; }
+                        .admin-header-user-name { font-weight: 600; color: #1e293b; font-size: 0.9375rem; }
+                        .admin-header-user-role { font-size: 0.75rem; padding: 0.15rem 0.4rem; border-radius: 6px; font-weight: 600; margin-top: 0.1rem; }
+                        .admin-header-user-role--receptionist { background: #d1fae5; color: #047857; }
+                        .admin-header-user-role--admin { background: rgba(30, 58, 138, 0.12); color: #1e3a8a; }
+                    </style>
                 </div>
             </div>
         </div>
@@ -217,15 +243,17 @@
                 <div class="nav-section">
                         <h3 class="nav-section-title" aria-label="عملیات سریع">عملیات سریع</h3>
 
-                        <a href="@Url.Action("Index","ReceptionV2")" class="btn btn-primary nav-action-btn" aria-label="پذیرش جدید">
+                        <a href="@Url.Content("~/ReceptionV2")" class="btn btn-primary nav-action-btn" aria-label="پذیرش جدید">
                             <i class="fas fa-user-plus icon" aria-hidden="true"></i>
                             <span>پذیرش جدید</span>
                         </a>
-
+                        @if (!isReceptionistOnly)
+                        {
                         <a href="@Url.Action("Create","Clinic", new { area = "Admin" })" class="btn btn-outline nav-action-btn" aria-label="کلینیک جدید">
                             <i class="fas fa-hospital-alt icon" aria-hidden="true"></i>
                             <span>کلینیک جدید</span>
                         </a>
+                        }
                     </div>
 
                     <hr class="nav-divider">

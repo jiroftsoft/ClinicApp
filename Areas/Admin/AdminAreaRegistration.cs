@@ -406,6 +406,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
+            // مسیر جایگزین: داشبورد منشی — /Admin/CMS/ReceptionistDashboard → کنترلر Admin (نه CMS)
+            context.MapRoute(
+                name: "Admin_CMS_ReceptionistDashboard_Fix",
+                url: "Admin/CMS/ReceptionistDashboard/{action}/{id}",
+                defaults: new { controller = "ReceptionistDashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // CMS Home: صفحهٔ ورود CMS — گرید ماژول‌ها
             context.MapRoute(
                 name: "Admin_CMS_Home",

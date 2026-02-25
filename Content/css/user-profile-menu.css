@@ -214,6 +214,27 @@
     text-overflow: ellipsis;
 }
 
+/* نقش کاربر — پروداکشن، نقش‌محور */
+.user-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 6px;
+    line-height: 1.2;
+}
+.user-role-badge--receptionist {
+    background: rgba(34, 139, 34, 0.15);
+    color: #1a6b1a;
+}
+.user-role-badge--admin {
+    background: rgba(44, 90, 160, 0.15);
+    color: #1e3d6f;
+}
+
 /* ============================================
    Menu Items
    ============================================ */

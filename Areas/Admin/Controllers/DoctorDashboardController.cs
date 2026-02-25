@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Core;
 using ClinicApp.Filters;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models.Core;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
 
@@ -43,6 +44,12 @@ namespace ClinicApp.Areas.Admin.Controllers
         [HttpGet]
         public async Task<ActionResult> Index(int? clinicId = null, int? departmentId = null)
         {
+            if (User.IsInRole(AppRoles.Receptionist) && !User.IsInRole(AppRoles.Admin))
+            {
+                _logger.Information("منشی به داشبورد پزشکان دسترسی ندارد؛ هدایت به داشبورد منشی.");
+                return RedirectToAction("Index", "ReceptionistDashboard", new { area = "Admin" });
+            }
+
             try
             {
                 _logger.Information("درخواست نمایش داشبورد اصلی پزشکان. کلینیک: {ClinicId}, دپارتمان: {DepartmentId}", 

@@ -1,0 +1,20 @@
+@* کارت پروفایل منشی — فقط داده‌های امن (بدون کد ملی، بدون شناسه داخلی) *@
+@using ClinicApp.Helpers
+@{
+    var displayName = (User.Identity != null ? User.Identity.GetFullName() : null)?.Trim();
+    if (string.IsNullOrEmpty(displayName)) { displayName = "کاربر سیستم"; }
+    var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpperInvariant() : "U";
+}
+<div class="receptionist-profile-card">
+    <div class="receptionist-profile-card__avatar">@initial</div>
+    <div class="receptionist-profile-card__body">
+        <div class="receptionist-profile-card__name">@displayName</div>
+        <div class="receptionist-profile-card__role">
+            <i class="fas fa-user-nurse" aria-hidden="true"></i>
+            <span>منشی</span>
+        </div>
+        <div class="receptionist-profile-card__meta">
+            <span class="receptionist-profile-card__status"><i class="fas fa-circle text-success" style="font-size:0.5rem;"></i> آنلاین</span>
+        </div>
+    </div>
+</div>

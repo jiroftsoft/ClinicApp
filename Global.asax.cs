@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Infrastructure;
@@ -30,10 +30,17 @@ namespace ClinicApp
     {
         protected void Application_BeginRequest(object sender, EventArgs e)
         {
+            string path = Request.Path ?? "";
+
+            // پذیرش بیمار در root است؛ لینک اشتباه /Admin/CMS/ReceptionV2 → /ReceptionV2
+            if (path.StartsWith("/Admin/CMS/ReceptionV2", StringComparison.OrdinalIgnoreCase))
+            {
+                var rest = path.Length > 22 ? path.Substring(22) : "";
+                Response.RedirectPermanent("/ReceptionV2" + rest, true);
+                return;
+            }
+
             // Redirect کردن URL های اشتباه View به Controller Action
-            // مثال: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml -> /Admin/CMS/ClinicWorkingHours
-            string path = Request.Path; // استفاده از path اصلی برای حفظ حروف صحیح
-            
             if (path.StartsWith("/Areas/Admin/Views/", StringComparison.OrdinalIgnoreCase))
             {
                 // Parse کردن path: /Areas/Admin/Views/CMS/ClinicWorkingHours/Index.cshtml

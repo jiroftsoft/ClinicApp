@@ -2272,6 +2272,7 @@
     <Content Include="Content\css\reception-form-header.css" />
     <Content Include="Content\css\reception-layout.css" />
     <Content Include="Content\css\reception-standards.css" />
+    <Content Include="Content\css\receptionist-layout.css" />
     <Content Include="Content\css\reception\patient-accordion.css" />
     <Content Include="Content\css\reception\realtime-insurance-binding.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />

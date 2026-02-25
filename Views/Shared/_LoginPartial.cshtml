@@ -97,39 +97,61 @@
                             {
                                 <div class="user-email">@userName</div>
                             }
+                            @* نقش کاربر برای پروداکشن — منشی مشخص شود *@
+                            @if (User.IsInRole(AppRoles.Receptionist) && !User.IsInRole(AppRoles.Admin))
+                            {
+                                <div class="user-role-badge user-role-badge--receptionist" aria-label="نقش: منشی">
+                                    <i class="fas fa-user-nurse" aria-hidden="true"></i>
+                                    <span>منشی</span>
+                                </div>
+                            }
+                            else if (User.IsInRole(AppRoles.Admin))
+                            {
+                                <div class="user-role-badge user-role-badge--admin" aria-label="نقش: مدیر">
+                                    <i class="fas fa-user-shield" aria-hidden="true"></i>
+                                    <span>مدیر</span>
+                                </div>
+                            }
                         </div>
                     </div>
                 </li>
                 <li><hr class="dropdown-divider"></li>
                 
-                @* Menu Items: مدیر/منشی → داشبورد ادمین؛ بیمار → داشبورد بیمار *@
+                @* Menu Items: منشی → داشبورد منشی؛ ادمین → داشبورد ادمین؛ بیمار → داشبورد بیمار *@
                 @{
-                    var isAdminOrReceptionist = User.IsInRole(AppRoles.Admin) || User.IsInRole(AppRoles.Receptionist);
+                    var isAdmin = User.IsInRole(AppRoles.Admin);
+                    var isReceptionist = User.IsInRole(AppRoles.Receptionist);
+                    var isReceptionistOnly = isReceptionist && !isAdmin;
+                    var isAdminOrReceptionist = isAdmin || isReceptionist;
                 }
                 @if (isAdminOrReceptionist)
                 {
-                    @* مسیر صریح به /Admin/Dashboard طبق قرارداد — جلوگیری از ساخت /Admin/CMS/Dashboard *@
-                    var adminDashboardUrl = Url.RouteUrl("Admin_default", new { controller = "Dashboard", action = "Index" });
-                    if (string.IsNullOrEmpty(adminDashboardUrl)) { adminDashboardUrl = Url.Content("~/Admin/Dashboard"); }
+                    var dashboardUrl = isReceptionistOnly
+                        ? Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" })
+                        : (Url.RouteUrl("Admin_default", new { controller = "Dashboard", action = "Index" }) ?? Url.Content("~/Admin/Dashboard"));
+                    var dashboardLabel = isReceptionistOnly ? "داشبورد منشی" : "داشبورد";
                     <li>
-                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
+                        <a class="dropdown-item user-menu-item" href="@dashboardUrl" data-ajax="false">
                             <i class="fas fa-tachometer-alt"></i>
-                            <span>داشبورد</span>
+                            <span>@dashboardLabel</span>
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
+                        <a class="dropdown-item user-menu-item" href="@dashboardUrl" data-ajax="false">
                             <i class="fas fa-user-circle"></i>
                             <span>پروفایل من</span>
                         </a>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <a class="dropdown-item user-menu-item" href="@adminDashboardUrl" data-ajax="false">
-                            <i class="fas fa-cog"></i>
-                            <span>تنظیمات</span>
-                        </a>
-                    </li>
+                    if (!isReceptionistOnly)
+                    {
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item user-menu-item" href="@(Url.RouteUrl("Admin_default", new { controller = "Dashboard", action = "Index" }) ?? Url.Content("~/Admin/Dashboard"))" data-ajax="false">
+                                <i class="fas fa-cog"></i>
+                                <span>تنظیمات</span>
+                            </a>
+                        </li>
+                    }
                 }
                 else
                 {

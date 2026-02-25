@@ -1,4 +1,4 @@
-﻿using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities;
 using Microsoft.AspNet.Identity;
 using System;
 using System.Linq;
@@ -78,6 +78,10 @@ public static class IdentityExtensions
     {
         if (identity is ClaimsIdentity claimsIdentity)
         {
+            var fullNameClaim = claimsIdentity.FindFirst("FullName")?.Value?.Trim();
+            if (!string.IsNullOrEmpty(fullNameClaim))
+                return fullNameClaim;
+
             var firstName = claimsIdentity.FindFirst(ClaimTypes.GivenName)?.Value ??
                             claimsIdentity.FindFirst("FirstName")?.Value ??
                             string.Empty;
