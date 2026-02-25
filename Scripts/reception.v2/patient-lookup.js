@@ -56,6 +56,15 @@
     return { isValid: ok, message: ok ? '' : 'کد ملی نامعتبر است (رقم کنترل اشتباه)' };
   }
 
+  /** نرمال‌سازی کد ملی (فارسی/عربی → انگلیسی) قبل از ارسال به API - HIS Production */
+  function normalizeNationalCodeToEnglish(code) {
+    if (!code) return (code || '').trim();
+    var s = String(code).trim()
+      .replace(/[\u06F0-\u06F9]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - 0x06F0 + 0x0030); })
+      .replace(/[\u0660-\u0669]/g, function(d) { return String.fromCharCode(d.charCodeAt(0) - 0x0660 + 0x0030); });
+    return s;
+  }
+
   /** نمایش خطای کد ملی نامعتبر: SweetAlert2 در اولویت، در غیر این صورت toastr */
   function showNationalCodeError(message) {
     var msg = message || 'کد ملی وارد شده معتبر نیست. لطفاً کد ملی صحیح را وارد کنید.';
@@ -210,10 +219,11 @@
       return $.Deferred().reject('Invalid national code').promise();
     }
 
-    console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc);
+    var ncForApi = normalizeNationalCodeToEnglish(nc);
+    console.log('🏥 V2: جستجوی بیمار - کد ملی:', nc, '(نرمال:', ncForApi + ')');
 
-    // ✅ Performance: بررسی Cache اول
-    const cached = patientLookupCache.get(nc);
+    // ✅ Performance: بررسی Cache اول (با کلید نرمال)
+    const cached = patientLookupCache.get(ncForApi);
     if (cached) {
       console.log('✅ V2: Using cached patient data for national code:', nc);
       // Process cached data
@@ -240,9 +250,8 @@
       currentLookupRequest = null;
     }
 
-    // ✅ استفاده از jQuery Deferred API برای سازگاری بهتر
-    // ✅ Performance: Request Cancellation + Cache
-    currentLookupRequest = API.post('/patient/lookup-or-create', { NationalCode: nc });
+    // ✅ HIS Production: ارسال کد ملی نرمال (انگلیسی) به API
+    currentLookupRequest = API.post('/patient/lookup-or-create', { NationalCode: ncForApi });
     
     currentLookupRequest.done(function(fullResponse) {
         currentLookupRequest = null; // ✅ Clear request reference
@@ -267,25 +276,28 @@
         console.log('🏥 V2: Response keys:', responseObj ? Object.keys(responseObj) : 'null/undefined');
         
         // چک Success - پشتیبانی از Success و success (camelCase/PascalCase)
-        // همچنین چک می‌کنیم که آیا Success به صورت true (boolean) یا "true" (string) برگردانده شده
         const successValue = responseObj?.Success ?? responseObj?.success;
         const isSuccess = successValue === true || successValue === "true" || successValue === 1;
+        // اگر پاسخ حاوی Data.Identity است، حتی با Success=false آن را موفق در نظر بگیر (مقاوم در برابر تفاوت سریالایز/بایند)
+        const dataPayload = responseObj?.Data ?? responseObj?.data;
+        const hasIdentity = dataPayload && (dataPayload.Identity || dataPayload.identity);
+        const treatAsSuccess = isSuccess || !!hasIdentity;
         
         console.log('🏥 V2: Success check:', {
           'responseObj.Success': responseObj?.Success,
-          'responseObj.success': responseObj?.success,
           'successValue': successValue,
           'isSuccess': isSuccess,
-          'typeof successValue': typeof successValue
+          'hasIdentity': !!hasIdentity,
+          'treatAsSuccess': treatAsSuccess
         });
         
-        if (!responseObj || !isSuccess) {
+        if (!responseObj || !treatAsSuccess) {
           const errorCode = responseObj?.Code || responseObj?.code;
           const errorMsg = responseObj?.Message || responseObj?.message || 'بیمار یافت نشد';
           
           console.warn('🏥 V2: Patient lookup failed:', errorCode, errorMsg, responseObj);
           
-          // اگر NOT_FOUND است، فقط در صورت معتبر بودن کد ملی Modal را باز کن (دفاع در عمق)
+          // ✅ فقط وقتی API صریحاً «بیمار یافت نشد» (NOT_FOUND) برگرداند مودال افزودن باز می‌شود؛ نه برای خطای اعتبارسنجی یا شبکه
           if (errorCode === 'NOT_FOUND' || errorCode === 'NotFound') {
             var ncCheck = validateIranianNationalCode(nc);
             if (!ncCheck.isValid) {
@@ -306,15 +318,15 @@
           return;
         }
 
-        // دریافت Data (API.ok() آن را extract می‌کند)
-        const dto = API.ok(responseObj);
+        // دریافت Data: در صورت موفقیت از API.ok؛ اگر فقط Identity داشتیم از dataPayload
+        const dto = (treatAsSuccess && hasIdentity ? dataPayload : null) || API.ok(responseObj);
         console.log('🏥 V2: Patient lookup data (extracted):', dto);
         console.log('🏥 V2: Data type:', typeof dto);
         console.log('🏥 V2: Data keys:', dto ? Object.keys(dto) : 'null/undefined');
 
-        // ✅ Performance: Cache response
-        patientLookupCache.set(nc, dto);
-        console.log('✅ V2: Patient lookup data cached for national code:', nc);
+        // ✅ Performance: Cache response (با کلید نرمال)
+        patientLookupCache.set(ncForApi, dto);
+        console.log('✅ V2: Patient lookup data cached for national code:', ncForApi);
 
         // ذخیره کپی برای انصراف
         const identity = dto?.Identity || dto?.identity;
@@ -1007,7 +1019,8 @@
     }
     
     const nc = ($nc.val() || '').trim();
-    if (/^\d{10}$/.test(nc) && !$pid.val() && !isLookingUp) {
+    const ncNormalized = normalizeNationalCodeToEnglish(nc);
+    if (/^\d{10}$/.test(ncNormalized) && !$pid.val() && !isLookingUp) {
       // اگر timeout وجود دارد، آن را cancel کن و lookup کن
       if (lookupTimeout) {
         clearTimeout(lookupTimeout);

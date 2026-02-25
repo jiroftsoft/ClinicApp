@@ -1,5 +1,6 @@
 using System;
 using System.Configuration;
+using System.Data.Entity;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Web.Hosting;
@@ -9,8 +10,12 @@ using Hangfire.Server;
 using Hangfire.SqlServer;
 using Owin;
 using ClinicApp.Infrastructure.Hangfire;
+using ClinicApp.Interfaces.Notification;
+using ClinicApp.Models;
+using ClinicApp.Repositories.Notification;
 using ClinicApp.Services.Notification;
 using Unity;
+using Unity.Lifetime;
 
 namespace ClinicApp
 {
@@ -95,33 +100,82 @@ namespace ClinicApp
             }
         }
 
-        // Helper methods for Recurring Jobs - Hangfire will use JobActivator to resolve dependencies
+        /// <summary>
+        /// Creates a child Unity container with Transient overrides for types that are PerRequest in the root.
+        /// Hangfire jobs run outside HTTP context; resolving PerRequest in background threads throws InvalidOperationException.
+        /// Caller must dispose the returned container after use.
+        /// </summary>
+        private static IUnityContainer CreateHangfireScopeContainer()
+        {
+            var parent = UnityConfig.Container;
+            var child = parent.CreateChildContainer();
+            var transient = new TransientLifetimeManager();
+
+            child.RegisterType<DbContext, ApplicationDbContext>(transient);
+            child.RegisterType<ApplicationDbContext>(transient);
+            child.RegisterType<INotificationQueueRepository, NotificationQueueRepository>(transient);
+            child.RegisterType<IAppointmentNotificationQueueService, NotificationService>(transient);
+            child.RegisterType<NotificationQueueProcessor>(transient);
+            child.RegisterType<AppointmentReminderScheduler>(transient);
+
+            return child;
+        }
+
+        // Recurring Jobs: resolve from a child container with Transient overrides (no HTTP context in background)
         public static async Task ProcessNotificationQueue()
         {
-            var container = UnityConfig.Container;
-            var processor = container.Resolve<NotificationQueueProcessor>();
-            await processor.ProcessPendingAsync();
+            var scope = CreateHangfireScopeContainer();
+            try
+            {
+                var processor = scope.Resolve<NotificationQueueProcessor>();
+                await processor.ProcessPendingAsync();
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         public static async Task Schedule24HourReminders()
         {
-            var container = UnityConfig.Container;
-            var scheduler = container.Resolve<AppointmentReminderScheduler>();
-            await scheduler.Schedule24HourRemindersAsync();
+            var scope = CreateHangfireScopeContainer();
+            try
+            {
+                var scheduler = scope.Resolve<AppointmentReminderScheduler>();
+                await scheduler.Schedule24HourRemindersAsync();
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         public static async Task Schedule3HourReminders()
         {
-            var container = UnityConfig.Container;
-            var scheduler = container.Resolve<AppointmentReminderScheduler>();
-            await scheduler.Schedule3HourRemindersAsync();
+            var scope = CreateHangfireScopeContainer();
+            try
+            {
+                var scheduler = scope.Resolve<AppointmentReminderScheduler>();
+                await scheduler.Schedule3HourRemindersAsync();
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         public static async Task Schedule30MinuteReminders()
         {
-            var container = UnityConfig.Container;
-            var scheduler = container.Resolve<AppointmentReminderScheduler>();
-            await scheduler.Schedule30MinuteRemindersAsync();
+            var scope = CreateHangfireScopeContainer();
+            try
+            {
+                var scheduler = scope.Resolve<AppointmentReminderScheduler>();
+                await scheduler.Schedule30MinuteRemindersAsync();
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
     }
 }

@@ -422,6 +422,51 @@ namespace ClinicApp.Controllers.Api
         {
             try
             {
+                // ✅ وقتی کلاینت با Content-Type: application/json ارسال می‌کند، در MVC مدل از بدنه بایند نمی‌شود؛ خواندن دستی
+                if ((request == null || string.IsNullOrWhiteSpace(request.NationalCode)) &&
+                    Request.ContentType != null && Request.ContentType.IndexOf("application/json", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    string body = null;
+                    try
+                    {
+                        if (Request.InputStream.CanSeek)
+                            Request.InputStream.Position = 0;
+                        using (var reader = new System.IO.StreamReader(Request.InputStream, System.Text.Encoding.UTF8, true, 1024, true))
+                            body = reader.ReadToEnd();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger?.Warning(ex, "🏥 V1 API: خطا در خواندن Request Body برای Patient Lookup");
+                    }
+                    if (!string.IsNullOrWhiteSpace(body))
+                    {
+                        try
+                        {
+                            var json = System.Web.Helpers.Json.Decode(body);
+                            if (json != null)
+                            {
+                                if (request == null) request = new PatientQuickCreateDto();
+                                request.NationalCode = request.NationalCode ?? json.NationalCode ?? json.nationalCode;
+                                request.FirstName = request.FirstName ?? json.FirstName ?? json.firstName;
+                                request.LastName = request.LastName ?? json.LastName ?? json.lastName;
+                                request.FatherName = request.FatherName ?? json.FatherName ?? json.fatherName;
+                                request.Mobile = request.Mobile ?? json.Mobile ?? json.mobile;
+                                request.Gender = request.Gender ?? json.Gender ?? json.gender;
+                                request.BirthDateShamsi = request.BirthDateShamsi ?? json.BirthDateShamsi ?? json.birthDateShamsi;
+                                request.Address = request.Address ?? json.Address ?? json.address;
+                                if (json.BaseInsurancePlanId != null || json.baseInsurancePlanId != null)
+                                    request.BaseInsurancePlanId = request.BaseInsurancePlanId ?? (int?)json.BaseInsurancePlanId ?? (int?)json.baseInsurancePlanId;
+                                if (json.SupplementaryInsurancePlanId != null || json.supplementaryInsurancePlanId != null)
+                                    request.SupplementaryInsurancePlanId = request.SupplementaryInsurancePlanId ?? (int?)json.SupplementaryInsurancePlanId ?? (int?)json.supplementaryInsurancePlanId;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger?.Warning(ex, "🏥 V1 API: خطا در پارس JSON برای Patient Lookup");
+                        }
+                    }
+                }
+
                 _logger?.Information("🏥 V1 API: Patient Lookup-Or-Create - NationalCode: {NationalCode}, HasQuickCreateData: {HasData}", 
                     request?.NationalCode, !string.IsNullOrWhiteSpace(request?.FirstName));
 
@@ -433,20 +478,23 @@ namespace ClinicApp.Controllers.Api
                         .WithValidationError("NationalCode", "کد ملی الزامی است."));
                 }
 
-                // ✅ بررسی اعتبار کد ملی (10 رقم)
-                if (request.NationalCode.Length != 10 || !Regex.IsMatch(request.NationalCode, @"^\d{10}$"))
+                // ✅ HIS Production: نرمال‌سازی کد ملی (فارسی/عربی → انگلیسی + Trim) قبل از هر اعتبارسنجی و جستجو
+                var normalizedNationalCode = (PersianNumberHelper.ToEnglishNumbers(request.NationalCode ?? "") ?? "").Trim();
+
+                // ✅ بررسی اعتبار کد ملی (10 رقم) روی مقدار نرمال
+                if (normalizedNationalCode.Length != 10 || !Regex.IsMatch(normalizedNationalCode, @"^\d{10}$"))
                 {
                     return Json(ServiceResult<PatientLookupResponseDto>
                         .Failed("کد ملی باید 10 رقم عددی باشد.", ReceptionApiCodes.VALIDATION)
                         .WithValidationError("NationalCode", "کد ملی باید 10 رقم عددی باشد."));
                 }
 
-                // ✅ اعتبارسنجی کامل کد ملی ایرانی (الگوریتم استاندارد + رقم کنترل) - جلوگیری از پذیرش هر عدد 10 رقمی
-                var ncValidation = IranianNationalCodeValidator.Validate(request.NationalCode);
+                // ✅ اعتبارسنجی کامل کد ملی ایرانی (الگوریتم استاندارد + رقم کنترل) روی مقدار نرمال
+                var ncValidation = IranianNationalCodeValidator.Validate(normalizedNationalCode);
                 if (!ncValidation.IsValid)
                 {
-                    _logger?.Warning("🏥 V1 API: کد ملی نامعتبر - NationalCode: {NationalCode}, Message: {Message}", 
-                        request.NationalCode, ncValidation.Message);
+                    _logger?.Warning("🏥 V1 API: کد ملی نامعتبر - NationalCode: {NationalCode}, Message: {Message}",
+                        normalizedNationalCode, ncValidation.Message);
                     return Json(ServiceResult<PatientLookupResponseDto>
                         .Failed(ncValidation.Message ?? "کد ملی نامعتبر است.", ReceptionApiCodes.VALIDATION)
                         .WithValidationError("NationalCode", ncValidation.Message ?? "کد ملی نامعتبر است."));
@@ -509,7 +557,7 @@ namespace ClinicApp.Controllers.Api
                         // اگر فقط کدملی آمده (Lookup فقط)
                         if (string.IsNullOrWhiteSpace(request.FirstName) && string.IsNullOrWhiteSpace(request.LastName))
                         {
-                            var findResult = await facadeImpl.FindOrCreatePatientAsync(request.NationalCode, null);
+                            var findResult = await facadeImpl.FindOrCreatePatientAsync(normalizedNationalCode, null);
                             if (findResult.Success && findResult.Data != null)
                             {
                                 var patientDto = findResult.Data;
@@ -548,11 +596,14 @@ namespace ClinicApp.Controllers.Api
                                     }
                                 }
                                 
-                                // Fallback
+                                // Fallback (patientId <= 0)
                                 return Json(ServiceResult.Failed("بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.", "NOT_FOUND"));
                             }
                             
-                            return Json(ServiceResult.Failed("بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.", "NOT_FOUND"));
+                            // جستجو ناموفق: فقط در صورت NOT_FOUND مودال باز می‌شود؛ در خطای سرور (مثلاً GENERAL_ERROR) همان Code/Message برگردانده می‌شود
+                            var code = findResult.Code ?? "NOT_FOUND";
+                            var msg = findResult.Message ?? "بیمار یافت نشد. لطفاً ثبت سریع بیمار را تکمیل کنید.";
+                            return Json(ServiceResult.Failed(msg, code));
                         }
                         
                         // ✅ گام ۵: اگر اطلاعات هویت آمده (Quick Create) - با تبدیل بهتر تاریخ
@@ -574,7 +625,7 @@ namespace ClinicApp.Controllers.Api
 
                         var quickCreateDto = new ViewModels.Reception.PatientCreateDto
                         {
-                            NationalCode = request.NationalCode,
+                            NationalCode = normalizedNationalCode,
                             FirstName = request.FirstName,
                             LastName = request.LastName,
                             FatherName = request.FatherName,
@@ -584,7 +635,7 @@ namespace ClinicApp.Controllers.Api
                             Address = request.Address
                         };
                         
-                        var createResult = await facadeImpl.FindOrCreatePatientAsync(request.NationalCode, quickCreateDto);
+                        var createResult = await facadeImpl.FindOrCreatePatientAsync(normalizedNationalCode, quickCreateDto);
                         if (createResult.Success && createResult.Data != null)
                         {
                             var patientDto = createResult.Data;

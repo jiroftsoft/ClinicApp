@@ -717,7 +717,10 @@ namespace ClinicApp.Services.Reception
                     }
                 }
 
-                return ServiceResult<PatientDto>.Failed("بیمار یافت نشد و اطلاعات ایجاد ارائه نشده");
+                // جستجو ناموفق: Code و Message سرویس را حفظ کن تا API بتواند NOT_FOUND را از GENERAL_ERROR تشخیص دهد
+                return ServiceResult<PatientDto>.Failed(
+                    findResult.Message ?? "بیمار یافت نشد و اطلاعات ایجاد ارائه نشده",
+                    findResult.Code ?? "NOT_FOUND");
             }
             catch (Exception ex)
             {

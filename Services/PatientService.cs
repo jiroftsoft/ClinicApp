@@ -2500,26 +2500,35 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
-        /// جستجوی بیمار بر اساس کد ملی
+        /// جستجوی بیمار بر اساس کد ملی – ضد گلوله: ورودی خالی → NOT_FOUND، خطای دیتابیس → GENERAL_ERROR با لاگ کامل.
         /// </summary>
         public async Task<ServiceResult<Models.Entities.Patient.Patient>> FindByNationalCodeAsync(string nationalCode)
         {
+            if (string.IsNullOrWhiteSpace(nationalCode))
+                return ServiceResult<Models.Entities.Patient.Patient>.Failed("بیمار یافت نشد", "NOT_FOUND");
+
             try
             {
-                _log.Information("جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
-                
+                _log.Debug("جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
+
                 var patient = await _patientRepository.GetPatientByNationalCodeAsync(nationalCode);
                 if (patient == null)
-                {
-                    return ServiceResult<Models.Entities.Patient.Patient>.Failed("بیمار یافت نشد");
-                }
-                
+                    return ServiceResult<Models.Entities.Patient.Patient>.Failed("بیمار یافت نشد", "NOT_FOUND");
+
                 return ServiceResult<Models.Entities.Patient.Patient>.Successful(patient);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
-                return ServiceResult<Models.Entities.Patient.Patient>.Failed("خطا در جستجوی بیمار");
+                _log.Error(ex,
+                    "خطا در جستجوی بیمار با کد ملی: {NationalCode}. Type: {ExceptionType}, Message: {Message}",
+                    nationalCode, ex.GetType().FullName, ex.Message);
+                if (ex.InnerException != null)
+                    _log.Error("FindByNationalCodeAsync InnerException: {InnerType}, {InnerMessage}", ex.InnerException.GetType().FullName, ex.InnerException.Message);
+                // در محیط Development متن استثنا در پاسخ برگردانده می‌شود تا در UI/لاگ علت خطا دیده شود
+                var message = "خطا در جستجوی بیمار";
+                if (string.Equals(_appSettings?.Environment, "Development", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(ex.Message))
+                    message = message + " | " + ex.GetType().Name + ": " + ex.Message;
+                return ServiceResult<Models.Entities.Patient.Patient>.Failed(message, "GENERAL_ERROR");
             }
         }
 

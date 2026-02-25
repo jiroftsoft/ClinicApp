@@ -95,6 +95,7 @@ namespace ClinicApp.Services
             try
             {
                 return await _context.FactorSettings
+                    .AsNoTracking()
                     .Where(f => f.FactorType == factorType &&
                                f.FinancialYear == financialYear &&
                                f.IsHashtagged == isHashtagged &&
@@ -117,6 +118,7 @@ namespace ClinicApp.Services
             try
             {
                 return await _context.FactorSettings
+                    .AsNoTracking()
                     .Where(f => f.FactorType == factorType &&
                                f.FinancialYear == financialYear &&
                                f.IsHashtagged == isHashtagged &&
