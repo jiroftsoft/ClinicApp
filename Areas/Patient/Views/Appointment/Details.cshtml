@@ -1,17 +1,26 @@
 @model ClinicApp.Models.DTOs.Appointment.PatientAppointmentDto
+@using ClinicApp.Models.Enums
 @{
     ViewBag.Title = "جزئیات نوبت";
     Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+    var status = Model?.Status ?? AppointmentStatus.Pending;
+    var canCancel = status == AppointmentStatus.Pending || status == AppointmentStatus.Scheduled;
+    var statusClass = status == AppointmentStatus.Cancelled ? "danger" : status == AppointmentStatus.Completed ? "success" : "primary";
+    var step1Done = status != AppointmentStatus.Cancelled;
+    var step2Done = status == AppointmentStatus.Scheduled || status == AppointmentStatus.Completed;
+    var step3Done = status == AppointmentStatus.Completed;
+    var anyCancelled = status == AppointmentStatus.Cancelled;
 }
 
 @section Styles {
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/css/appointment-views.css" rel="stylesheet" />
+    <link href="~/Content/css/appointment-details-page.css" rel="stylesheet" />
 }
 
-<div class="appointment-views-container py-4">
-    <nav class="mb-3" aria-label="مسیر">
+<div class="appointment-details-page appointment-views-container py-4">
+    <nav class="appointment-details-breadcrumb mb-3" aria-label="مسیر">
         <a href="@Url.Action("Index", "Dashboard", new { area = "Patient" })">داشبورد</a>
         <span class="text-muted mx-1">/</span>
         <a href="@Url.Action("MyAppointments")">نوبت‌های من</a>
@@ -21,76 +30,141 @@
 
     <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <h1 class="h4 mb-0 text-medical-primary">
-            <i class="fas fa-calendar-check ml-2"></i>
+            <i class="fas fa-calendar-check ml-2" aria-hidden="true"></i>
             جزئیات نوبت
         </h1>
         <a href="@Url.Action("MyAppointments")" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-right ml-1"></i>
+            <i class="fas fa-arrow-right ml-1" aria-hidden="true"></i>
             بازگشت به نوبت‌های من
         </a>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>پزشک</strong></div>
-                <div class="col-12 col-md-8">@(Model?.DoctorName ?? "—")</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>تخصص</strong></div>
-                <div class="col-12 col-md-8">@(Model?.DoctorSpecialization ?? "—")</div>
-            </div>
-            @if (!string.IsNullOrEmpty(Model?.MedicalCouncilCode))
-            {
-                <div class="row mb-3">
-                    <div class="col-12 col-md-4 text-muted"><strong>کد نظام پزشکی</strong></div>
-                    <div class="col-12 col-md-8">@Model.MedicalCouncilCode</div>
-                </div>
-            }
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>تاریخ</strong></div>
-                <div class="col-12 col-md-8">@(Model?.AppointmentDate.ToString("yyyy/MM/dd") ?? "—")</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>زمان</strong></div>
-                <div class="col-12 col-md-8">@(Model?.AppointmentTime ?? "—")</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>وضعیت</strong></div>
-                <div class="col-12 col-md-8">@(Model?.StatusDisplay ?? "—")</div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-12 col-md-4 text-muted"><strong>مبلغ</strong></div>
-                <div class="col-12 col-md-8">@(Model?.Price.ToString("N0") ?? "0") ریال</div>
-            </div>
-            @if (!string.IsNullOrEmpty(Model?.ClinicName) && Model.ClinicName != "نامشخص")
-            {
-                <div class="row mb-3">
-                    <div class="col-12 col-md-4 text-muted"><strong>کلینیک</strong></div>
-                    <div class="col-12 col-md-8">@Model.ClinicName</div>
-                </div>
-            }
-            @if (!string.IsNullOrEmpty(Model?.DepartmentName) && Model.DepartmentName != "نامشخص")
-            {
-                <div class="row mb-3">
-                    <div class="col-12 col-md-4 text-muted"><strong>بخش</strong></div>
-                    <div class="col-12 col-md-8">@Model.DepartmentName</div>
-                </div>
-            }
-            @if (Model?.Duration > 0)
-            {
-                <div class="row mb-3">
-                    <div class="col-12 col-md-4 text-muted"><strong>مدت ویزیت</strong></div>
-                    <div class="col-12 col-md-8">@Model.Duration دقیقه</div>
-                </div>
-            }
-            @if (!string.IsNullOrWhiteSpace(Model?.Description))
-            {
-                <div class="row mb-3">
-                    <div class="col-12 col-md-4 text-muted"><strong>توضیحات</strong></div>
-                    <div class="col-12 col-md-8">@Model.Description</div>
-                </div>
-            }
+    @if (Model == null)
+    {
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            نوبتی یافت نشد.
         </div>
-    </div>
+    }
+    else
+    {
+        <!-- وضعیت نوبت (Timeline) -->
+        <section class="appointment-details-status-card mb-4" aria-labelledby="status-heading">
+            <h2 id="status-heading" class="visually-hidden">وضعیت نوبت</h2>
+            <div class="appointment-details-timeline">
+                <div class="appointment-details-timeline-step @(step1Done ? "done" : (anyCancelled ? "cancelled" : ""))">
+                    <span class="step-icon"><i class="fas fa-calendar-plus" aria-hidden="true"></i></span>
+                    <span class="step-label">رزرو</span>
+                </div>
+                <div class="appointment-details-timeline-step @(step2Done ? "done" : (anyCancelled ? "cancelled" : ""))">
+                    <span class="step-icon"><i class="fas fa-check-circle" aria-hidden="true"></i></span>
+                    <span class="step-label">تایید</span>
+                </div>
+                <div class="appointment-details-timeline-step @(step3Done ? "done" : (anyCancelled ? "cancelled" : ""))">
+                    <span class="step-icon"><i class="fas fa-user-md" aria-hidden="true"></i></span>
+                    <span class="step-label">ویزیت</span>
+                </div>
+            </div>
+            <p class="appointment-details-status-badge mb-0 mt-2">
+                <span class="badge bg-@statusClass">@(Model.StatusDisplay ?? "—")</span>
+            </p>
+        </section>
+
+        <div class="row g-4">
+            <!-- کارت خلاصه پزشک -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <section class="appointment-details-card h-100" aria-labelledby="doctor-heading">
+                    <h3 id="doctor-heading" class="appointment-details-card-title">
+                        <i class="fas fa-user-md me-2" aria-hidden="true"></i>
+                        پزشک
+                    </h3>
+                    <div class="appointment-details-doctor-summary">
+                        <p class="mb-1 fw-bold">@(Model.DoctorName ?? "—")</p>
+                        <p class="mb-1 text-muted small">@(Model.DoctorSpecialization ?? "—")</p>
+                        @if (!string.IsNullOrEmpty(Model.MedicalCouncilCode))
+                        {
+                            <p class="mb-0 small">کد نظام: @Model.MedicalCouncilCode</p>
+                        }
+                    </div>
+                </section>
+            </div>
+
+            <!-- کارت تاریخ و زمان -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <section class="appointment-details-card h-100" aria-labelledby="datetime-heading">
+                    <h3 id="datetime-heading" class="appointment-details-card-title">
+                        <i class="fas fa-clock me-2" aria-hidden="true"></i>
+                        تاریخ و زمان
+                    </h3>
+                    <ul class="appointment-details-list">
+                        <li><strong>تاریخ:</strong> @(Model.AppointmentDate.ToString("yyyy/MM/dd") ?? "—")</li>
+                        <li><strong>زمان:</strong> @(Model.AppointmentTime ?? "—")</li>
+                        @if (Model.Duration > 0)
+                        {
+                            <li><strong>مدت ویزیت:</strong> @Model.Duration دقیقه</li>
+                        }
+                    </ul>
+                </section>
+            </div>
+
+            <!-- کارت مبلغ و پرداخت -->
+            <div class="col-12 col-md-6 col-lg-4">
+                <section class="appointment-details-card h-100" aria-labelledby="payment-heading">
+                    <h3 id="payment-heading" class="appointment-details-card-title">
+                        <i class="fas fa-money-bill-wave me-2" aria-hidden="true"></i>
+                        خلاصه مالی
+                    </h3>
+                    <p class="appointment-details-price mb-0">@(Model.Price.ToString("N0") ?? "0") ریال</p>
+                    @if (!string.IsNullOrEmpty(Model.ClinicName) && Model.ClinicName != "نامشخص")
+                    {
+                        <p class="mb-0 mt-2 small text-muted">@Model.ClinicName</p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.DepartmentName) && Model.DepartmentName != "نامشخص")
+                    {
+                        <p class="mb-0 small text-muted">@Model.DepartmentName</p>
+                    }
+                </section>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Description))
+        {
+            <section class="appointment-details-card mt-4" aria-labelledby="desc-heading">
+                <h3 id="desc-heading" class="appointment-details-card-title">
+                    <i class="fas fa-comment me-2" aria-hidden="true"></i>
+                    توضیحات
+                </h3>
+                <p class="mb-0">@Model.Description</p>
+            </section>
+        }
+
+        <!-- دکمه‌های اقدام -->
+        <section class="appointment-details-actions mt-4" aria-label="اقدامات">
+            <div class="d-flex flex-wrap gap-2">
+                @if (canCancel)
+                {
+                    using (Html.BeginForm("Cancel", "Appointment", new { area = "Patient", id = Model.AppointmentId }, FormMethod.Post, new { @class = "d-inline", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger" onclick="return confirm('آیا از لغو این نوبت اطمینان دارید؟');" aria-label="لغو نوبت">
+                            <i class="fas fa-times-circle me-1" aria-hidden="true"></i>
+                            لغو نوبت
+                        </button>
+                    }
+                }
+                <a href="@Url.Action("MyAppointments")" class="btn btn-outline-secondary" aria-label="بازگشت به لیست نوبت‌ها">
+                    <i class="fas fa-list me-1" aria-hidden="true"></i>
+                    نوبت‌های من
+                </a>
+                <button type="button" class="btn btn-outline-primary" onclick="window.print();" aria-label="چاپ">
+                    <i class="fas fa-print me-1" aria-hidden="true"></i>
+                    چاپ
+                </button>
+                <a href="@Url.Action("DoctorDetails", "Appointment", new { area = "Patient", doctorId = Model.DoctorId })" class="btn btn-outline-primary" aria-label="مشاهده پروفایل پزشک">
+                    <i class="fas fa-user-md me-1" aria-hidden="true"></i>
+                    پروفایل پزشک
+                </a>
+            </div>
+        </section>
+    }
 </div>

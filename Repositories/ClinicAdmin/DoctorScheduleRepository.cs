@@ -1194,26 +1194,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
                             new List<DoctorTimeSlot>(), // existingSlotsInRange (خالی است)
                             bookedAppointmentsInRange);
 
-                        System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {generatedSlots.Count} اسلات از Schedule تولید شد");
+                        System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {generatedSlots.Count} اسلات از Schedule تولید شد (فقط برای نمایش، بدون ذخیره در DB)");
 
-                        // ✅ ذخیره اسلات‌ها در دیتابیس (فقط برای این تاریخ)
+                        // ✅ تولید اسلات فقط برای نمایش (Read-Only): ذخیره در دیتابیس انجام نمی‌شود.
+                        // دلیل: جلوگیری از ایجاد ناخواسته اسلات‌ها هنگام بازدید بیمار از صفحه «نوبت‌های موجود» (Available).
+                        // اسلات‌ها باید فقط از طریق ادمین (تولید برنامه) یا در زمان رزرو واقعی ایجاد شوند.
                         if (generatedSlots.Any())
                         {
-                            try
-                            {
-                                _context.DoctorTimeSlots.AddRange(generatedSlots);
-                                await _context.SaveChangesAsync();
-                                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ✅ {generatedSlots.Count} اسلات در دیتابیس ذخیره شد");
-                                
-                                // ✅ استفاده از اسلات‌های تولید شده
-                                existingSlots = generatedSlots;
-                            }
-                            catch (Exception ex)
-                            {
-                                System.Diagnostics.Debug.WriteLine($"[GetAvailableAppointmentSlotsAsync] ⚠️ خطا در ذخیره اسلات‌ها: {ex.Message}");
-                                // ✅ در صورت خطا، از اسلات‌های تولید شده استفاده می‌کنیم (بدون ذخیره)
-                                existingSlots = generatedSlots;
-                            }
+                            existingSlots = generatedSlots;
                         }
                     }
                     else

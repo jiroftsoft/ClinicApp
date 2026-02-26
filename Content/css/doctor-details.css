@@ -112,6 +112,47 @@
     border: 1px solid var(--medical-border-light, #e9ecef);
 }
 
+/* Hero layout: avatar + body + CTA */
+.doctor-details-hero-card .doctor-details-hero-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    text-align: right;
+}
+.doctor-details-hero-left {
+    flex-shrink: 0;
+}
+.doctor-details-hero-body {
+    flex: 1;
+    min-width: 200px;
+}
+.doctor-details-hero-cta {
+    flex-shrink: 0;
+}
+.doctor-details-hero-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 0.5rem;
+    font-size: 0.9375rem;
+    color: var(--medical-text-muted, #6c757d);
+}
+.doctor-details-hero-rating i {
+    color: #f0c14b;
+}
+.doctor-details-hero-rating span:first-of-type {
+    font-weight: 700;
+    color: var(--medical-text, #212529);
+}
+@media (max-width: 767.98px) {
+    .doctor-details-hero-card .doctor-details-hero-inner {
+        flex-direction: column;
+        text-align: center;
+    }
+    .doctor-details-hero-body { min-width: 0; }
+}
+
 .doctor-details-avatar-wrap {
     width: 120px;
     height: 120px;
@@ -252,6 +293,94 @@
     margin: 0;
     color: var(--medical-text, #212529);
     line-height: 1.75;
+}
+
+/* Education / Achievements */
+.doctor-details-education {
+    background: #fff;
+    border-radius: var(--radius-lg, 12px);
+    padding: 1.75rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    border: 1px solid var(--medical-border-light, #e9ecef);
+}
+.doctor-details-education h5 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Services list */
+.doctor-details-services {
+    background: #fff;
+    border-radius: var(--radius-lg, 12px);
+    padding: 1.75rem;
+    margin-bottom: 1.75rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+    border: 1px solid var(--medical-border-light, #e9ecef);
+}
+.doctor-details-services h5 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.doctor-details-services-list {
+    margin: 0;
+    padding-inline-start: 1.5rem;
+    list-style: none;
+}
+.doctor-details-services-list li {
+    padding: 0.35rem 0;
+    color: var(--medical-text, #212529);
+}
+
+/* Reviews placeholder */
+.doctor-details-reviews-placeholder {
+    background: #f8f9fa;
+    border-radius: var(--radius-lg, 12px);
+    padding: 1.5rem 1.75rem;
+    margin-bottom: 1.75rem;
+    border: 1px dashed var(--medical-border, #dee2e6);
+}
+.doctor-details-reviews-placeholder h5 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Sticky mobile CTA */
+.doctor-details-sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
+    border-top: 1px solid var(--medical-border-light, #e9ecef);
+}
+.doctor-details-sticky-cta .btn:disabled {
+    opacity: 0.7;
+}
+
+/* فضای پایین صفحه وقتی sticky CTA نمایش داده می‌شود (موبایل) */
+@media (max-width: 767.98px) {
+    .doctor-details-page {
+        padding-bottom: 5rem;
+    }
 }
 
 /* ========== Schedule Card (Date/Time picker) ========== */

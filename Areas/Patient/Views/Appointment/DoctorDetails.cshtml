@@ -5,6 +5,15 @@
         ? "رزرو نوبت آنلاین دکتر " + Model.Doctor.FullName + (Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() ? "، " + string.Join(" و ", Model.Doctor.SpecializationNames) : "") + " — مشاهده برنامه و زمان‌های در دسترس."
         : "جزئیات پزشک و رزرو نوبت آنلاین";
     Layout = "~/Areas/Patient/Views/Shared/_PatientLayout.cshtml";
+    var serviceNames = (Model?.Doctor?.DoctorServiceCategories?
+        .Where(sc => sc != null && (!string.IsNullOrEmpty(sc.ServiceCategoryName) || !string.IsNullOrEmpty(sc.ServiceCategoryTitle)))
+        .Select(sc => !string.IsNullOrEmpty(sc.ServiceCategoryName) ? sc.ServiceCategoryName : sc.ServiceCategoryTitle)
+        .Distinct()
+        .ToList()) ?? new List<string>();
+    if (serviceNames.Count == 0 && Model?.Doctor?.ServiceCategoryAssignments != null && Model.Doctor.ServiceCategoryAssignments.Any())
+    {
+        serviceNames = Model.Doctor.ServiceCategoryAssignments.Where(x => !string.IsNullOrEmpty(x?.Text)).Select(x => x.Text).Distinct().ToList();
+    }
 }
 
 @section Styles {
@@ -45,42 +54,61 @@
 
 @if (Model?.Doctor != null)
 {
-    <article class="doctor-details-profile-card">
-        <div class="text-center">
-            <div class="doctor-details-avatar-wrap" role="img" aria-label="@(Model.Doctor.FullName ?? "پزشک")">
-                @if (!string.IsNullOrEmpty(Model.Doctor.ProfileImageUrl))
-                {
-                    <img src="@Model.Doctor.ProfileImageUrl" alt="@(Model.Doctor.FullName ?? "پزشک")" />
-                }
-                else
-                {
-                    @(string.IsNullOrEmpty(Model.Doctor.FullName) ? "پ" : Model.Doctor.FullName.Trim().Substring(0, 1))
-                }
-            </div>
-            <h1 class="doctor-details-name">@Model.Doctor.FullName</h1>
-            <div class="doctor-details-specialization">
-                <i class="fas fa-stethoscope" aria-hidden="true"></i>
-                <span>@(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() ? string.Join("، ", Model.Doctor.SpecializationNames) : "نامشخص")</span>
-            </div>
-            @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode) || Model.ExperienceYears > 0)
-            {
-                <div class="doctor-details-meta">
-                    @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
+    <!-- 1. Hero Doctor Card: Photo, Name, Specialization, Experience, Rating, CTA -->
+    <article class="doctor-details-profile-card doctor-details-hero-card">
+        <div class="doctor-details-hero-inner">
+            <div class="doctor-details-hero-left">
+                <div class="doctor-details-avatar-wrap" role="img" aria-label="@(Model.Doctor.FullName ?? "پزشک")">
+                    @if (!string.IsNullOrEmpty(Model.Doctor.ProfileImageUrl))
                     {
-                        <span class="meta-item">
-                            <i class="fas fa-id-card" aria-hidden="true"></i>
-                            کد نظام: @Model.Doctor.MedicalCouncilCode
-                        </span>
+                        <img src="@Model.Doctor.ProfileImageUrl" alt="@(Model.Doctor.FullName ?? "پزشک")" loading="lazy" />
                     }
-                    @if (Model.ExperienceYears > 0)
+                    else
                     {
-                        <span class="meta-item">
-                            <i class="fas fa-briefcase" aria-hidden="true"></i>
-                            @Model.ExperienceYears سال تجربه
-                        </span>
+                        @(string.IsNullOrEmpty(Model.Doctor.FullName) ? "پ" : Model.Doctor.FullName.Trim().Substring(0, 1))
                     }
                 </div>
-            }
+            </div>
+            <div class="doctor-details-hero-body">
+                <h1 class="doctor-details-name">@Model.Doctor.FullName</h1>
+                <div class="doctor-details-specialization">
+                    <i class="fas fa-stethoscope" aria-hidden="true"></i>
+                    <span>@(Model.Doctor.SpecializationNames != null && Model.Doctor.SpecializationNames.Any() ? string.Join("، ", Model.Doctor.SpecializationNames) : "نامشخص")</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode) || Model.ExperienceYears > 0)
+                {
+                    <div class="doctor-details-meta">
+                        @if (!string.IsNullOrEmpty(Model.Doctor.MedicalCouncilCode))
+                        {
+                            <span class="meta-item">
+                                <i class="fas fa-id-card" aria-hidden="true"></i>
+                                کد نظام: @Model.Doctor.MedicalCouncilCode
+                            </span>
+                        }
+                        @if (Model.ExperienceYears > 0)
+                        {
+                            <span class="meta-item">
+                                <i class="fas fa-briefcase" aria-hidden="true"></i>
+                                @Model.ExperienceYears سال تجربه
+                            </span>
+                        }
+                    </div>
+                }
+                @if (Model.AverageRating > 0)
+                {
+                    <div class="doctor-details-hero-rating" aria-label="امتیاز @Model.AverageRating از 5">
+                        <i class="fas fa-star" aria-hidden="true"></i>
+                        <span>@Model.AverageRating.ToString("0.0", System.Globalization.CultureInfo.GetCultureInfo("fa-IR"))</span>
+                        <span class="text-muted small">امتیاز</span>
+                    </div>
+                }
+            </div>
+            <div class="doctor-details-hero-cta d-none d-md-flex">
+                <a href="#doctor-details-schedule-card" class="btn doctor-details-btn-book btn-lg" id="heroReserveBtn" aria-label="رفتن به بخش رزرو نوبت">
+                    <i class="fas fa-calendar-plus me-2" aria-hidden="true"></i>
+                    رزرو نوبت
+                </a>
+            </div>
         </div>
     </article>
 
@@ -115,16 +143,47 @@
         </div>
     </section>
 
-    if (!string.IsNullOrEmpty(Model.Doctor.Bio))
+    @* 2. About Doctor *@
+    if (!string.IsNullOrWhiteSpace(Model.Doctor.Bio) || !string.IsNullOrWhiteSpace(Model.Doctor.Biography))
     {
+        var aboutText = !string.IsNullOrWhiteSpace(Model.Doctor.Bio) ? Model.Doctor.Bio : Model.Doctor.Biography;
         <section class="doctor-details-bio" aria-labelledby="bio-heading">
             <h5 id="bio-heading">
                 <i class="fas fa-user-circle" aria-hidden="true"></i>
                 درباره پزشک
             </h5>
             <div>
-                @Html.Raw(Model.Doctor.Bio.Replace("\n", "<br />"))
+                @Html.Raw(aboutText.Replace("\n", "<br />"))
             </div>
+        </section>
+    }
+
+    @* 3. Education / Achievements *@
+    if (!string.IsNullOrWhiteSpace(Model.Doctor.Education))
+    {
+        <section class="doctor-details-education" aria-labelledby="education-heading">
+            <h5 id="education-heading">
+                <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+                تحصیلات و دستاوردها
+            </h5>
+            <p class="mb-0">@Model.Doctor.Education</p>
+        </section>
+    }
+
+    @* 4. Services (from service categories) *@
+    if (serviceNames != null && serviceNames.Any())
+    {
+        <section class="doctor-details-services" aria-labelledby="services-heading">
+            <h5 id="services-heading">
+                <i class="fas fa-briefcase-medical" aria-hidden="true"></i>
+                خدمات
+            </h5>
+            <ul class="doctor-details-services-list">
+                @foreach (var name in serviceNames)
+                {
+                    <li><i class="fas fa-check text-success me-2" aria-hidden="true"></i>@name</li>
+                }
+            </ul>
         </section>
     }
 
@@ -142,7 +201,7 @@
         </div>
     }
 
-    <section class="doctor-details-schedule-card" aria-labelledby="appointment-heading">
+    <section class="doctor-details-schedule-card" id="doctor-details-schedule-card" aria-labelledby="appointment-heading">
         <h5 id="appointment-heading">
             <i class="fas fa-calendar-check" aria-hidden="true"></i>
             انتخاب تاریخ و زمان نوبت
@@ -266,12 +325,44 @@
             </div>
         }
     </section>
+
+    @* 6. Patient Reviews placeholder *@
+    <section class="doctor-details-reviews-placeholder" aria-labelledby="reviews-heading">
+        <h5 id="reviews-heading">
+            <i class="fas fa-comments" aria-hidden="true"></i>
+            نظرات بیماران
+        </h5>
+        <p class="text-muted mb-0">به زودی امکان ثبت و مشاهده نظرات بیماران فراهم می‌شود.</p>
+    </section>
+
+    @* 7. Sticky Mobile Reserve Button *@
+    if (User.Identity.IsAuthenticated)
+    {
+        <div class="doctor-details-sticky-cta d-md-none" id="doctorDetailsStickyCta" aria-hidden="true" style="display: none;">
+            <button type="button" id="stickyBookAppointmentBtn" class="btn doctor-details-btn-book w-100 py-3" disabled aria-label="رزرو نوبت">
+                <i class="fas fa-calendar-plus me-2" aria-hidden="true"></i>
+                رزرو نوبت
+            </button>
+        </div>
+    }
 }
 </div>
 
 @section Scripts {
     <script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.min.js"></script>
     <script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+    <script>
+        (function () {
+            var heroBtn = document.getElementById('heroReserveBtn');
+            var target = document.getElementById('doctor-details-schedule-card');
+            if (heroBtn && target) {
+                heroBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            }
+        })();
+    </script>
     <script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
     <script src="~/Content/js/plugins/toastr/toastr.min.js"></script>
     <script>
@@ -492,7 +583,17 @@
                 }
             }
 
-            // انتخاب زمان
+            // انتخاب زمان — همگام‌سازی با دکمه sticky موبایل
+            function syncStickyBookButton() {
+                var mainBtn = document.getElementById('bookAppointmentBtn');
+                var stickyBtn = document.getElementById('stickyBookAppointmentBtn');
+                var stickyCta = document.getElementById('doctorDetailsStickyCta');
+                if (mainBtn && stickyBtn && stickyCta) {
+                    stickyBtn.disabled = mainBtn.disabled;
+                    stickyCta.style.display = mainBtn.disabled ? 'none' : 'block';
+                    stickyCta.setAttribute('aria-hidden', mainBtn.disabled ? 'true' : 'false');
+                }
+            }
             $(document).on('click', '.time-slot.available', function () {
                 if ($(this).data('disabled') || $(this).attr('aria-disabled') === 'true') return;
 
@@ -501,8 +602,12 @@
                 selectedTime = $(this).data('start');
                 $('#bookAppointmentBtn').prop('disabled', false);
                 $('#book-appointment-help').text('برای ادامه رزرو نوبت، روی دکمه رزرو کلیک کنید');
+                syncStickyBookButton();
 
                 toastr.success('زمان انتخاب شد: ' + $(this).find('span').first().text(), 'موفق');
+            });
+            $('#stickyBookAppointmentBtn').on('click', function () {
+                if (!this.disabled) $('#bookAppointmentBtn').click();
             });
 
             // نمایش تاریخ انتخاب شده (با Enterprise: نام روز از تبدیل شمسی به میلادی)
@@ -660,6 +765,7 @@
                             
                             selectedTime = null;
                             $('#bookAppointmentBtn').prop('disabled', true);
+                            if (typeof syncStickyBookButton === 'function') syncStickyBookButton();
                         } else {
                             var message = (response && response.message) ? response.message : 'زمانی در دسترس نیست';
                             var helpfulMessage = message;

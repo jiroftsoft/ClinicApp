@@ -2197,6 +2197,7 @@
     <Content Include="Content\css\appointment-booking-progress.css" />
     <Content Include="Content\css\appointment-booking-skeleton.css" />
     <Content Include="Content\css\appointment-booking-views.css" />
+    <Content Include="Content\css\appointment-details-page.css" />
     <Content Include="Content\css\appointment-views.css" />
     <Content Include="Content\css\doctor-details.css" />
     <Content Include="Content\css\blog-section.css" />

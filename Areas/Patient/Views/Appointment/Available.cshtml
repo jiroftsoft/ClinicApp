@@ -87,6 +87,24 @@
     </div>
 }
 
+<!-- ✅ Step progress indicator -->
+<section class="appointment-views-container available-progress-wrap" aria-label="مراحل رزرو نوبت">
+    <div class="available-steps">
+        <div class="available-step active" aria-current="step">
+            <span class="available-step-num">۱</span>
+            <span class="available-step-label">انتخاب پزشک و تاریخ</span>
+        </div>
+        <div class="available-step @(Model.SelectedDoctorId.HasValue ? "active" : "")">
+            <span class="available-step-num">۲</span>
+            <span class="available-step-label">انتخاب زمان</span>
+        </div>
+        <div class="available-step">
+            <span class="available-step-num">۳</span>
+            <span class="available-step-label">تایید و پرداخت</span>
+        </div>
+    </div>
+</section>
+
 <!-- ✅ Filter Section (Sticky + Mobile-First) طبق پرامپت -->
 <section class="appointment-filter-section sticky-top-mobile appointment-views-container">
     <div class="container-fluid px-0">
@@ -401,26 +419,61 @@ else
 <!-- ✅ Time Slots Section (نمایش پویا) طبق پرامپت -->
 @if (Model.SelectedDoctorId.HasValue && Model.AvailableSlots != null && Model.AvailableSlots.Any())
 {
+    var selectedDoctorForSlots = Model.Doctors?.FirstOrDefault(d => d.DoctorId == Model.SelectedDoctorId);
+    var firstAvailableSlotIndex = -1;
+    for (var i = 0; i < Model.AvailableSlots.Count; i++) { if (Model.AvailableSlots[i].IsAvailable) { firstAvailableSlotIndex = i; break; } }
     <section id="timeSlotsSection" class="appointment-views-container">
         <div class="container-fluid px-0">
+            @if (selectedDoctorForSlots != null)
+            {
+                <div class="available-doctor-mini-card mb-3" aria-label="پزشک انتخاب‌شده">
+                    <div class="available-doctor-mini-inner">
+                        @if (!string.IsNullOrEmpty(selectedDoctorForSlots.ProfileImageUrl))
+                        {
+                            <img src="@selectedDoctorForSlots.ProfileImageUrl" alt="" class="available-doctor-mini-avatar" loading="lazy" />
+                        }
+                        else
+                        {
+                            <div class="available-doctor-mini-avatar available-doctor-mini-avatar-placeholder">
+                                @(selectedDoctorForSlots.FullName != null && selectedDoctorForSlots.FullName.Length > 0 ? selectedDoctorForSlots.FullName.Substring(0, 1) : "پ")
+                            </div>
+                        }
+                        <div class="available-doctor-mini-body">
+                            <strong class="available-doctor-mini-name">@selectedDoctorForSlots.FullName</strong>
+                            <span class="available-doctor-mini-spec text-muted">@(selectedDoctorForSlots.Specialization ?? "—")</span>
+                        </div>
+                    </div>
+                </div>
+            }
             <div class="appointment-card-medical">
                 <div class="card-header" style="background-color: var(--medical-primary); color: white; padding: 1rem 1.5rem;">
                     <h4 class="mb-0">
                         <i class="fas fa-clock ml-2"></i>
                         انتخاب زمان ویزیت
+                        @if (firstAvailableSlotIndex >= 0)
+                        {
+                            <span class="badge bg-light text-dark ms-2" style="font-size: 0.8rem;">اولین نوبت خالی را انتخاب کنید</span>
+                        }
                     </h4>
                 </div>
                 
                 <div class="card-body p-3 p-md-4">
                     <!-- Time Slots Grid (id برای به‌روزرسانی AJAX) -->
                     <div id="time-slots-container" class="appointment-time-slots-grid" aria-live="polite" aria-atomic="true">
-                        @foreach (var slot in Model.AvailableSlots)
+                        @for (var idx = 0; idx < Model.AvailableSlots.Count; idx++)
                         {
+                            var slot = Model.AvailableSlots[idx];
+                            var isFirstAvailable = slot.IsAvailable && idx == firstAvailableSlotIndex;
                             <button type="button" 
-                                    class="btn btn-time-slot-medical @(!slot.IsAvailable ? "disabled" : "")"
+                                    class="btn btn-time-slot-medical time-slot-card @(!slot.IsAvailable ? "disabled" : "") @(isFirstAvailable ? "first-available-slot" : "")"
                                     data-start="@slot.StartTime.ToString(@"hh\:mm")"
                                     data-end="@slot.EndTime.ToString(@"hh\:mm")"
-                                    @(!slot.IsAvailable ? "disabled" : "")>
+                                    @(!slot.IsAvailable ? "disabled" : "")
+                                    @(isFirstAvailable ? "aria-label=\"اولین نوبت خالی: " + (slot.DisplayTime ?? "") + "\"" : "")>
+                                @if (isFirstAvailable)
+                                {
+                                    <span class="first-slot-badge">اولین نوبت</span>
+                                }
                                 <div class="time-text-medical">@slot.DisplayTime</div>
                                 @if (slot.Duration > 0)
                                 {

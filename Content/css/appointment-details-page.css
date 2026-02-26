@@ -1,0 +1,152 @@
+/**
+ * صفحه جزئیات نوبت — طراحی حرفه‌ای و کارت‌محور
+ * Patient/Appointment/Details/{id}
+ */
+
+.appointment-details-page {
+    font-family: var(--font-family-base, 'Vazir', 'Tahoma', Arial, sans-serif);
+}
+
+.appointment-details-breadcrumb a {
+    color: var(--medical-primary, #2c5aa0);
+    text-decoration: none;
+}
+.appointment-details-breadcrumb a:hover {
+    text-decoration: underline;
+}
+
+/* کارت‌ها */
+.appointment-details-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--medical-border-light, #e9ecef);
+}
+
+.appointment-details-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.appointment-details-doctor-summary p,
+.appointment-details-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.appointment-details-list li {
+    padding: 0.25rem 0;
+    color: var(--medical-text, #212529);
+}
+.appointment-details-price {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--medical-text, #212529);
+}
+
+/* وضعیت نوبت — Timeline */
+.appointment-details-status-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid var(--medical-border-light, #e9ecef);
+}
+
+.appointment-details-timeline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    max-width: 320px;
+    margin: 0 auto;
+}
+
+.appointment-details-timeline-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    position: relative;
+}
+.appointment-details-timeline-step::after {
+    content: '';
+    position: absolute;
+    top: 1rem;
+    right: -50%;
+    width: 100%;
+    height: 2px;
+    background: var(--medical-border, #dee2e6);
+    z-index: 0;
+}
+.appointment-details-timeline-step:last-child::after {
+    display: none;
+}
+
+.appointment-details-timeline-step .step-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background: var(--medical-border, #dee2e6);
+    color: #6c757d;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    position: relative;
+    z-index: 1;
+}
+.appointment-details-timeline-step.done .step-icon {
+    background: var(--medical-success, #28a745);
+    color: #fff;
+}
+.appointment-details-timeline-step.cancelled .step-icon {
+    background: var(--medical-danger, #dc3545);
+    color: #fff;
+}
+
+.appointment-details-timeline-step .step-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+.appointment-details-timeline-step.done .step-label {
+    color: var(--medical-success, #28a745);
+}
+
+.appointment-details-status-badge .badge {
+    font-size: 0.9rem;
+    padding: 0.35rem 0.75rem;
+}
+
+/* دکمه‌های اقدام */
+.appointment-details-actions .btn {
+    min-height: 44px;
+}
+.appointment-details-actions .btn:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+
+@media (max-width: 575.98px) {
+    .appointment-details-actions .d-flex {
+        flex-direction: column;
+    }
+    .appointment-details-actions .btn {
+        width: 100%;
+    }
+}
+
+@media print {
+    .appointment-details-actions,
+    .appointment-details-breadcrumb,
+    .btn {
+        display: none !important;
+    }
+}
