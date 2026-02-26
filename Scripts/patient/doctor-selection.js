@@ -173,11 +173,25 @@
                 retryDelay: 1000, // ✅ 1 ثانیه تاخیر
                 onSuccess: (response) => {
                     this._hideLoading();
-                    if (response.success && response.data) {
-                        this.renderDoctors(response.data);
-                    } else {
-                        this.showError(response.message || 'خطا در دریافت لیست پزشکان');
+                    // ✅ پروداکشن: پشتیبانی از پاسخ رشته (اگر jQuery پارس نکرده) و هر دو حالت success/Success و data/Data
+                    if (typeof response === 'string') {
+                        try { response = JSON.parse(response); } catch (e) {
+                            this.showError('خطا در دریافت لیست پزشکان');
+                            return;
+                        }
                     }
+                    if (!response || typeof response !== 'object') {
+                        this.showError('خطا در دریافت لیست پزشکان');
+                        return;
+                    }
+                    var ok = response.success === true || response.Success === true;
+                    var list = response.data != null ? response.data : response.Data;
+                    if (!Array.isArray(list)) list = ok ? [] : null;
+                    if (ok) {
+                        this.renderDoctors(list || []);
+                        return;
+                    }
+                    this.showError(response.message || response.Message || 'خطا در دریافت لیست پزشکان');
                 },
                 onError: (xhr, status, error) => {
                     this._hideLoading();
@@ -294,6 +308,7 @@
                     url: options.url,
                     type: options.type || 'GET',
                     data: options.data || {},
+                    dataType: 'json',
                     headers: options.headers || {},
                     timeout: timeout,
                     success: function (response) {

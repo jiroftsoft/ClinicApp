@@ -40,7 +40,7 @@ namespace ClinicApp.Factories.Patient
         }
 
         /// <summary>
-        /// ایجاد ViewModel برای صفحه انتخاب تاریخ
+        /// ایجاد ViewModel برای صفحه انتخاب تاریخ (ساده، سازگار با قبل)
         /// </summary>
         public static DateSelectionViewModel CreateDateSelectionViewModel(
             int doctorId,
@@ -52,6 +52,29 @@ namespace ClinicApp.Factories.Patient
                 DoctorId = doctorId,
                 DoctorName = doctorName ?? "نامشخص",
                 DoctorSpecialization = doctorSpecialization ?? "نامشخص"
+            };
+        }
+
+        /// <summary>
+        /// ایجاد ViewModel برای صفحه انتخاب تاریخ با اطلاعات کامل پزشک (Context-Aware UX)
+        /// </summary>
+        public static DateSelectionViewModel CreateDateSelectionViewModelFromDoctor(DoctorSearchResultDto doctor)
+        {
+            if (doctor == null)
+                return new DateSelectionViewModel { DoctorName = "نامشخص", DoctorSpecialization = "نامشخص" };
+            var first = doctor.AvailableDates != null && doctor.AvailableDates.Count > 0 ? doctor.AvailableDates[0] : null;
+            var firstText = first != null
+                ? $"{first.DayName} {first.PersianDate} — {first.TimeRange}"
+                : null;
+            return new DateSelectionViewModel
+            {
+                DoctorId = doctor.DoctorId,
+                DoctorName = doctor.FullName ?? "نامشخص",
+                DoctorSpecialization = doctor.Specialization ?? "نامشخص",
+                MedicalCouncilCode = doctor.MedicalCouncilCode ?? "",
+                FirstAvailableSlotText = firstText,
+                HasOnlineConsultation = doctor.HasOnlineConsultation,
+                AvailableDates = doctor.AvailableDates ?? new List<AvailableDateInfo>()
             };
         }
 

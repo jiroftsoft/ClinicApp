@@ -377,11 +377,8 @@ namespace ClinicApp.Areas.Patient.Controllers
                     return RedirectToAction("SelectDoctor");
                 }
 
-                // ✅ CRITICAL FIX: استفاده از Factory Pattern (طبق قرارداد)
-                var viewModel = AppointmentBookingViewModelFactory.CreateDateSelectionViewModel(
-                    doctorId,
-                    doctorResult.Data.FullName,
-                    doctorResult.Data.Specialization);
+                // ✅ Context-Aware UX: ViewModel با اطلاعات کامل پزشک (اولین نوبت، کد نظام، مشاوره آنلاین، تاریخ‌های موجود)
+                var viewModel = AppointmentBookingViewModelFactory.CreateDateSelectionViewModelFromDoctor(doctorResult.Data);
 
                 return View(viewModel);
             }

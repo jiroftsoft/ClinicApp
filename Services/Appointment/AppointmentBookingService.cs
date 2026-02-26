@@ -367,6 +367,26 @@ namespace ClinicApp.Services.Appointment
                         ? doctorDetailsDict[doctor.DoctorId] 
                         : null;
                     
+                    var availableDates = hasActiveSchedule && schedule != null
+                        ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
+                        : new List<AvailableDateInfo>();
+
+                    // ✅ پروداکشن: فقط تاریخ‌هایی که واقعاً حداقل یک نوبت خالی دارند نمایش داده شوند
+                    if (availableDates != null && availableDates.Any())
+                    {
+                        var withFreeSlots = new List<AvailableDateInfo>();
+                        foreach (var d in availableDates)
+                        {
+                            var parsed = PersianDateHelper.ParsePersianDate(d.PersianDate);
+                            if (!parsed.HasValue) continue;
+                            var slotsResult = await GetAvailableTimeSlotsAsync(doctor.DoctorId, parsed.Value.Date);
+                            if (slotsResult.Success && slotsResult.Data != null && slotsResult.Data.Any(s => s.IsAvailable))
+                                withFreeSlots.Add(d);
+                        }
+                        availableDates = withFreeSlots;
+                    }
+
+                    var hasRealAvailability = availableDates != null && availableDates.Any();
                     var dto = new DoctorSearchResultDto
                     {
                         DoctorId = doctor.DoctorId,
@@ -375,17 +395,15 @@ namespace ClinicApp.Services.Appointment
                         MedicalCouncilCode = doctor.MedicalCouncilCode ?? "",
                         DepartmentId = null,
                         DepartmentName = "",
-                        HasActiveSchedule = hasActiveSchedule,
-                        ScheduleInfo = hasActiveSchedule ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
+                        HasActiveSchedule = hasRealAvailability,
+                        ScheduleInfo = hasRealAvailability ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
                         BasePrice = 0,
                         ProfileImageUrl = doctor.ProfileImageUrl,
                         Bio = bio,
                         ExperienceYears = doctor.ExperienceYears,
                         Rating = null,   // TODO: از جدول نظرات/امتیاز پر شود
                         ReviewCount = 0,
-                        AvailableDates = hasActiveSchedule && schedule != null
-                            ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
-                            : new List<AvailableDateInfo>(),
+                        AvailableDates = availableDates ?? new List<AvailableDateInfo>(),
                         HasOnlineConsultation = onlineConsultationDoctorIds.Contains(doctor.DoctorId)
                     };
 
@@ -438,6 +456,26 @@ namespace ClinicApp.Services.Appointment
                             && !dsc.IsDeleted);
                 }
                 
+                var availableDates = hasActiveSchedule && schedule != null
+                    ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
+                    : new List<AvailableDateInfo>();
+
+                // ✅ پروداکشن: فقط تاریخ‌هایی که واقعاً حداقل یک نوبت خالی دارند
+                if (availableDates != null && availableDates.Any())
+                {
+                    var withFreeSlots = new List<AvailableDateInfo>();
+                    foreach (var d in availableDates)
+                    {
+                        var parsed = PersianDateHelper.ParsePersianDate(d.PersianDate);
+                        if (!parsed.HasValue) continue;
+                        var slotsResult = await GetAvailableTimeSlotsAsync(doctorId, parsed.Value.Date);
+                        if (slotsResult.Success && slotsResult.Data != null && slotsResult.Data.Any(s => s.IsAvailable))
+                            withFreeSlots.Add(d);
+                    }
+                    availableDates = withFreeSlots;
+                }
+
+                var hasRealAvailability = availableDates != null && availableDates.Any();
                 var dto = new DoctorSearchResultDto
                 {
                     DoctorId = doctor.DoctorId,
@@ -446,17 +484,15 @@ namespace ClinicApp.Services.Appointment
                     MedicalCouncilCode = doctor.MedicalCouncilCode ?? "",
                     DepartmentId = department?.DepartmentId,
                     DepartmentName = department?.DepartmentName ?? "",
-                    HasActiveSchedule = hasActiveSchedule,
-                    ScheduleInfo = hasActiveSchedule ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
+                    HasActiveSchedule = hasRealAvailability,
+                    ScheduleInfo = hasRealAvailability ? GetScheduleInfoFromEntity(schedule) : "برنامه کاری تعریف نشده",
                     BasePrice = 0,
                     ProfileImageUrl = doctor.ProfileImageUrl,
                     Bio = doctor.Bio,
                     ExperienceYears = doctor.ExperienceYears,
                     Rating = null,
                     ReviewCount = 0,
-                    AvailableDates = hasActiveSchedule && schedule != null
-                        ? GetSchedulePreviewDates(schedule, _appSettings.AppointmentAvailableDatesMaxCount, _appSettings.AppointmentAvailableDatesDaysToCheck)
-                        : new List<AvailableDateInfo>(),
+                    AvailableDates = availableDates ?? new List<AvailableDateInfo>(),
                     HasOnlineConsultation = hasOnlineConsultation
                 };
 
@@ -591,15 +627,19 @@ namespace ClinicApp.Services.Appointment
                         // ✅ CRITICAL FIX: فیلتر کردن اسلات‌های گذشته (فقط برای امروز)
                         if (isToday)
                         {
-                            // اگر اسلات تمام شده است (EndTime <= CurrentTime)، آن را فیلتر می‌کنیم
-                            var slotEndTime = slot.EndTime;
                             var currentTime = iranNow.TimeOfDay;
-                            
-                            if (slotEndTime <= currentTime)
+                            // اسلاتی که تمام شده (EndTime <= الان) یا قبلاً شروع شده (StartTime < الان) نمایش داده نشود
+                            if (slot.EndTime <= currentTime)
                             {
-                                _logger.Debug("⏰ اسلات گذشته فیلتر شد - Slot: {StartTime}-{EndTime}, CurrentTime: {CurrentTime}",
+                                _logger.Debug("⏰ اسلات گذشته فیلتر شد (پایان یافته) - Slot: {StartTime}-{EndTime}, CurrentTime: {CurrentTime}",
                                     slot.StartTime, slot.EndTime, currentTime);
-                                return false; // اسلات گذشته را فیلتر می‌کنیم
+                                return false;
+                            }
+                            if (slot.StartTime < currentTime)
+                            {
+                                _logger.Debug("⏰ اسلات گذشته فیلتر شد (شروع شده) - Slot: {StartTime}-{EndTime}, CurrentTime: {CurrentTime}",
+                                    slot.StartTime, slot.EndTime, currentTime);
+                                return false;
                             }
                         }
                         
@@ -1167,6 +1207,7 @@ namespace ClinicApp.Services.Appointment
             var dayNamesShort = new[] { "ش", "ی", "د", "س", "چ", "پ", "ج" };
 
             var startDate = _timeProvider.GetIranToday();
+            var iranNow = _timeProvider.GetIranNow();
             var endDate = startDate.AddDays(Math.Max(daysToCheck, 1));
             var currentDate = startDate;
             var foundCount = 0;
@@ -1179,15 +1220,32 @@ namespace ClinicApp.Services.Appointment
 
                 if (workDayInfo != null && workDayInfo.TimeRange != null)
                 {
+                    // ✅ پروداکشن: برای امروز فقط اگر بازه هنوز تمام نشده باشد نمایش داده شود
+                    var isToday = currentDate.Date == startDate.Date;
+                    if (isToday)
+                    {
+                        var nowTime = iranNow.TimeOfDay;
+                        if (workDayInfo.TimeRange.EndTime <= nowTime)
+                            goto nextDay; // بازه امروز تمام شده، این روز را اضافه نکن
+                    }
+
                     var persianDate = PersianDateHelper.ToPersianDate(currentDate);
                     if (!string.IsNullOrEmpty(persianDate) && persianDate != "0000/00/00")
                     {
                         var dateParts = persianDate.Split('/');
                         var shortDate = dateParts.Length >= 3 ? $"{dateParts[2]}/{dateParts[1]}" : persianDate;
                         var iranDayOfWeek = (dbDayOfWeek + 1) % 7;
-                        var startTime = TimeFormatHelper.FormatTimeToPersian(workDayInfo.TimeRange.StartTime);
-                        var endTime = TimeFormatHelper.FormatTimeToPersian(workDayInfo.TimeRange.EndTime);
-                        var timeRange = TimeFormatHelper.FormatTimeRangeToPersian(workDayInfo.TimeRange.StartTime, workDayInfo.TimeRange.EndTime);
+                        TimeSpan displayStart = workDayInfo.TimeRange.StartTime;
+                        TimeSpan displayEnd = workDayInfo.TimeRange.EndTime;
+                        if (isToday && workDayInfo.TimeRange.StartTime < iranNow.TimeOfDay)
+                        {
+                            displayStart = iranNow.TimeOfDay;
+                            if (displayStart >= displayEnd)
+                                goto nextDay;
+                        }
+                        var startTime = TimeFormatHelper.FormatTimeToPersian(displayStart);
+                        var endTime = TimeFormatHelper.FormatTimeToPersian(displayEnd);
+                        var timeRange = TimeFormatHelper.FormatTimeRangeToPersian(displayStart, displayEnd);
 
                         result.Add(new AvailableDateInfo
                         {
@@ -1202,6 +1260,7 @@ namespace ClinicApp.Services.Appointment
                         foundCount++;
                     }
                 }
+                nextDay:
                 currentDate = currentDate.AddDays(1);
             }
 

@@ -2,62 +2,121 @@
 @{
     ViewBag.Title = "انتخاب تاریخ نوبت";
     Layout = "~/Areas/Patient/Views/Shared/_PatientLayoutPro.cshtml";
-    ViewBag.BookingStep = 2; // ✅ Progress Indicator: Step 2/4
+    ViewBag.BookingStep = 2;
     ViewBag.BookingTotal = 4;
+    var hasAnyDate = Model?.AvailableDates != null && Model.AvailableDates.Any();
+    var firstDate = hasAnyDate ? Model.AvailableDates.First() : null;
 }
 
 @section Styles {
     <link href="~/Content/css/appointment-booking-progress.css" rel="stylesheet" />
     <link href="~/Content/css/appointment-booking-views.css" rel="stylesheet" />
+    <link href="~/Content/css/selectdate-ux.css" rel="stylesheet" />
     <link href="~/Content/css/local-fonts.css" rel="stylesheet" />
     <link href="~/Content/css/medical-forms.css" rel="stylesheet" />
     <link href="~/Content/js/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
-    <!-- ✅ CRITICAL FIX: حذف Inline Styles - انتقال به appointment-booking-views.css -->
 }
 
-<div class="container-fluid px-3 px-sm-4 px-md-5">
-    <!-- ✅ Page Header - Mobile-First -->
+<div class="container-fluid px-3 px-sm-4 px-md-5 selectdate-page" data-doctor-id="@(Model?.DoctorId ?? 0)">
+    <!-- Progress: اسکریپت appointment-booking-progress.js این container را پر می‌کند -->
+    <div class="appointment-progress-container" aria-label="مراحل رزرو نوبت"></div>
+
+    <!-- PHASE 1: Doctor Context Bar (Sticky) -->
+    <div class="selectdate-context-header" id="selectdateContextHeader">
+        <div class="context-header-inner">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <div class="context-doctor-avatar">
+                    <i class="fas fa-user-md" aria-hidden="true"></i>
+                </div>
+                <div class="context-doctor-info">
+                    <h2 class="context-doctor-name mb-1">@(Model?.DoctorName ?? "پزشک")</h2>
+                    <p class="context-doctor-spec mb-0">@(Model?.DoctorSpecialization ?? "—")</p>
+                    @if (!string.IsNullOrEmpty(Model?.MedicalCouncilCode))
+                    {
+                        <p class="context-medical-code mb-0 small text-muted">کد نظام پزشکی: @Model.MedicalCouncilCode</p>
+                    }
+                </div>
+                @if (Model?.HasOnlineConsultation == true)
+                {
+                    <span class="badge bg-info context-badge">مشاوره آنلاین</span>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(Model?.FirstAvailableSlotText))
+            {
+                <div class="context-first-slot mt-2 mt-md-0">
+                    <span class="first-slot-label">اولین نوبت خالی:</span>
+                    <span class="first-slot-value">@Model.FirstAvailableSlotText</span>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- PHASE 3: Selected Summary Panel -->
+    <div class="selectdate-summary-panel" id="selectdateSummaryPanel" role="region" aria-label="خلاصه انتخاب">
+        <h3 class="summary-title mb-2">شما در حال رزرو:</h3>
+        <ul class="summary-list list-unstyled mb-0">
+            <li><strong>پزشک:</strong> @(Model?.DoctorName ?? "—")</li>
+            <li><strong>خدمت:</strong> ویزیت</li>
+            <li><strong>تاریخ:</strong> <span id="summaryDateText">هنوز انتخاب نشده</span></li>
+        </ul>
+    </div>
+
+    <!-- PHASE 4 & 5: First Available Quick Select + Date Selection -->
+    @if (firstDate != null)
+    {
+        <div class="selectdate-recommended-card">
+            <span class="recommended-badge"><i class="fas fa-star me-1" aria-hidden="true"></i> اولین نوبت پیشنهادی</span>
+            <div class="recommended-date-info">
+                <span class="recommended-day">@firstDate.DayName (@firstDate.DayNameShort)</span>
+                <span class="recommended-date" dir="ltr">@firstDate.PersianDate</span>
+                <span class="recommended-time">@firstDate.TimeRange</span>
+            </div>
+            <button type="button" class="btn btn-success btn-recommended-select" id="btnSelectFirstDate" data-persian-date="@firstDate.PersianDate" aria-label="انتخاب سریع اولین نوبت">
+                <i class="fas fa-bolt me-1" aria-hidden="true"></i> انتخاب سریع
+            </button>
+        </div>
+    }
+
+    <!-- Page Title -->
     <div class="appointment-page-header">
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center">
             <div class="mb-3 mb-sm-0">
                 <h2 class="mb-2 mb-sm-1">
-                    <i class="fas fa-calendar-alt me-2"></i>
+                    <i class="fas fa-calendar-alt me-2" aria-hidden="true"></i>
                     انتخاب تاریخ نوبت
                 </h2>
                 <p class="mb-0">لطفاً تاریخ مورد نظر خود را انتخاب کنید</p>
             </div>
-            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" 
-               class="btn btn-light btn-sm">
-                <i class="fas fa-arrow-right me-1"></i>
+            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="btn btn-light btn-sm" aria-label="بازگشت به انتخاب پزشک">
+                <i class="fas fa-arrow-right me-1" aria-hidden="true"></i>
                 بازگشت
             </a>
         </div>
     </div>
 
-    <!-- ✅ Doctor Info Card - Mobile-First -->
-    <div class="doctor-info-card">
-        <div class="d-flex align-items-center">
-            <div class="doctor-avatar me-3">
-                <i class="fas fa-user-md text-white fs-4"></i>
-            </div>
-            <div class="flex-grow-1">
-                <h5 class="mb-1 fw-bold">@Model.DoctorName</h5>
-                <p class="text-muted mb-0 small">
-                    <i class="fas fa-stethoscope me-1"></i>
-                    @Model.DoctorSpecialization
-                </p>
-            </div>
+    <!-- Date Cards (optional list from AvailableDates) -->
+    @if (hasAnyDate)
+    {
+        <div class="selectdate-date-cards mb-3" role="list" aria-label="تاریخ‌های دارای نوبت">
+            @foreach (var d in Model.AvailableDates)
+            {
+                <div class="selectdate-date-card" role="listitem" data-persian-date="@d.PersianDate">
+                    <div class="date-card-day">@d.DayName <span class="text-muted">(@d.DayNameShort)</span></div>
+                    <div class="date-card-date" dir="ltr">@d.PersianDate</div>
+                    <div class="date-card-time text-muted small">@d.TimeRange</div>
+                    <button type="button" class="btn btn-outline-primary btn-sm btn-date-card-select" data-persian-date="@d.PersianDate" aria-label="انتخاب تاریخ @d.PersianDate">انتخاب</button>
+                </div>
+            }
         </div>
-    </div>
+    }
 
-    <!-- ✅ Calendar Container - Mobile-First -->
+    <!-- Calendar Container -->
     <div class="calendar-container">
         <div class="date-picker-wrapper">
             @{
-                // ✅ مهم: initialValue را null می‌گذاریم تا تاریخ امروز به اشتباه نمایش داده نشود
                 ViewBag.PersianDatePickerId = "appointmentDatePicker";
                 ViewBag.PersianDatePickerName = "SelectedDate";
-                ViewBag.PersianDatePickerValue = (DateTime?)null; // ✅ No initial value - user must select
+                ViewBag.PersianDatePickerValue = (DateTime?)null;
                 ViewBag.PersianDatePickerLabel = "انتخاب تاریخ";
                 ViewBag.PersianDatePickerPlaceholder = "روی اینجا کلیک کنید تا تاریخ را انتخاب کنید";
                 ViewBag.PersianDatePickerHelpText = "لطفاً تاریخ مورد نظر خود را از تقویم انتخاب کنید";
@@ -66,101 +125,109 @@
             }
             @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePicker.cshtml")
         </div>
-
-        <!-- ✅ Feedback when date is selected -->
         <div class="date-selected-feedback" id="dateSelectedFeedback">
-            <i class="fas fa-check-circle me-2"></i>
+            <i class="fas fa-check-circle me-2" aria-hidden="true"></i>
             <span id="selectedDateDisplay"></span>
         </div>
     </div>
 
-    <!-- ✅ Continue Button - Mobile-First -->
-    <div class="text-center mb-4">
-        <button type="button" 
-                class="btn btn-primary btn-lg btn-continue" 
-                id="continueToTimeBtn" 
-                disabled>
-            <i class="fas fa-arrow-left me-2"></i>
+    <!-- PHASE 7: Empty State (when no available dates) -->
+    @if (!hasAnyDate)
+    {
+        <div class="selectdate-empty-state" role="status">
+            <i class="fas fa-calendar-times empty-state-icon" aria-hidden="true"></i>
+            <h4 class="mb-2">در حال حاضر نوبت فعالی وجود ندارد</h4>
+            <p class="text-muted mb-3">لطفاً با کلینیک تماس بگیرید یا روزهای دیگر را بررسی کنید.</p>
+            <a href="@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })" class="btn btn-outline-primary me-2">مشاهده پزشکان دیگر</a>
+            <a href="tel:+98" class="btn btn-outline-secondary">تماس با کلینیک</a>
+        </div>
+    }
+
+    <!-- PHASE 6: Continue Button + Sticky CTA (Mobile) -->
+    <div class="text-center mb-4 selectdate-cta-wrap">
+        <button type="button" class="btn btn-primary btn-lg btn-continue" id="continueToTimeBtn" disabled aria-label="ادامه به انتخاب زمان">
+            <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
             ادامه به انتخاب زمان
         </button>
     </div>
 </div>
 
-<!-- ✅ Hidden Fields -->
-<input type="hidden" id="doctorId" value="@Model.DoctorId" />
+<!-- Sticky Bottom CTA (Mobile) -->
+<div class="selectdate-sticky-cta" id="selectdateStickyCta" style="display: none;" aria-hidden="true">
+    <button type="button" class="btn btn-primary btn-lg w-100 sticky-cta-btn" id="continueToTimeBtnSticky" disabled aria-label="ادامه به انتخاب زمان">
+        <i class="fas fa-arrow-left me-2" aria-hidden="true"></i>
+        ادامه انتخاب ساعت
+    </button>
+</div>
+
+<input type="hidden" id="doctorId" value="@(Model?.DoctorId ?? 0)" />
 <input type="hidden" id="selectedDateGregorian" />
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
-    @* ✅ Enterprise: استفاده از Enterprise Component که در Layout لود شده است *@
-    @* نیازی به لود مجدد نیست - فقط اگر در Layout لود نشده باشد *@
-    @if (false) // ✅ Enterprise Component در Layout لود می‌شود
-    {
-        @Html.Partial("~/Areas/Admin/Views/Shared/_PersianDatePickerScript.cshtml")
-    }
-    <!-- ✅ CRITICAL FIX: انتقال JavaScript به فایل جداگانه (طبق APPOINTMENT_BOOKING_VIEWS_REVIEW.md) -->
-    <!-- ✅ CRITICAL FIX: منتظر می‌مانیم تا pDatepicker لود شود -->
     <script>
-        // ✅ Enterprise: Wait for JalaliDatePickerEnterprise to be loaded before initializing date-selection module
-        function waitForJalaliDatePickerEnterprise(callback, maxAttempts) {
-            maxAttempts = maxAttempts || 50; // 5 seconds max
-            var attempts = 0;
-            
-            function check() {
-                attempts++;
-                // ✅ Enterprise: بررسی JalaliDatePickerEnterprise و jalaliDatepicker
-                // همچنین بررسی می‌کنیم که DatePicker initialize شده باشد
-                var $datePicker = $('#appointmentDatePicker');
-                var datePickerElement = $datePicker[0];
-                
-                if (typeof jalaliDatepicker !== 'undefined' && 
-                    typeof JalaliDatePickerEnterprise !== 'undefined' &&
-                    datePickerElement && 
-                    (datePickerElement.dataset.jdpInitialized === 'true' || attempts > 10)) {
-                    // ✅ اگر بعد از 10 تلاش هنوز initialize نشده، ادامه می‌دهیم (ممکن است بعداً initialize شود)
-                    callback();
-                } else if (attempts < maxAttempts) {
-                    setTimeout(check, 100);
-                } else {
-                    console.error('❌ JalaliDatePickerEnterprise failed to load after ' + maxAttempts + ' attempts');
-                    console.error('jalaliDatepicker:', typeof jalaliDatepicker);
-                    console.error('JalaliDatePickerEnterprise:', typeof JalaliDatePickerEnterprise);
-                    console.error('DatePicker Element:', datePickerElement);
-                    console.error('Initialized:', datePickerElement ? datePickerElement.dataset.jdpInitialized : 'N/A');
-                    // ✅ حتی اگر لود نشده باشد، callback را فراخوانی می‌کنیم تا date-selection.js لود شود
-                    callback();
-                }
-            }
-            check();
-        }
-        
-        // ✅ Load date-selection.js after JalaliDatePickerEnterprise is ready
-        waitForJalaliDatePickerEnterprise(function() {
-            // Load the module script dynamically
-            var script = document.createElement('script');
-            script.src = '@Url.Content("~/Scripts/patient/date-selection.js")';
-            script.onload = function() {
-                // ✅ Pass Razor-generated URL to JavaScript module
-                if (window.DateSelectionModule) {
-                    window.appConfig = window.appConfig || {};
-                    window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
-                    window.appConfig.appointmentBooking.selectTimeUrl = '@Url.Action("SelectTime", "AppointmentBooking", new { area = "Patient" })';
-                    
-                    // Initialize the module
-                    if (typeof jQuery !== 'undefined') {
-                        $(document).ready(function () {
-                            if (window.DateSelectionModule && typeof window.DateSelectionModule.init === 'function') {
-                                window.DateSelectionModule.init();
-                            }
-                        });
+        (function () {
+            function waitForJalaliDatePickerEnterprise(callback, maxAttempts) {
+                maxAttempts = maxAttempts || 50;
+                var attempts = 0;
+                function check() {
+                    attempts++;
+                    var $datePicker = $('#appointmentDatePicker');
+                    var datePickerElement = $datePicker[0];
+                    if (typeof jalaliDatepicker !== 'undefined' && typeof JalaliDatePickerEnterprise !== 'undefined' && datePickerElement && (datePickerElement.dataset.jdpInitialized === 'true' || attempts > 10)) {
+                        callback();
+                    } else if (attempts < maxAttempts) {
+                        setTimeout(check, 100);
+                    } else {
+                        callback();
                     }
                 }
-            };
-            script.onerror = function() {
-                console.error('❌ Failed to load date-selection.js');
-            };
-            document.head.appendChild(script);
-        });
+                check();
+            }
+            waitForJalaliDatePickerEnterprise(function () {
+                var script = document.createElement('script');
+                script.src = '@Url.Content("~/Scripts/patient/date-selection.js")';
+                script.onload = function () {
+                    if (window.DateSelectionModule) {
+                        window.appConfig = window.appConfig || {};
+                        window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
+                        window.appConfig.appointmentBooking.selectTimeUrl = '@Url.Action("SelectTime", "AppointmentBooking", new { area = "Patient" })';
+                        if (typeof jQuery !== 'undefined') {
+                            $(document).ready(function () {
+                                var updateSummary = function (persianDateText) {
+                                    $('#summaryDateText').text(persianDateText || 'هنوز انتخاب نشده');
+                                };
+                                $('#btnSelectFirstDate, .btn-date-card-select').on('click', function () {
+                                    var p = $(this).data('persian-date');
+                                    if (!p) return;
+                                    $('#appointmentDatePicker').val(p);
+                                    if (window.DateSelectionModule && typeof window.DateSelectionModule.handleDateSelectionFromPersian === 'function') {
+                                        window.DateSelectionModule.handleDateSelectionFromPersian(p);
+                                    } else {
+                                        updateSummary(p);
+                                        $('#dateSelectedFeedback').addClass('show');
+                                        $('#selectedDateDisplay').text('تاریخ انتخاب شده: ' + p);
+                                        $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', false);
+                                    }
+                                });
+                                $(window).on('scroll', function () {
+                                    var sticky = document.getElementById('selectdateStickyCta');
+                                    if (!sticky) return;
+                                    var btn = document.getElementById('continueToTimeBtn');
+                                    var show = btn && !btn.disabled && window.innerWidth < 768 && window.pageYOffset > 300;
+                                    sticky.style.display = show ? 'block' : 'none';
+                                    sticky.setAttribute('aria-hidden', show ? 'false' : 'true');
+                                });
+                                $('#continueToTimeBtnSticky').on('click', function () {
+                                    $('#continueToTimeBtn').trigger('click');
+                                });
+                            });
+                        }
+                    }
+                };
+                document.head.appendChild(script);
+            });
+        })();
     </script>
 }

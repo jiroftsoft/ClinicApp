@@ -1,13 +1,20 @@
 @model ClinicApp.Models.DTOs.Appointment.DoctorSearchResultDto
 
 @* Partial View برای نمایش کارت پزشک - رعایت SRP: فقط نمایش یک پزشک *@
-<div class="doctor-card card mb-3" data-doctor-id="@Model.DoctorId">
+<article class="doctor-card card mb-3" data-doctor-id="@Model.DoctorId" role="listitem">
     <div class="card-body">
-        <div class="row">
-            <div class="col-md-8">
+        <div class="row align-items-center">
+            <div class="col-12 col-md-8 order-2 order-md-1">
                 <div class="d-flex align-items-center mb-2">
-                    <div class="doctor-avatar me-3">
-                        <i class="fas fa-user-md text-primary fs-1"></i>
+                    <div class="doctor-avatar me-3 flex-shrink-0">
+                        @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+                        {
+                            <img src="@Model.ProfileImageUrl" alt="" class="doctor-avatar-img" width="60" height="60" loading="lazy" />
+                        }
+                        else
+                        {
+                            <i class="fas fa-user-md text-white" aria-hidden="true"></i>
+                        }
                     </div>
                     <div>
                         <h5 class="card-title mb-1">@Model.FullName</h5>
@@ -41,8 +48,9 @@
                 @if (Model.HasActiveSchedule && Model.AvailableDates != null && Model.AvailableDates.Any())
                 {
                     <p class="text-info mb-1">
-                        <i class="fas fa-calendar-check me-1"></i>
+                        <i class="fas fa-calendar-check me-1" aria-hidden="true"></i>
                         <span class="small fw-semibold">برنامه کاری (تاریخ دقیق):</span>
+                        <span class="badge bg-success ms-2 doctor-first-slot-badge">اولین نوبت خالی</span>
                     </p>
                     <ul class="list-unstyled mb-0 small">
                         @foreach (var d in Model.AvailableDates)
@@ -63,69 +71,59 @@
                     </p>
                 }
             </div>
-            <div class="col-md-4 text-end d-flex flex-column justify-content-between">
-                <div>
+            <div class="col-12 col-md-4 text-md-end text-start mt-3 mt-md-0 order-1 order-md-2">
+                <div class="d-flex flex-wrap gap-2 mb-2">
                     @if (Model.HasOnlineConsultation)
                     {
-                        <span class="badge bg-info mb-2">
-                            <i class="fas fa-video me-1"></i>
+                        <span class="badge bg-info">
+                            <i class="fas fa-video me-1" aria-hidden="true"></i>
                             مشاوره آنلاین
                         </span>
                     }
                     @if (Model.HasActiveSchedule)
                     {
-                        <span class="badge bg-success mb-2">
-                            <i class="fas fa-check-circle me-1"></i>
+                        <span class="badge bg-success">
+                            <i class="fas fa-check-circle me-1" aria-hidden="true"></i>
                             در دسترس
                         </span>
                     }
                     else
                     {
-                        <span class="badge bg-secondary mb-2">
-                            <i class="fas fa-times-circle me-1"></i>
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-times-circle me-1" aria-hidden="true"></i>
                             غیرفعال
                         </span>
                     }
                 </div>
                 @if (Model.HasActiveSchedule)
                 {
-                    // ✅ CRITICAL FIX: استفاده از Url.Action با area برای اطمینان از Route Resolution صحیح
-                    // مشکل: Url.RouteUrl برای Area routes ممکن است area را در نظر نگیرد
                     var selectDateUrl = Url.Action("SelectDate", "AppointmentBooking", new { area = "Patient", doctorId = Model.DoctorId });
-                    
-                    // ✅ Fallback: اگر Url.Action خالی بود از نام روت استفاده کن (بدون hardcode مسیر)
                     if (string.IsNullOrEmpty(selectDateUrl))
                     {
                         selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { area = "Patient", doctorId = Model.DoctorId });
                     }
-                    // ✅ فاز ۳.۱: اطمینان از معتبر بودن URL؛ در صورت نامعتبر بودن فقط یک بار دیگر RouteUrl
-                    if (string.IsNullOrEmpty(selectDateUrl) ||
-                        selectDateUrl == "/" ||
-                        selectDateUrl.Contains("/Home") ||
-                        !selectDateUrl.Contains("SelectDate"))
+                    if (string.IsNullOrEmpty(selectDateUrl) || selectDateUrl == "/" || selectDateUrl.Contains("/Home") || !selectDateUrl.Contains("SelectDate"))
                     {
                         selectDateUrl = Url.RouteUrl("Patient_AppointmentBooking_SelectDate", new { area = "Patient", doctorId = Model.DoctorId });
                     }
-                    
-                    <a href="@selectDateUrl" 
-                       class="btn btn-primary w-100 select-doctor-btn" 
+                    <a href="@selectDateUrl"
+                       class="btn btn-primary w-100 select-doctor-btn btn-select-doctor-cta"
                        data-doctor-id="@Model.DoctorId"
                        data-href="@selectDateUrl"
-                       aria-label="انتخاب پزشک @Model.FullName برای رزرو نوبت">
-                        <i class="fas fa-calendar-plus me-1"></i>
-                        انتخاب پزشک
+                       aria-label="انتخاب دکتر @Model.FullName و رفتن به انتخاب تاریخ نوبت">
+                        <i class="fas fa-calendar-plus me-1" aria-hidden="true"></i>
+                        انتخاب نوبت
                     </a>
                 }
                 else
                 {
-                    <button type="button" class="btn btn-secondary w-100" disabled>
-                        <i class="fas fa-times-circle me-1"></i>
+                    <button type="button" class="btn btn-secondary w-100" disabled aria-disabled="true" aria-label="این پزشک در حال حاضر نوبت ندارد">
+                        <i class="fas fa-times-circle me-1" aria-hidden="true"></i>
                         غیرفعال
                     </button>
                 }
             </div>
         </div>
     </div>
-</div>
-<!-- ✅ CRITICAL FIX: حذف Inline Styles - انتقال به appointment-booking-views.css -->
+</article>
 

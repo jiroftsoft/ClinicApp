@@ -1,0 +1,327 @@
+/**
+ * ✅ Select Date Page — Context-Aware UX
+ * صفحه انتخاب تاریخ نوبت با هدر زمینه پزشک، خلاصه انتخاب، کارت تاریخ و CTA چسبان
+ * طبق ULTRA UX نقشه راه
+ */
+
+:root {
+    --selectdate-primary: #2c5aa0;
+    --selectdate-success: #28a745;
+    --selectdate-bg: #f8f9fa;
+    --selectdate-border: #dee2e6;
+    --selectdate-shadow: rgba(44, 90, 160, 0.12);
+}
+
+.selectdate-page {
+    padding-bottom: 5rem; /* فضای پایین برای sticky CTA */
+}
+
+/* ============================================
+   PHASE 1: Doctor Context Bar (Sticky)
+   ============================================ */
+
+.selectdate-context-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 12px var(--selectdate-shadow);
+    border: 1px solid var(--selectdate-border);
+    border-right: 4px solid var(--selectdate-primary);
+}
+
+.context-header-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.context-doctor-avatar {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    background: var(--selectdate-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 1.5rem;
+}
+
+.context-doctor-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.context-doctor-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+    margin: 0;
+}
+
+.context-doctor-spec {
+    font-size: 0.95rem;
+    color: #6c757d;
+}
+
+.context-medical-code {
+    font-size: 0.8rem;
+}
+
+.context-badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.65rem;
+}
+
+.context-first-slot {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--selectdate-border);
+}
+
+.first-slot-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-left: 0.35rem;
+}
+
+.first-slot-value {
+    font-weight: 600;
+    color: var(--selectdate-success);
+    font-size: 0.95rem;
+}
+
+@media (min-width: 768px) {
+    .context-first-slot {
+        width: auto;
+        margin-top: 0;
+        padding-top: 0;
+        border-top: none;
+        border-right: 1px solid var(--selectdate-border);
+        padding-right: 1rem;
+        margin-right: 1rem;
+    }
+}
+
+/* ============================================
+   PHASE 3: Summary Panel
+   ============================================ */
+
+.selectdate-summary-panel {
+    background: var(--selectdate-bg);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--selectdate-border);
+}
+
+.summary-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+    margin: 0 0 0.5rem 0;
+}
+
+.summary-list {
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.summary-list li {
+    padding: 0.2rem 0;
+}
+
+/* ============================================
+   PHASE 4 & 5: Recommended / First Available
+   ============================================ */
+
+.selectdate-recommended-card {
+    background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+}
+
+.recommended-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2e7d32;
+    width: 100%;
+}
+
+.recommended-date-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.recommended-day {
+    font-weight: 600;
+    color: #1b5e20;
+}
+
+.recommended-date {
+    font-variant-numeric: tabular-nums;
+    color: #388e3c;
+}
+
+.recommended-time {
+    font-size: 0.9rem;
+    color: #558b2f;
+}
+
+.btn-recommended-select {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+@media (min-width: 576px) {
+    .recommended-badge {
+        width: auto;
+    }
+}
+
+/* ============================================
+   Date Cards (Horizontal scroll on mobile)
+   ============================================ */
+
+.selectdate-date-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.selectdate-date-card {
+    flex: 0 0 auto;
+    min-width: 140px;
+    max-width: 180px;
+    background: #fff;
+    border: 1px solid var(--selectdate-border);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+    transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.selectdate-date-card:hover {
+    border-color: var(--selectdate-primary);
+    box-shadow: 0 4px 12px var(--selectdate-shadow);
+}
+
+.date-card-day {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.date-card-date {
+    font-variant-numeric: tabular-nums;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--selectdate-primary);
+    margin-bottom: 0.25rem;
+}
+
+.date-card-time {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+}
+
+.btn-date-card-select {
+    width: 100%;
+    min-height: 38px;
+    font-size: 0.875rem;
+}
+
+/* ============================================
+   PHASE 7: Empty State
+   ============================================ */
+
+.selectdate-empty-state {
+    text-align: center;
+    padding: 2.5rem 1.5rem;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px dashed var(--selectdate-border);
+    margin-bottom: 1.5rem;
+}
+
+.selectdate-empty-state .empty-state-icon {
+    font-size: 3rem;
+    color: #adb5bd;
+    margin-bottom: 1rem;
+    display: block;
+}
+
+.selectdate-empty-state h4 {
+    font-size: 1.15rem;
+    color: #495057;
+}
+
+/* ============================================
+   PHASE 6: Sticky Bottom CTA (Mobile)
+   ============================================ */
+
+.selectdate-sticky-cta {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
+    border-top: 1px solid var(--selectdate-border);
+}
+
+.sticky-cta-btn {
+    min-height: 48px;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+/* فقط در موبایل نمایش داده شود */
+@media (min-width: 768px) {
+    .selectdate-sticky-cta {
+        display: none !important;
+    }
+}
+
+/* ============================================
+   CTA Wrap (main continue button)
+   ============================================ */
+
+.selectdate-cta-wrap .btn-continue {
+    min-width: 200px;
+    min-height: 48px;
+}
+
+@media (max-width: 575.98px) {
+    .selectdate-cta-wrap .btn-continue {
+        width: 100%;
+        min-height: 52px;
+        font-size: 1rem;
+    }
+}

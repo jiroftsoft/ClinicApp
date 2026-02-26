@@ -29,7 +29,16 @@
         lastSelectionTime: 0, // ✅ Track selection time for auto-recovery
 
         init: function () {
-            this.doctorId = parseInt($('#doctorId').val(), 10);
+            var raw = $('#doctorId').val();
+            this.doctorId = parseInt(raw, 10);
+            if (!this.doctorId || isNaN(this.doctorId)) {
+                var fromData = $('.selectdate-page').data('doctor-id');
+                if (fromData != null) this.doctorId = parseInt(fromData, 10);
+            }
+            if (!this.doctorId || isNaN(this.doctorId)) {
+                var m = window.location.pathname.match(/\/SelectDate\/(\d+)/);
+                if (m) this.doctorId = parseInt(m[1], 10);
+            }
             if (!this.doctorId || isNaN(this.doctorId)) {
                 this.showError('شناسه پزشک نامعتبر است');
                 return;
@@ -146,7 +155,7 @@
 
         bindEvents: function () {
             const self = this;
-            $('#continueToTimeBtn').on('click', function () {
+            $('#continueToTimeBtn, #continueToTimeBtnSticky').on('click', function () {
                 self.handleContinue();
             });
         },
@@ -317,6 +326,9 @@
             // ✅ Show feedback
             $('#selectedDateDisplay').text('تاریخ انتخاب شده: ' + persianDate);
             $('#dateSelectedFeedback').addClass('show');
+            // ✅ Context-Aware UX: به‌روزرسانی خلاصه انتخاب در Summary Panel
+            var $summary = $('#summaryDateText');
+            if ($summary.length) $summary.text(persianDate || 'هنوز انتخاب نشده');
         },
 
         convertPersianToGregorian: function (persianDate) {
@@ -327,7 +339,7 @@
                 
                 // ✅ Use jalaali library (loaded with PersianDatePicker)
                 if (typeof jalaali !== 'undefined' && jalaali.toGregorian) {
-                    const parts = englishDate.split('/');
+                    const parts = englishDate.split(/[\/\-]/).map(function (p) { return (p || '').trim(); }).filter(Boolean);
                     if (parts.length === 3) {
                         const year = parseInt(parts[0], 10);
                         const month = parseInt(parts[1], 10);
@@ -370,7 +382,7 @@
 
         checkDateAvailability: function (date) {
             if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
-                $('#continueToTimeBtn').prop('disabled', true);
+                $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', true);
                 this.isProcessingSelection = false; // ✅ CRITICAL: Reset flag if invalid date
                 return;
             }
@@ -393,7 +405,7 @@
 
                         // ✅ Check if date is in the past (string comparison is timezone-independent)
                         if (selectedString < todayString) {
-                            $('#continueToTimeBtn').prop('disabled', true);
+                            $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', true);
                             $('#dateSelectedFeedback').removeClass('show');
                             self.showError('نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید');
                             console.warn('⚠️ Date rejected as past:', selectedString, '<', todayString);
@@ -402,7 +414,7 @@
                         }
 
                         // ✅ Date is valid - enable button
-                        $('#continueToTimeBtn').prop('disabled', false);
+                        $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', false);
                         console.log('✅ Date selected and validated (Iran timezone):', selectedString, '>=', todayString);
                         self.isProcessingSelection = false; // ✅ Reset flag after validation
                     } else {
@@ -438,7 +450,7 @@
             console.log('🔍 Date comparison (fallback) - Today (Iran):', todayString, 'Selected:', selectedString);
 
             if (selectedString < todayString) {
-                $('#continueToTimeBtn').prop('disabled', true);
+                $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', true);
                 $('#dateSelectedFeedback').removeClass('show');
                 this.showError('نمی‌توانید برای تاریخ‌های گذشته نوبت رزرو کنید');
                 console.warn('⚠️ Date rejected as past (fallback):', selectedString, '<', todayString);
@@ -446,24 +458,32 @@
                 return;
             }
 
-            $('#continueToTimeBtn').prop('disabled', false);
+            $('#continueToTimeBtn, #continueToTimeBtnSticky').prop('disabled', false);
             console.log('✅ Date selected and validated (fallback):', selectedString, '>=', todayString);
             this.isProcessingSelection = false; // ✅ Reset flag after validation
         },
 
         handleContinue: function () {
-            if (!this.selectedDateGregorian) {
+            var dateToUse = this.selectedDateGregorian;
+            if (!dateToUse || !(dateToUse instanceof Date) || isNaN(dateToUse.getTime())) {
+                var hiddenVal = $('#selectedDateGregorian').val();
+                if (hiddenVal && hiddenVal.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                    dateToUse = new Date(hiddenVal + 'T12:00:00Z');
+                }
+            }
+            if (!dateToUse || !(dateToUse instanceof Date) || isNaN(dateToUse.getTime())) {
                 this.showError('لطفاً تاریخ را انتخاب کنید');
                 return;
             }
 
-            const dateStr = this.formatDateForInput(this.selectedDateGregorian);
+            const dateStr = this.formatDateForInput(dateToUse);
             // ✅ Route: Patient/Appointment/Book/SelectTime/{doctorId}/{date} — استفاده از path به‌جای query
             const baseUrl = (window.appConfig?.appointmentBooking?.selectTimeUrl || '/Patient/Appointment/Book/SelectTime').replace(/\/?$/, '');
             const url = baseUrl + '/' + encodeURIComponent(this.doctorId) + '/' + encodeURIComponent(dateStr);
 
-            const $btn = $('#continueToTimeBtn');
-            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال انتقال...');
+            const $btn = $('#continueToTimeBtn, #continueToTimeBtnSticky');
+            $btn.prop('disabled', true);
+            $('#continueToTimeBtn').html('<i class="fas fa-spinner fa-spin me-2"></i>در حال انتقال...');
 
             window.location.href = url;
         },

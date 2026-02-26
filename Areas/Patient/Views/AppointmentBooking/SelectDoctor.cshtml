@@ -33,37 +33,40 @@
 
 <!-- جستجو و فیلتر -->
 <div class="search-card">
-    <form id="searchForm" method="get" action="@Url.Action("SelectDoctor")">
+    <form id="searchForm" method="get" action="@Url.Action("SelectDoctor")" role="search" aria-label="جستجو و فیلتر پزشکان">
         <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">جستجوی پزشک</label>
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="searchInput">جستجوی پزشک</label>
                 <div class="input-group">
-                    <span class="input-group-text">
+                    <span class="input-group-text" aria-hidden="true">
                         <i class="fas fa-search"></i>
                     </span>
-                    <input type="text" 
-                           name="searchTerm" 
-                           class="form-control" 
-                           placeholder="نام پزشک، تخصص..." 
-                           value="@Model.SearchTerm"
-                           id="searchInput" />
+                    <input type="search"
+                           name="searchTerm"
+                           class="form-control"
+                           id="searchInput"
+                           placeholder="نام پزشک، تخصص..."
+                           value="@(Model?.SearchTerm)"
+                           autocomplete="off"
+                           aria-label="جستجوی نام یا تخصص پزشک" />
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label">بخش</label>
-                <select name="departmentId" class="form-select" id="departmentFilter">
+            <div class="col-12 col-md-4">
+                <label class="form-label" for="departmentFilter">بخش</label>
+                <select name="departmentId" class="form-select" id="departmentFilter" aria-label="فیلتر بر اساس بخش">
                     <option value="">همه بخش‌ها</option>
-                    @foreach (var dept in Model.Departments)
+                    @if (Model?.Departments != null)
                     {
-                        <option value="@dept.DepartmentId" @(Model.SelectedDepartmentId == dept.DepartmentId ? "selected" : "")>
-                            @dept.Name
-                        </option>
+                        foreach (var dept in Model.Departments)
+                        {
+                            <option value="@dept.DepartmentId" @(Model.SelectedDepartmentId == dept.DepartmentId ? "selected" : "")>@dept.Name</option>
+                        }
                     }
                 </select>
             </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search me-1"></i>
+            <div class="col-12 col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100 btn-search-submit" aria-label="اعمال جستجو">
+                    <i class="fas fa-search me-1" aria-hidden="true"></i>
                     جستجو
                 </button>
             </div>
@@ -74,8 +77,8 @@
 @* ✅ PRODUCTION: بلوک تشخیص احراز هویت حذف شد — در پروداکشن نباید userId/نقش‌ها در UI نمایش داده شوند. برای عیب‌یابی از لاگ سرور یا endpoint امن استفاده شود. *@
 
 <!-- لیست پزشکان -->
-<div class="doctors-container" id="doctorsContainer">
-    @if (Model.Doctors != null && Model.Doctors.Any())
+<div class="doctors-container" id="doctorsContainer" role="list" aria-label="لیست پزشکان">
+    @if (Model?.Doctors != null && Model.Doctors.Any())
     {
         foreach (var doctor in Model.Doctors)
         {
@@ -84,20 +87,18 @@
     }
     else
     {
-        <div class="empty-state">
-            <i class="fas fa-user-md"></i>
-            <h4>پزشکی یافت نشد</h4>
-            <p class="text-muted">لطفاً فیلترهای جستجو را تغییر دهید</p>
+        <div class="empty-state" role="status" aria-live="polite">
+            <i class="fas fa-user-md empty-state-icon" aria-hidden="true"></i>
+            <h3 class="h4 mb-2">پزشکی یافت نشد</h3>
+            <p class="text-muted mb-0">با فیلترهای فعلی پزشکی وجود ندارد. بخش یا عبارت جستجو را تغییر دهید.</p>
         </div>
     }
 </div>
 
-<!-- Loading State -->
-<div id="loadingState" class="loading-spinner" style="display: none;">
-    <div class="spinner-border text-primary" role="status">
-        <span class="visually-hidden">در حال بارگذاری...</span>
-    </div>
-    <p class="mt-3 text-muted">در حال جستجوی پزشکان...</p>
+<!-- Loading State (برای جستجوی AJAX) -->
+<div id="loadingState" class="loading-spinner" style="display: none;" role="status" aria-live="polite" aria-label="در حال بارگذاری">
+    <div class="spinner-border text-primary" role="img" aria-hidden="true"></div>
+    <p class="mt-3 text-muted mb-0">در حال جستجوی پزشکان...</p>
 </div>
 
 @section Scripts {
