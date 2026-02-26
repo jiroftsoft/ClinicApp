@@ -59,10 +59,56 @@
             <div class="price-section">
                 <div class="medical-form-summary-item">
                     <span class="medical-form-summary-label">مبلغ نوبت:</span>
-                    <span class="price-total">@Model.Price.ToString("N0") تومان</span>
+                    <span class="price-total" id="summaryPriceDisplay">@(Model.Price > 0 ? Model.Price.ToString("N0") : "—") تومان</span>
                 </div>
             </div>
         </div>
+    </fieldset>
+</div>
+
+<!-- انتخاب نوع ویزیت (کارت‌ها به‌جای دراپ‌داون) -->
+@{
+    var serviceCategories = ViewBag.ServiceCategories as IEnumerable<ClinicApp.Models.DTOs.Appointment.ServiceCategoryLookupDto>;
+    var hasServiceCategories = serviceCategories != null && serviceCategories.Any();
+    var appointmentDateIso = Model?.AppointmentDate.ToString("yyyy-MM-dd") ?? "";
+}
+<div class="visit-type-section medical-form" id="visitTypeSection" data-doctor-id="@(Model?.DoctorId ?? 0)" data-appointment-date="@appointmentDateIso" aria-label="انتخاب نوع ویزیت">
+    <fieldset class="medical-form-section">
+        <legend>نوع ویزیت</legend>
+        <p class="text-muted small mb-3">یکی از گزینه‌ها را انتخاب کنید. مبلغ هر نوع ویزیت در کارت نمایش داده شده است.</p>
+        @if (hasServiceCategories)
+        {
+            <div class="visit-type-cards" role="group" aria-label="نوع ویزیت">
+                @foreach (var item in serviceCategories)
+                {
+                    var isOnline = item.Name != null && item.Name.IndexOf("آنلاین", StringComparison.OrdinalIgnoreCase) >= 0;
+                    var icon = isOnline ? "fa-video" : "fa-building";
+                    var desc = isOnline ? "تماس تصویری یا تلفنی بدون نیاز به مراجعه حضوری" : "مراجعه به مرکز درمانی در زمان تعیین شده";
+                    <div class="visit-type-card" data-service-category-id="@item.Id" data-name="@item.Name" role="button" tabindex="0" aria-pressed="false" aria-label="انتخاب @item.Name">
+                        <div class="visit-type-card-inner">
+                            <div class="visit-type-icon">
+                                <i class="fas @icon" aria-hidden="true"></i>
+                            </div>
+                            <div class="visit-type-body">
+                                <h6 class="visit-type-name">@item.Name</h6>
+                                <p class="visit-type-desc text-muted small mb-0">@desc</p>
+                                <p class="visit-type-price mb-0 mt-2">
+                                    <span class="visit-type-price-value" data-price="">—</span>
+                                    <span class="text-muted small">تومان</span>
+                                </p>
+                            </div>
+                            <div class="visit-type-action">
+                                <span class="visit-type-select-label">انتخاب</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p class="text-muted small">نوع ویزیت از طرف کلینیک تعیین می‌شود.</p>
+        }
     </fieldset>
 </div>
 
@@ -94,25 +140,6 @@
                 </div>
             </div>
 
-            @{
-                var serviceCategories = ViewBag.ServiceCategories as IEnumerable<ClinicApp.Models.DTOs.Appointment.ServiceCategoryLookupDto>;
-                var hasServiceCategories = serviceCategories != null && serviceCategories.Any();
-            }
-            @if (hasServiceCategories)
-            {
-                <div class="form-group">
-                    <label for="ServiceCategoryIdSelect" class="form-label">نوع ویزیت</label>
-                    <select id="ServiceCategoryIdSelect" class="form-select">
-                        <option value="">— انتخاب کنید —</option>
-                        @foreach (var item in serviceCategories)
-                        {
-                            <option value="@item.Id" @(Model.ServiceCategoryId == item.Id ? "selected" : "")>@item.Name</option>
-                        }
-                    </select>
-                    <small class="form-text text-muted">برای مشاوره آنلاین، نوع ویزیت «مشاوره آنلاین» را انتخاب کنید.</small>
-                </div>
-            }
-
             @if (!string.IsNullOrEmpty(Model.Description))
             {
                 <div class="form-group">
@@ -124,7 +151,7 @@
 
             <div class="form-group mt-4">
                 @Html.ValidationSummary(true, "", new { @class = "alert alert-danger", role = "alert" })
-                <button type="submit" class="btn btn-primary w-100" id="confirmBookingBtn">
+                <button type="submit" class="btn btn-primary w-100" id="confirmBookingBtn"@if (hasServiceCategories) { <text> disabled</text> }>
                     <i class="fas fa-check-circle me-1"></i>
                     تایید و پرداخت
                 </button>
@@ -139,7 +166,6 @@
 
 @section Scripts {
     <script>
-        // ✅ CRITICAL FIX: Pass Reserve URL to JavaScript (instead of hardcoded)
         window.appConfig = window.appConfig || {};
         window.appConfig.appointmentBooking = window.appConfig.appointmentBooking || {};
         window.appConfig.appointmentBooking.reserveUrl = '@Url.Action("Reserve", "AppointmentBooking", new { area = "Patient" })';
@@ -147,15 +173,7 @@
         window.appConfig.appointmentBooking.selectDoctorUrl = '@Url.Action("SelectDoctor", "AppointmentBooking", new { area = "Patient" })';
         window.appConfig.appointmentBooking.myAppointmentsUrl = '@Url.Action("MyAppointments", "Appointment", new { area = "Patient" })';
         window.appConfig.appointmentBooking.processPaymentUrl = '@Url.Action("ProcessPayment", "AppointmentBooking", new { area = "Patient" })';
-        // ✅ فاز ۲.۲: همگام‌سازی انتخاب نوع ویزیت با فیلد مخفی ارسالی به سرور
-        (function () {
-            var sel = document.getElementById('ServiceCategoryIdSelect');
-            var hid = document.getElementById('ServiceCategoryId');
-            if (sel && hid) {
-                sel.addEventListener('change', function () { hid.value = this.value || ''; });
-                hid.value = sel.value || '';
-            }
-        })();
+        window.appConfig.appointmentBooking.getAppointmentPriceUrl = '@Url.Action("GetAppointmentPrice", "DoctorSearchApi", new { area = "Patient" })';
     </script>
     <script src="~/Content/js/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script src="~/Scripts/patient/confirm-booking.js"></script>

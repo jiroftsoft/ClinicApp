@@ -386,25 +386,27 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
 
         /// <summary>
         /// دریافت قیمت نوبت (شامل تخفیف ایونت تبلیغاتی در صورت ارسال تاریخ نوبت)
-        /// GET: /Patient/Api/DoctorSearch/GetAppointmentPrice
+        /// GET: /Patient/Api/DoctorSearch/GetAppointmentPrice?id=...&serviceCategoryId=...&appointmentDate=...
         /// ✅ AllowAnonymous: کاربران می‌توانند قبل از login قیمت نوبت را ببینند
+        /// ✅ ضد گلوله: id اختیاری (nullable) تا در صورت نبود پارامتر به جای Exception، پاسخ JSON خطا برگردد
         /// </summary>
-        /// <param name="appointmentDate">تاریخ نوبت (اختیاری؛ برای اعمال صحیح تخفیف ایونت مثلاً عید نوروز)</param>
         [HttpGet]
         [AllowAnonymous]
         public async Task<JsonResult> GetAppointmentPrice(
-            int id,
+            int? id = null,
             int? serviceCategoryId = null,
             DateTime? appointmentDate = null)
         {
             try
             {
-                if (id <= 0)
+                if (!id.HasValue || id.Value <= 0)
                 {
                     return Json(new { success = false, message = "شناسه پزشک نامعتبر است" }, JsonRequestBehavior.AllowGet);
                 }
 
-                var result = await _bookingService.GetAppointmentPriceAsync(id, serviceCategoryId, appointmentDate);
+                var doctorId = id.Value;
+
+                var result = await _bookingService.GetAppointmentPriceAsync(doctorId, serviceCategoryId, appointmentDate);
 
                 if (!result.Success)
                 {

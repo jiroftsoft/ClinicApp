@@ -1498,3 +1498,108 @@
     }
 }
 
+/* ============================================
+   Confirm: کارت‌های انتخاب نوع ویزیت (بدون دراپ‌داون)
+   ============================================ */
+
+.visit-type-section .visit-type-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.visit-type-card {
+    flex: 1 1 100%;
+    min-width: 0;
+    max-width: 100%;
+    background: #fff;
+    border: 2px solid var(--medical-border, #dee2e6);
+    border-radius: 12px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+@media (min-width: 576px) {
+    .visit-type-card {
+        flex: 1 1 calc(50% - 0.5rem);
+        max-width: calc(50% - 0.5rem);
+    }
+}
+
+.visit-type-card:hover {
+    border-color: var(--medical-primary, #2c5aa0);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.12);
+}
+
+.visit-type-card.selected {
+    border-color: var(--medical-primary, #2c5aa0);
+    background: rgba(44, 90, 160, 0.04);
+    box-shadow: 0 4px 16px rgba(44, 90, 160, 0.18);
+}
+
+.visit-type-card-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.visit-type-icon {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    background: var(--medical-primary, #2c5aa0);
+    color: #fff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.visit-type-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.visit-type-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #212529;
+    margin-bottom: 0.25rem;
+}
+
+.visit-type-desc {
+    font-size: 0.875rem;
+}
+
+.visit-type-price {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--medical-primary, #2c5aa0);
+}
+
+.visit-type-action {
+    flex-shrink: 0;
+}
+
+.visit-type-select-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--medical-primary, #2c5aa0);
+}
+
+.visit-type-card.selected .visit-type-select-label {
+    color: #fff;
+}
+
+.visit-type-card.selected .visit-type-action::before {
+    content: '✓ ';
+}
+
+.visit-type-card:focus-visible {
+    outline: 2px solid var(--medical-primary, #2c5aa0);
+    outline-offset: 2px;
+}
+

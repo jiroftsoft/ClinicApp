@@ -8,14 +8,146 @@
 
     const ConfirmBooking = {
         init: function () {
+            this.initVisitTypeCards();
             this.bindEvents();
         },
 
+        /**
+         * خواندن doctorId از فرم (مطمئن‌ترین منبع) یا از data-section
+         */
+        getDoctorIdAndDate: function () {
+            var $section = $('#visitTypeSection');
+            var doctorId = parseInt($('#DoctorId').val(), 10);
+            if (isNaN(doctorId) || doctorId <= 0) {
+                var raw = $section.length ? $section.data('doctor-id') : null;
+                doctorId = (raw != null && raw !== '') ? parseInt(raw, 10) : NaN;
+            }
+            if (isNaN(doctorId) || doctorId <= 0) return { doctorId: null, appointmentDate: null, baseUrl: null };
+            var appointmentDate = $section.length ? $section.data('appointment-date') : null;
+            var baseUrl = (window.appConfig && window.appConfig.appointmentBooking && window.appConfig.appointmentBooking.getAppointmentPriceUrl) || '/Patient/Api/DoctorSearch/GetAppointmentPrice';
+            baseUrl = String(baseUrl).replace(/\/?$/, '');
+            if (baseUrl.indexOf('/') !== 0 && baseUrl.indexOf('http') !== 0) baseUrl = '/' + baseUrl;
+            return { doctorId: doctorId, appointmentDate: appointmentDate || '', baseUrl: baseUrl };
+        },
+
+        /**
+         * فراخوانی API قیمت برای یک کارت و به‌روزرسانی متن قیمت
+         * @param {jQuery} $card - کارت نوع ویزیت
+         * @param {Function} [doneCallback] - بعد از بارگذاری قیمت (در صورت موفقیت)
+         */
+        fetchPriceForCard: function ($card, doneCallback) {
+            var self = this;
+            var ctx = this.getDoctorIdAndDate();
+            if (!ctx.doctorId || !ctx.baseUrl) {
+                if (doneCallback) doneCallback(false);
+                return;
+            }
+            var categoryId = $card.data('service-category-id');
+            var $priceEl = $card.find('.visit-type-price-value');
+            if (!categoryId) {
+                if (doneCallback) doneCallback(false);
+                return;
+            }
+            var url = ctx.baseUrl + '?id=' + encodeURIComponent(ctx.doctorId) + '&serviceCategoryId=' + encodeURIComponent(categoryId);
+            if (ctx.appointmentDate) url += '&appointmentDate=' + encodeURIComponent(ctx.appointmentDate);
+
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json'
+            }).done(function (res) {
+                var ok = res && (res.success === true || res.Success === true);
+                var price = res && (res.price != null ? res.price : (res.Price != null ? res.Price : null));
+                if (ok && typeof price === 'number' && price >= 0) {
+                    $priceEl.data('price', price).text(price.toLocaleString('fa-IR'));
+                    if (doneCallback) doneCallback(true);
+                } else {
+                    $priceEl.text('—');
+                    if (doneCallback) doneCallback(false);
+                }
+            }).fail(function () {
+                $priceEl.text('—');
+                if (doneCallback) doneCallback(false);
+            });
+        },
+
+        /**
+         * ✅ کارت‌های انتخاب نوع ویزیت: بارگذاری قیمت هر کارت و انتخاب نوع ویزیت
+         */
+        initVisitTypeCards: function () {
+            var self = this;
+            var $section = $('#visitTypeSection');
+            if (!$section.length) return;
+
+            var ctx = this.getDoctorIdAndDate();
+            if (!ctx.doctorId) {
+                $('.visit-type-card .visit-type-price-value').text('—');
+                return;
+            }
+
+            $('.visit-type-card').each(function () {
+                var $card = $(this);
+                var categoryId = $card.data('service-category-id');
+                var $priceEl = $card.find('.visit-type-price-value');
+
+                $card.off('click keydown').on('click', function (e) {
+                    e.preventDefault();
+                    var price = parseFloat($priceEl.data('price'));
+                    if ((!price && price !== 0) || price < 0) {
+                        self.fetchPriceForCard($card, function (ok) {
+                            if (ok) self.selectVisitTypeCard($card);
+                            else self.selectVisitTypeCard($card);
+                        });
+                    } else {
+                        self.selectVisitTypeCard($card);
+                    }
+                }).on('keydown', function (e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        $(this).click();
+                    }
+                });
+
+                if (!categoryId) {
+                    $priceEl.text('—');
+                    return;
+                }
+
+                self.fetchPriceForCard($card, function (ok) {
+                    if (!ok) return;
+                    var currentCat = $('#ServiceCategoryId').val();
+                    if (currentCat && String(categoryId) === String(currentCat)) {
+                        self.selectVisitTypeCard($card);
+                    }
+                });
+            });
+        },
+
+        selectVisitTypeCard: function ($card) {
+            var categoryId = $card.data('service-category-id');
+            var $priceEl = $card.find('.visit-type-price-value');
+            var price = parseFloat($priceEl.data('price')) || 0;
+
+            $('.visit-type-card').removeClass('selected').attr('aria-pressed', 'false');
+            $card.addClass('selected').attr('aria-pressed', 'true');
+
+            $('#ServiceCategoryId').val(categoryId || '');
+            $('#Price').val(price);
+
+            var $summary = $('#summaryPriceDisplay');
+            if ($summary.length) {
+                $summary.text(price > 0 ? price.toLocaleString('fa-IR') + ' تومان' : '— تومان');
+            }
+
+            var $btn = $('#confirmBookingBtn');
+            if ($btn.length) {
+                $btn.prop('disabled', !categoryId || price <= 0).attr('aria-disabled', !categoryId || price <= 0);
+            }
+        },
+
         bindEvents: function () {
-            // انتخاب روش پرداخت
+            const self = this;
             $('.payment-method-card').on('click', this.handlePaymentMethodSelection.bind(this));
-            
-            // تایید و پرداخت
             $('#bookingForm').on('submit', this.handleBookingSubmit.bind(this));
         },
 
