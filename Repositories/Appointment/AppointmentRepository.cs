@@ -71,27 +71,33 @@ namespace ClinicApp.Repositories.Appointment
 
         /// <summary>
         /// آمار شمارش نوبت‌های بیمار — یک کوئری سبک (یک round-trip)، بدون Include، Real-Time.
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» در داشبورد رخ ندهد.
         /// </summary>
         public async Task<PatientAppointmentCountsDto> GetPatientAppointmentCountsAsync(int patientId, DateTime asOf)
         {
             try
             {
-                var query = _context.Appointments
-                    .AsNoTracking()
-                    .Where(a => a.PatientId == patientId && !a.IsDeleted);
+                using (var ctx = new ApplicationDbContext())
+                {
+                    ctx.Configuration.LazyLoadingEnabled = false;
+                    var query = ctx.Appointments
+                        .AsNoTracking()
+                        .Where(a => a.PatientId == patientId && !a.IsDeleted);
 
-                var counts = await query
-                    .GroupBy(a => 1)
-                    .Select(g => new PatientAppointmentCountsDto
-                    {
-                        Total = g.Count(),
-                        Upcoming = g.Count(a => a.AppointmentDate > asOf && a.Status != AppointmentStatus.Cancelled),
-                        Completed = g.Count(a => a.Status == AppointmentStatus.Completed),
-                        Cancelled = g.Count(a => a.Status == AppointmentStatus.Cancelled)
-                    })
-                    .FirstOrDefaultAsync();
+                    var counts = await query
+                        .GroupBy(a => 1)
+                        .Select(g => new PatientAppointmentCountsDto
+                        {
+                            Total = g.Count(),
+                            Upcoming = g.Count(a => a.AppointmentDate > asOf && a.Status != AppointmentStatus.Cancelled),
+                            Completed = g.Count(a => a.Status == AppointmentStatus.Completed),
+                            Cancelled = g.Count(a => a.Status == AppointmentStatus.Cancelled)
+                        })
+                        .FirstOrDefaultAsync()
+                        .ConfigureAwait(false);
 
-                return counts ?? new PatientAppointmentCountsDto();
+                    return counts ?? new PatientAppointmentCountsDto();
+                }
             }
             catch (Exception ex)
             {

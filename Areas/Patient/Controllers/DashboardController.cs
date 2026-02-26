@@ -21,9 +21,11 @@ namespace ClinicApp.Areas.Patient.Controllers
     /// Single Responsibility: مدیریت نمایش داشبورد بیمار
     /// 
     /// ✅ Enterprise-Grade: AJAX-Compatible, Authorization, ServiceResult Enhanced
+    /// ✅ دسترسی فقط برای نقش Patient (هم‌تراز با سایر کنترلرهای بخش بیمار).
     /// طبق: CLINICAPP_PATIENT_DASHBOARD_BEAST_ROADMAP_PROMPT.md
     /// </summary>
     [Authorize]
+    [PatientRoleAuthorization]
     [NoCache]
     public class DashboardController : BasePatientController
     {

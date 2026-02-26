@@ -55,14 +55,9 @@ namespace ClinicApp.Services
 
                 var asOf = DateTime.Now;
 
-                // دو کوئری سبک COUNT به‌صورت موازی؛ بدون بارگذاری لیست نوبت‌ها
-                var appointmentCountsTask = _appointmentRepository.GetPatientAppointmentCountsAsync(patientId, asOf);
-                var receptionCountTask = _patientService.GetPatientReceptionCountAsync(patientId);
-
-                await Task.WhenAll(appointmentCountsTask, receptionCountTask).ConfigureAwait(false);
-
-                var counts = await appointmentCountsTask.ConfigureAwait(false);
-                var totalReceptions = await receptionCountTask.ConfigureAwait(false);
+                // ✅ ترتیبی به‌جای WhenAll: یک DbContext در هر درخواست؛ اجرای موازی دو کوئری روی همان context منجر به InvalidOperationException می‌شود.
+                var counts = await _appointmentRepository.GetPatientAppointmentCountsAsync(patientId, asOf).ConfigureAwait(false);
+                var totalReceptions = await _patientService.GetPatientReceptionCountAsync(patientId).ConfigureAwait(false);
 
                 var stats = new DashboardQuickStatsViewModel
                 {
@@ -301,6 +296,7 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// دریافت یک‌جا آمار + نوبت‌های اخیر/آینده + پذیرش‌ها — یک درخواست به‌جای چهار (فاز ۳.۳).
+        /// ✅ اجرای ترتیبی (غیرموازی) برای جلوگیری از استفادهٔ همزمان DbContext در همان درخواست و خطاهای InvalidOperationException/NotSupportedException.
         /// </summary>
         public async Task<ServiceResult<DashboardViewModel>> GetOverviewAsync(
             int patientId,
@@ -312,17 +308,11 @@ namespace ClinicApp.Services
             {
                 _logger.Information("دریافت Overview داشبورد - PatientId: {PatientId}", patientId);
 
-                var statsTask = GetQuickStatsAsync(patientId);
-                var recentTask = GetRecentAppointmentsAsync(patientId, 1, recentPageSize);
-                var upcomingTask = GetUpcomingAppointmentsAsync(patientId, 1, upcomingPageSize);
-                var receptionsTask = GetRecentReceptionsAsync(patientId, 1, receptionsPageSize);
-
-                await Task.WhenAll(statsTask, recentTask, upcomingTask, receptionsTask).ConfigureAwait(false);
-
-                var statsResult = await statsTask.ConfigureAwait(false);
-                var recentResult = await recentTask.ConfigureAwait(false);
-                var upcomingResult = await upcomingTask.ConfigureAwait(false);
-                var receptionsResult = await receptionsTask.ConfigureAwait(false);
+                // ✅ ترتیبی به‌جای WhenAll: یک DbContext در هر درخواست؛ اجرای موازی چهار تسک روی همان context منجر به خطای EF می‌شود.
+                var statsResult = await GetQuickStatsAsync(patientId).ConfigureAwait(false);
+                var recentResult = await GetRecentAppointmentsAsync(patientId, 1, recentPageSize).ConfigureAwait(false);
+                var upcomingResult = await GetUpcomingAppointmentsAsync(patientId, 1, upcomingPageSize).ConfigureAwait(false);
+                var receptionsResult = await GetRecentReceptionsAsync(patientId, 1, receptionsPageSize).ConfigureAwait(false);
 
                 var sectionErrors = new Dictionary<string, string>();
 

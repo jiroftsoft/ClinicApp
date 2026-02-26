@@ -134,28 +134,30 @@
                 if (!hasSectionErrors) _overviewRetryCount = 0;
 
                 var $qs = $(sections.quickStats.container), $ra = $(sections.recentAppointments.container), $ua = $(sections.upcomingAppointments.container), $rr = $(sections.recentReceptions.container);
+                // خواندن خطای سکشن با پشتیبانی PascalCase و camelCase
+                var err = function(key) { return sectionErrors[key] || sectionErrors[key.charAt(0).toLowerCase() + key.slice(1)]; };
                 // QuickStats — پشتیبانی از خطا و نمایش در همان ساختار کارت‌ها
                 if ($qs.length) {
-                    if (sectionErrors.QuickStats) {
+                    if (err('QuickStats')) {
                         self.hideLoading($qs);
-                        self.showError($qs, sectionErrors.QuickStats);
+                        self.showError($qs, err('QuickStats'));
                     } else {
                         self.renderSection($qs, sections.quickStats.partial, d.QuickStats || d.quickStats);
                     }
                 }
                 // RecentAppointments
                 if ($ra.length) {
-                    if (sectionErrors.RecentAppointments) { self.hideLoading($ra); self.showError($ra, sectionErrors.RecentAppointments); }
+                    if (err('RecentAppointments')) { self.hideLoading($ra); self.showError($ra, err('RecentAppointments')); }
                     else self.renderSection($ra, sections.recentAppointments.partial, d.RecentAppointments || d.recentAppointments);
                 }
                 // UpcomingAppointments
                 if ($ua.length) {
-                    if (sectionErrors.UpcomingAppointments) { self.hideLoading($ua); self.showError($ua, sectionErrors.UpcomingAppointments); }
+                    if (err('UpcomingAppointments')) { self.hideLoading($ua); self.showError($ua, err('UpcomingAppointments')); }
                     else self.renderSection($ua, sections.upcomingAppointments.partial, d.UpcomingAppointments || d.upcomingAppointments);
                 }
                 // RecentReceptions
                 if ($rr.length) {
-                    if (sectionErrors.RecentReceptions) { self.hideLoading($rr); self.showError($rr, sectionErrors.RecentReceptions); }
+                    if (err('RecentReceptions')) { self.hideLoading($rr); self.showError($rr, err('RecentReceptions')); }
                     else self.renderSection($rr, sections.recentReceptions.partial, d.RecentReceptions || d.recentReceptions);
                 }
             }).catch(function(xhr) {

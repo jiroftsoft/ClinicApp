@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Areas.Patient.Controllers.Base;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
@@ -17,9 +18,11 @@ namespace ClinicApp.Areas.Patient.Controllers.Api
     /// Single Responsibility: ارائه API endpoints برای AJAX loading sections
     /// 
     /// ✅ Enterprise-Grade: ServiceResult Enhanced, Authorization, AJAX-First
+    /// ✅ دسترسی فقط برای نقش Patient (هم‌تراز با PatientAppointmentApi و DoctorSearchApi).
     /// طبق: CLINICAPP_PATIENT_DASHBOARD_BEAST_ROADMAP_PROMPT.md
     /// </summary>
     [Authorize]
+    [PatientRoleAuthorization]
     public class PatientDashboardApiController : BasePatientController
     {
         private readonly IPatientDashboardService _dashboardService;

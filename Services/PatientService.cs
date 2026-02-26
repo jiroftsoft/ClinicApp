@@ -18,6 +18,8 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
 using PaymentStatus = ClinicApp.Models.Enums.PaymentStatus;
@@ -736,7 +738,8 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
-        /// دریافت جزئیات کامل یک بیمار برای نمایش اطلاعات
+        /// دریافت جزئیات کامل یک بیمار برای نمایش اطلاعات.
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» / NotSupportedException در تب پروفایل رخ ندهد.
         /// </summary>
         public async Task<ServiceResult<PatientDetailsViewModel>> GetPatientDetailsAsync(int patientId)
         {
@@ -746,43 +749,53 @@ namespace ClinicApp.Services
 
             try
             {
-                // مرحله 1: دریافت موجودیت کامل بیمار از دیتابیس
-                var patientEntity = await _context.Patients
-                    .Include(p => p.CreatedByUser)
-                    .Include(p => p.UpdatedByUser)
-                    .Include(p => p.Receptions.Select(r => r.ReceptionItems))
-                    .Include(p => p.Receptions.Select(r => r.Transactions))
-                    .Include(p => p.Receptions.Select(r => r.Doctor))
-                    .Include(p => p.PatientInsurances.Select(pi => pi.InsurancePlan.InsuranceProvider))
-                    .Include(p => p.Appointments.Select(a => a.Doctor))
-                    .Where(p => p.PatientId == patientId && !p.IsDeleted)
-                    .FirstOrDefaultAsync();
-
-                if (patientEntity == null)
+                PatientDetailsViewModel patientViewModel;
+                using (var ctx = new ApplicationDbContext())
                 {
-                    _log.Warning(
-                        "درخواست جزئیات برای بیمار غیرموجود انجام شد. شناسه بیمار: {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
-                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    ctx.Configuration.LazyLoadingEnabled = false;
 
-                    return ServiceResult<PatientDetailsViewModel>.Failed(
-                        "بیمار موردنظر یافت نشد یا حذف شده است.",
-                        "PATIENT_NOT_FOUND",
-                        ErrorCategory.NotFound,
-                        SecurityLevel.Medium);
+                    // مرحله ۱: دریافت موجودیت کامل بیمار از دیتابیس
+                    var patientEntity = await ctx.Patients
+                        .AsNoTracking()
+                        .Include(p => p.CreatedByUser)
+                        .Include(p => p.UpdatedByUser)
+                        .Include(p => p.Receptions.Select(r => r.ReceptionItems))
+                        .Include(p => p.Receptions.Select(r => r.Transactions))
+                        .Include(p => p.Receptions.Select(r => r.Doctor))
+                        .Include(p => p.PatientInsurances.Select(pi => pi.InsurancePlan.InsuranceProvider))
+                        .Include(p => p.Appointments.Select(a => a.Doctor))
+                        .Where(p => p.PatientId == patientId && !p.IsDeleted)
+                        .FirstOrDefaultAsync()
+                        .ConfigureAwait(false);
+
+                    if (patientEntity == null)
+                    {
+                        _log.Warning(
+                            "درخواست جزئیات برای بیمار غیرموجود انجام شد. شناسه بیمار: {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
+                            patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                        return ServiceResult<PatientDetailsViewModel>.Failed(
+                            "بیمار موردنظر یافت نشد یا حذف شده است.",
+                            "PATIENT_NOT_FOUND",
+                            ErrorCategory.NotFound,
+                            SecurityLevel.Medium);
+                    }
+
+                    // مرحله ۲: نگاشت موجودیت به ViewModel (داخل using تا به داده‌های Include دسترسی باشد)
+                    patientViewModel = ConvertToPatientDetailsViewModel(patientEntity);
+
+                    // محاسبه مانده بدهی بیمار
+                    var totalDebt = await ctx.PaymentTransactions
+                        .AsNoTracking()
+                        .Where(t => t.Reception.PatientId == patientId &&
+                                    t.Method == PaymentMethod.Debt &&
+                                    t.Status == PaymentStatus.Success &&
+                                    !t.IsDeleted)
+                        .SumAsync(t => (decimal?)t.Amount)
+                        .ConfigureAwait(false) ?? 0;
+
+                    patientViewModel.DebtBalance = totalDebt;
                 }
-
-                // مرحله 2: نگاشت موجودیت به ViewModel
-                var patientViewModel = ConvertToPatientDetailsViewModel(patientEntity);
-
-                // محاسبه مانده بدهی بیمار - رفع مشکل null
-                var totalDebt = await _context.PaymentTransactions
-                    .Where(t => t.Reception.PatientId == patientId &&
-                               t.Method == PaymentMethod.Debt &&
-                               t.Status == PaymentStatus.Success &&
-                               !t.IsDeleted)
-                    .SumAsync(t => (decimal?)t.Amount) ?? 0;
-
-                patientViewModel.DebtBalance = totalDebt;
 
                 _log.Information(
                     "دریافت جزئیات بیمار شناسه {PatientId} با موفقیت انجام شد. کاربر: {UserName} (شناسه: {UserId})",
@@ -2102,14 +2115,14 @@ namespace ClinicApp.Services
                     DoctorId = a.DoctorId,
                     DoctorName = a.Doctor?.FullName,
                     AppointmentDate = a.AppointmentDate,
-                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    AppointmentDateShamsi = SafeToPersianDateTime(a.AppointmentDate),
                     Status = a.Status,
                     StatusText = GetAppointmentStatusText(a.Status),
                     Price = a.Price,
                     ServiceCategoryName = a.ServiceCategory?.Title,
                     Notes = a.Description,
                     CreatedAt = a.CreatedAt,
-                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                    CreatedAtShamsi = SafeToPersianDateTime(a.CreatedAt)
                 }).ToList();
 
                 _log.Information(
@@ -2138,7 +2151,8 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
-        /// دریافت تاریخچه نوبت‌های بیمار با اطلاعات صفحه‌بندی (برای داشبورد و جایی که TotalCount لازم است)
+        /// دریافت تاریخچه نوبت‌های بیمار با اطلاعات صفحه‌بندی (برای داشبورد و جایی که TotalCount لازم است).
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» رخ ندهد.
         /// </summary>
         public async Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
         {
@@ -2152,19 +2166,25 @@ namespace ClinicApp.Services
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 100) pageSize = 100;
 
-                var query = _context.Appointments
-                    .AsNoTracking()
-                    .Include(a => a.Doctor)
-                    .Include(a => a.ServiceCategory)
-                    .Where(a => a.PatientId == patientId && !a.IsDeleted);
+                List<Models.Entities.Appointment.Appointment> appointments;
+                int totalItems;
+                using (var ctx = new ApplicationDbContext())
+                {
+                    ctx.Configuration.LazyLoadingEnabled = false;
+                    var query = ctx.Appointments
+                        .AsNoTracking()
+                        .Include(a => a.Doctor)
+                        .Include(a => a.ServiceCategory)
+                        .Where(a => a.PatientId == patientId && !a.IsDeleted);
 
-                int totalItems = await query.CountAsync();
+                    totalItems = await query.CountAsync().ConfigureAwait(false);
 
-                var appointments = await query
-                    .OrderByDescending(a => a.AppointmentDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                    appointments = await query
+                        .OrderByDescending(a => a.AppointmentDate)
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync().ConfigureAwait(false);
+                }
 
                 var viewModels = appointments.Select(a => new PatientAppointmentViewModel
                 {
@@ -2173,14 +2193,14 @@ namespace ClinicApp.Services
                     DoctorId = a.DoctorId,
                     DoctorName = a.Doctor?.FullName,
                     AppointmentDate = a.AppointmentDate,
-                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    AppointmentDateShamsi = SafeToPersianDateTime(a.AppointmentDate),
                     Status = a.Status,
                     StatusText = GetAppointmentStatusText(a.Status),
                     Price = a.Price,
                     ServiceCategoryName = a.ServiceCategory?.Title,
                     Notes = a.Description,
                     CreatedAt = a.CreatedAt,
-                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                    CreatedAtShamsi = SafeToPersianDateTime(a.CreatedAt)
                 }).ToList();
 
                 var paged = new PagedResult<PatientAppointmentViewModel>(viewModels, totalItems, pageNumber, pageSize);
@@ -2195,6 +2215,7 @@ namespace ClinicApp.Services
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در دریافت نوبت‌های بیمار با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                _log.Error("GET_APPOINTMENTS_PAGED_ERROR | Type: {ExType} | Message: {ExMessage} | Inner: {Inner}", ex.GetType().FullName, ex.Message, ex.InnerException?.Message ?? "-");
                 return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Failed(
                     "خطا در دریافت تاریخچه نوبت‌ها.",
                     "GET_APPOINTMENTS_PAGED_ERROR",
@@ -2205,6 +2226,7 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// نوبت‌های آینده بیمار با صفحه‌بندی در DB — فیلتر تاریخ و وضعیت در دیتابیس، بدون بارگذاری همه در حافظه.
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» رخ ندهد.
         /// </summary>
         public async Task<ServiceResult<PagedResult<PatientAppointmentViewModel>>> GetPatientUpcomingAppointmentsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
         {
@@ -2220,22 +2242,28 @@ namespace ClinicApp.Services
 
                 var now = DateTime.Now;
 
-                var query = _context.Appointments
-                    .AsNoTracking()
-                    .Include(a => a.Doctor)
-                    .Include(a => a.ServiceCategory)
-                    .Where(a => a.PatientId == patientId
-                        && !a.IsDeleted
-                        && a.AppointmentDate > now
-                        && a.Status != AppointmentStatus.Cancelled);
+                List<Models.Entities.Appointment.Appointment> appointments;
+                int totalItems;
+                using (var ctx = new ApplicationDbContext())
+                {
+                    ctx.Configuration.LazyLoadingEnabled = false;
+                    var query = ctx.Appointments
+                        .AsNoTracking()
+                        .Include(a => a.Doctor)
+                        .Include(a => a.ServiceCategory)
+                        .Where(a => a.PatientId == patientId
+                            && !a.IsDeleted
+                            && a.AppointmentDate > now
+                            && a.Status != AppointmentStatus.Cancelled);
 
-                int totalItems = await query.CountAsync();
+                    totalItems = await query.CountAsync().ConfigureAwait(false);
 
-                var appointments = await query
-                    .OrderBy(a => a.AppointmentDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                    appointments = await query
+                        .OrderBy(a => a.AppointmentDate)
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync().ConfigureAwait(false);
+                }
 
                 var viewModels = appointments.Select(a => new PatientAppointmentViewModel
                 {
@@ -2244,14 +2272,14 @@ namespace ClinicApp.Services
                     DoctorId = a.DoctorId,
                     DoctorName = a.Doctor?.FullName,
                     AppointmentDate = a.AppointmentDate,
-                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    AppointmentDateShamsi = SafeToPersianDateTime(a.AppointmentDate),
                     Status = a.Status,
                     StatusText = GetAppointmentStatusText(a.Status),
                     Price = a.Price,
                     ServiceCategoryName = a.ServiceCategory?.Title,
                     Notes = a.Description,
                     CreatedAt = a.CreatedAt,
-                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                    CreatedAtShamsi = SafeToPersianDateTime(a.CreatedAt)
                 }).ToList();
 
                 var paged = new PagedResult<PatientAppointmentViewModel>(viewModels, totalItems, pageNumber, pageSize);
@@ -2266,6 +2294,7 @@ namespace ClinicApp.Services
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در دریافت نوبت‌های آینده با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                _log.Error("GET_UPCOMING_APPOINTMENTS_PAGED_ERROR | Type: {ExType} | Message: {ExMessage} | Inner: {Inner}", ex.GetType().FullName, ex.Message, ex.InnerException?.Message ?? "-");
                 return ServiceResult<PagedResult<PatientAppointmentViewModel>>.Failed(
                     "خطا در دریافت نوبت‌های آینده.",
                     "GET_UPCOMING_APPOINTMENTS_PAGED_ERROR",
@@ -2276,12 +2305,18 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// تعداد پذیرش‌های بیمار — یک کوئری سبک COUNT، Real-Time (بدون کش).
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» رخ ندهد.
         /// </summary>
         public async Task<int> GetPatientReceptionCountAsync(int patientId)
         {
-            return await _context.Receptions
-                .AsNoTracking()
-                .CountAsync(r => r.PatientId == patientId && !r.IsDeleted);
+            using (var ctx = new ApplicationDbContext())
+            {
+                ctx.Configuration.LazyLoadingEnabled = false;
+                return await ctx.Receptions
+                    .AsNoTracking()
+                    .CountAsync(r => r.PatientId == patientId && !r.IsDeleted)
+                    .ConfigureAwait(false);
+            }
         }
 
         /// <summary>
@@ -2364,6 +2399,7 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// دریافت پذیرش‌های بیمار با صفحه‌بندی و TotalCount — برای پرونده پزشکی (فاز ۱.۲).
+        /// ✅ از context اختصاصی استفاده می‌کند تا وابسته به DbContext درخواست نباشد و خطای «DbContext has been disposed» رخ ندهد.
         /// </summary>
         public async Task<ServiceResult<PagedResult<PatientReceptionViewModel>>> GetPatientReceptionsPagedAsync(int patientId, int pageNumber = 1, int pageSize = 10)
         {
@@ -2373,20 +2409,26 @@ namespace ClinicApp.Services
                 if (pageSize < 1) pageSize = 10;
                 if (pageSize > 100) pageSize = 100;
 
-                var query = _context.Receptions
-                    .AsNoTracking()
-                    .Include(r => r.Doctor)
-                    .Include(r => r.ReceptionItems)
-                    .Include(r => r.Transactions)
-                    .Where(r => r.PatientId == patientId && !r.IsDeleted);
+                List<Models.Entities.Reception.Reception> receptions;
+                int totalItems;
+                using (var ctx = new ApplicationDbContext())
+                {
+                    ctx.Configuration.LazyLoadingEnabled = false;
+                    var query = ctx.Receptions
+                        .AsNoTracking()
+                        .Include(r => r.Doctor)
+                        .Include(r => r.ReceptionItems)
+                        .Include(r => r.Transactions)
+                        .Where(r => r.PatientId == patientId && !r.IsDeleted);
 
-                int totalItems = await query.CountAsync();
+                    totalItems = await query.CountAsync().ConfigureAwait(false);
 
-                var receptions = await query
-                    .OrderByDescending(r => r.ReceptionDate)
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToListAsync();
+                    receptions = await query
+                        .OrderByDescending(r => r.ReceptionDate)
+                        .Skip((pageNumber - 1) * pageSize)
+                        .Take(pageSize)
+                        .ToListAsync().ConfigureAwait(false);
+                }
 
                 var viewModels = receptions.Select(r => new PatientReceptionViewModel
                 {
@@ -2395,7 +2437,7 @@ namespace ClinicApp.Services
                     DoctorId = r.DoctorId,
                     DoctorName = r.Doctor?.FullName,
                     ReceptionDate = r.ReceptionDate,
-                    ReceptionDateShamsi = r.ReceptionDate.ToPersianDateTime(),
+                    ReceptionDateShamsi = SafeToPersianDateTime(r.ReceptionDate),
                     Status = r.Status,
                     StatusText = GetReceptionStatusText(r.Status),
                     TotalAmount = r.TotalAmount,
@@ -2406,7 +2448,7 @@ namespace ClinicApp.Services
                     ServicesCount = r.ReceptionItems?.Count ?? 0,
                     PaymentsCount = r.Transactions?.Count(t => t.Status == PaymentStatus.Success) ?? 0,
                     CreatedAt = r.CreatedAt,
-                    CreatedAtShamsi = r.CreatedAt.ToPersianDateTime()
+                    CreatedAtShamsi = SafeToPersianDateTime(r.CreatedAt)
                 }).ToList();
 
                 var paged = new PagedResult<PatientReceptionViewModel>(viewModels, totalItems, pageNumber, pageSize);
@@ -2421,11 +2463,30 @@ namespace ClinicApp.Services
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در دریافت پذیرش‌های بیمار با صفحه‌بندی - PatientId: {PatientId}", patientId);
+                _log.Error("GET_RECEPTIONS_PAGED_ERROR | Type: {ExType} | Message: {ExMessage} | Inner: {Inner} | StackTrace: {StackTrace}",
+                    ex.GetType().FullName, ex.Message, ex.InnerException?.Message ?? "-", ex.StackTrace);
                 return ServiceResult<PagedResult<PatientReceptionViewModel>>.Failed(
                     "خطا در دریافت تاریخچه پذیرش‌ها.",
                     "GET_RECEPTIONS_PAGED_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// تبدیل امن تاریخ به شمسی — در صورت خطا رشته خالی برمی‌گرداند تا استثنا در Select پرتاب نشود.
+        /// </summary>
+        private static string SafeToPersianDateTime(DateTime dateTime)
+        {
+            try
+            {
+                if (dateTime == default || dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
+                    return string.Empty;
+                return dateTime.ToPersianDateTime();
+            }
+            catch
+            {
+                return dateTime.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
             }
         }
 
