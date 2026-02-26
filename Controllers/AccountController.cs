@@ -143,11 +143,26 @@ namespace ClinicApp.Controllers
                 
                 return CreateServiceResultJson(result);
             }
+            catch (SmsGatewayException sgEx)
+            {
+                _log.Warning(sgEx, "⚠️ [Controller.SendLoginOtp] SMS Gateway - MaskedNC: {MaskedNC}, StatusCode: {Status}",
+                    MaskHelper.MaskNationalCode(model?.NationalCode), sgEx.StatusCode);
+                var is403 = sgEx.StatusCode == System.Net.HttpStatusCode.Forbidden || (int)(sgEx.StatusCode ?? 0) == 403;
+                return CreateServiceResultJson(ServiceResult.Failed(
+                    is403
+                        ? "ارسال کد تایید با مشکل مواجه شد. در برخی موارد فعال بودن VPN یا اختلال شبکه می‌تواند باعث عدم دریافت پیامک شود. لطفاً VPN خود را خاموش کرده و مجدداً تلاش کنید. در صورت عدم دریافت، می‌توانید ارسال مجدد را انتخاب نمایید."
+                        : "ارسال پیامک با مشکل مواجه شد. لطفاً چند لحظه صبر کرده و دوباره تلاش کنید.",
+                    is403 ? "SMS_BLOCKED" : "SMS_GATEWAY_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium,
+                    isTemporaryFailure: true,
+                    suggestVpnOff: is403));
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "❌ [Controller.SendLoginOtp] EXCEPTION - MaskedNC: {MaskedNC}, ExceptionType: {ExceptionType}",
                     MaskHelper.MaskNationalCode(model.NationalCode), ex.GetType().Name);
-                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+                return CreateServiceResultJson(ServiceResult.Failed("خطای سیستمی رخ داد. لطفاً با پشتیبانی تماس بگیرید.", "SYSTEM_ERROR"));
             }
         }
 
@@ -163,10 +178,25 @@ namespace ClinicApp.Controllers
                 var result = await _authService.SendRegistrationOtpAsync(model.NationalCode, model.PhoneNumber);
                 return CreateServiceResultJson(result);
             }
+            catch (SmsGatewayException sgEx)
+            {
+                _log.Warning(sgEx, "⚠️ [Controller.SendRegistrationOtp] SMS Gateway - MaskedNC: {MaskedNC}, StatusCode: {Status}",
+                    MaskHelper.MaskNationalCode(model?.NationalCode), sgEx.StatusCode);
+                var is403 = sgEx.StatusCode == System.Net.HttpStatusCode.Forbidden || (int)(sgEx.StatusCode ?? 0) == 403;
+                return CreateServiceResultJson(ServiceResult.Failed(
+                    is403
+                        ? "ارسال کد تایید با مشکل مواجه شد. در برخی موارد فعال بودن VPN یا اختلال شبکه می‌تواند باعث عدم دریافت پیامک شود. لطفاً VPN خود را خاموش کرده و مجدداً تلاش کنید. در صورت عدم دریافت، می‌توانید ارسال مجدد را انتخاب نمایید."
+                        : "ارسال پیامک با مشکل مواجه شد. لطفاً چند لحظه صبر کرده و دوباره تلاش کنید.",
+                    is403 ? "SMS_BLOCKED" : "SMS_GATEWAY_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium,
+                    isTemporaryFailure: true,
+                    suggestVpnOff: is403));
+            }
             catch (Exception ex)
             {
                 _log.Error(ex, "System error in SendRegistrationOtp for NationalCode: {MaskedNC}", MaskHelper.MaskNationalCode(model.NationalCode));
-                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+                return CreateServiceResultJson(ServiceResult.Failed("خطای سیستمی رخ داد. لطفاً با پشتیبانی تماس بگیرید.", "SYSTEM_ERROR"));
             }
         }
 
@@ -803,7 +833,9 @@ namespace ClinicApp.Controllers
                 success = result.Success,
                 message = result.Message,
                 code = result.Code,
-                redirectUrl
+                redirectUrl,
+                suggestVpnOff = result.SuggestVpnOff,
+                isTemporaryFailure = result.IsTemporaryFailure
             });
         }
 
@@ -815,7 +847,9 @@ namespace ClinicApp.Controllers
                 message = result.Message,
                 code = result.Code,
                 redirectUrl,
-                data = result.Data
+                data = result.Data,
+                suggestVpnOff = result.SuggestVpnOff,
+                isTemporaryFailure = result.IsTemporaryFailure
             });
         }
 

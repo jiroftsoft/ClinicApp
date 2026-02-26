@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -52,6 +52,10 @@ namespace ClinicApp.Helpers
         public string OperationName { get; protected set; }
         public OperationStatus Status { get; protected set; }
         public List<ValidationError> ValidationErrors { get; protected set; }
+        /// <summary>برای OTP: true اگر خطا موقتی باشد (مثلاً 403 از پنل SMS) و کاربر بتواند دوباره تلاش کند.</summary>
+        public bool IsTemporaryFailure { get; protected set; }
+        /// <summary>برای OTP: true اگر احتمالاً به دلیل IP/موقعیت یا VPN باشد؛ پیشنهاد خاموش کردن VPN به کاربر.</summary>
+        public bool SuggestVpnOff { get; protected set; }
 
         #endregion
 
@@ -109,7 +113,9 @@ namespace ClinicApp.Helpers
             string message,
             string code = "GENERAL_ERROR",
             ErrorCategory category = ErrorCategory.General,
-            SecurityLevel securityLevel = SecurityLevel.Medium)
+            SecurityLevel securityLevel = SecurityLevel.Medium,
+            bool isTemporaryFailure = false,
+            bool suggestVpnOff = false)
         {
             var result = new ServiceResult
             {
@@ -118,7 +124,9 @@ namespace ClinicApp.Helpers
                 Code = code,
                 Category = category,
                 SecurityLevel = securityLevel,
-                Status = OperationStatus.Failed
+                Status = OperationStatus.Failed,
+                IsTemporaryFailure = isTemporaryFailure,
+                SuggestVpnOff = suggestVpnOff
             };
 
             // لاگ‌گیری خطا

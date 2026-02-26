@@ -1799,6 +1799,7 @@
     <Compile Include="Services\SharedServiceManagementService.cs" />
     <Compile Include="Services\ShiftHelperService.cs" />
     <Compile Include="Services\ShiftInfo.cs" />
+    <Compile Include="Services\SmsGatewayException.cs" />
     <Compile Include="Services\SystemSettings\ISystemSettingService.cs" />
     <Compile Include="Services\SystemSettings\SystemSettingService.cs" />
     <Compile Include="Services\Triage\ITriageQueueService.cs" />

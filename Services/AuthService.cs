@@ -14,6 +14,7 @@ using Serilog;
 using System;
 using System.Data.Entity;
 using System.Linq;
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -238,6 +239,21 @@ namespace ClinicApp.Services
                     user.Id, duration);
                 
                 return ServiceResult.Successful("کد ورود به شماره موبایل شما ارسال شد.");
+            }
+            catch (SmsGatewayException sgEx)
+            {
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _log.Warning(sgEx, "⚠️ [SendLoginOtp] SMS Gateway failed - MaskedNC: {MaskedNC}, StatusCode: {Status}, Duration: {Duration}ms",
+                    MaskHelper.MaskNationalCode(nationalCode), sgEx.StatusCode, duration);
+                if (sgEx.StatusCode == HttpStatusCode.Forbidden || (int)(sgEx.StatusCode ?? 0) == 403)
+                {
+                    return ServiceResult.Failed(
+                        "ارسال کد تایید با مشکل مواجه شد. در برخی موارد فعال بودن VPN یا اختلال شبکه می‌تواند باعث عدم دریافت پیامک شود. لطفاً VPN خود را خاموش کرده و مجدداً تلاش کنید. در صورت عدم دریافت، می‌توانید ارسال مجدد را انتخاب نمایید.",
+                        "SMS_BLOCKED", ErrorCategory.System, SecurityLevel.Medium, isTemporaryFailure: true, suggestVpnOff: true);
+                }
+                return ServiceResult.Failed(
+                    "ارسال پیامک با مشکل مواجه شد. لطفاً چند لحظه صبر کرده و دوباره تلاش کنید.",
+                    "SMS_GATEWAY_ERROR", ErrorCategory.System, SecurityLevel.Medium, isTemporaryFailure: true, suggestVpnOff: false);
             }
             catch (Exception ex)
             {
@@ -591,6 +607,19 @@ namespace ClinicApp.Services
 
                 _log.Information("کد OTP ثبت‌نام با موفقیت به شماره {PhoneNumber} برای کد ملی {NationalCode} ارسال شد.", normalizedPhone, nationalCode);
                 return ServiceResult.Successful("کد تایید به شماره موبایل شما ارسال شد.");
+            }
+            catch (SmsGatewayException sgEx)
+            {
+                _log.Warning(sgEx, "⚠️ [SendRegistrationOtp] SMS Gateway failed - NationalCode: {NC}, StatusCode: {Status}", nationalCode, sgEx.StatusCode);
+                if (sgEx.StatusCode == HttpStatusCode.Forbidden || (int)(sgEx.StatusCode ?? 0) == 403)
+                {
+                    return ServiceResult.Failed(
+                        "ارسال کد تایید با مشکل مواجه شد. در برخی موارد فعال بودن VPN یا اختلال شبکه می‌تواند باعث عدم دریافت پیامک شود. لطفاً VPN خود را خاموش کرده و مجدداً تلاش کنید. در صورت عدم دریافت، می‌توانید ارسال مجدد را انتخاب نمایید.",
+                        "SMS_BLOCKED", ErrorCategory.System, SecurityLevel.Medium, isTemporaryFailure: true, suggestVpnOff: true);
+                }
+                return ServiceResult.Failed(
+                    "ارسال پیامک با مشکل مواجه شد. لطفاً چند لحظه صبر کرده و دوباره تلاش کنید.",
+                    "SMS_GATEWAY_ERROR", ErrorCategory.System, SecurityLevel.Medium, isTemporaryFailure: true, suggestVpnOff: false);
             }
             catch (Exception ex)
             {

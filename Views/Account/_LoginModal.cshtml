@@ -6,6 +6,25 @@
 <div class="login-form-container">
     <p id="card-subtitle" class="text-center text-muted mb-4" style="font-size: 0.95rem;">برای ادامه لطفاً کد ملی خود را وارد کنید</p>
 
+    <!-- پیام حرفه‌ای و کاربرپسند برای خطای ارسال پیامک (403/VPN) - داخل مودال، قابل مشاهده -->
+    <div id="login-sms-blocked-alert" class="alert alert-warning border-0 shadow-sm mb-3 d-none" role="alert" style="background: #fff8e6; border-right: 4px solid #f59e0b;">
+        <div class="d-flex align-items-start">
+            <span class="me-2 mt-1" style="font-size: 1.25rem;">⚠️</span>
+            <div class="flex-grow-1">
+                <h6 class="alert-heading mb-2" style="color: #92400e; font-weight: 600;">ارسال کد تایید در این لحظه ممکن نشد</h6>
+                <p class="mb-2 small text-muted" style="line-height: 1.6;">
+                    گاهی به‌دلیل تنظیمات شبکه یا اتصال اینترنت، ارسال پیامک با تأخیر یا خطا مواجه می‌شود. این موضوع موقتی است و به‌راحتی قابل حل است.
+                </p>
+                <ul class="small mb-0 ps-3 text-muted" style="line-height: 1.8;">
+                    <li>لطفاً <strong>VPN</strong> خود را خاموش کنید (در صورت استفاده).</li>
+                    <li>اتصال اینترنت خود را بررسی کنید.</li>
+                    <li>پس از <strong id="login-sms-retry-seconds">۴۵</strong> ثانیه می‌توانید دوباره روی «ادامه» کلیک کنید.</li>
+                </ul>
+                <p class="mt-2 mb-0 small" style="color: #92400e;">در صورت ادامه مشکل با پشتیبانی کلینیک تماس بگیرید.</p>
+            </div>
+        </div>
+    </div>
+
     <div id="step-national-code">
         @using (Html.BeginForm("CheckUser", "Account", FormMethod.Post, new { id = "form-check-user" }))
         {
@@ -148,12 +167,14 @@
                 'PHONE_MISMATCH': 'اطلاعات تایید نامعتبر است. لطفاً دوباره تلاش کنید.'
             };
             
-            // ✅ Use mapped message if available, otherwise use response message
-            var finalMessage = errorMessages[code] || message;
+            // ✅ برای خطای ارسال پیامک (403 / VPN) پیام سرور را بدون جایگزینی نمایش بده
+            var isSmsFailure = code === 'SMS_BLOCKED' || code === 'SMS_GATEWAY_ERROR' || response.suggestVpnOff;
+            var finalMessage = isSmsFailure ? message : (errorMessages[code] || message);
+            var toastTimeout = isSmsFailure ? 10000 : 5000; // پیام VPN/ارسال مجدد طولانی‌تر
             
             // ✅ Display with appropriate styling (مکتب خونه style: clear, friendly, actionable)
-            toastr.error(finalMessage, '', {
-                timeOut: 5000, // ✅ Show longer for important errors
+            toastr.error(finalMessage, isSmsFailure ? 'ارسال کد تایید با مشکل مواجه شد ⚠️' : '', {
+                timeOut: toastTimeout,
                 closeButton: true,
                 progressBar: true,
                 positionClass: 'toast-top-center'
@@ -316,6 +337,19 @@
         function showStep(stepId) {
             $('[id^="step-"]').hide();
             $('#' + stepId).show();
+            if (stepId !== 'step-national-code') {
+                hideSmsBlockedAlert();
+            }
+        }
+
+        function showSmsBlockedAlert(retrySeconds) {
+            var $alert = $('#login-sms-blocked-alert');
+            $('#login-sms-retry-seconds').text(retrySeconds || 45);
+            $alert.removeClass('d-none');
+        }
+
+        function hideSmsBlockedAlert() {
+            $('#login-sms-blocked-alert').addClass('d-none');
         }
 
         // --- OTP HANDLING - Delegated to OTPManager (SRP Compliance) ---
@@ -639,7 +673,8 @@
                         
                         // Success: Show OTP step
                         showStep('step-otp');
-                        $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
+                        $('#otp-prompt').html((response.message || 'کد تایید به شماره موبایل شما ارسال شد') +
+                            '<br><small class="text-muted">اگر پیام را دریافت نکردید: اینترنت و VPN خود را بررسی کنید؛ ۶۰ ثانیه صبر کنید.</small>');
                         // Set hidden fields for verify form
                         $('#form-verify-otp input[name="NationalCode"]').val(nationalCode);
                         // ✅ Clear PhoneNumber for login flow
@@ -657,42 +692,55 @@
                         // Reset button state
                         resetSendOtpButton($checkUserButton, originalText);
                     } else {
-                        // ✅ Error: Show user-friendly message and stay on national code step
-                        showErrorMessage(response, 'خطا در ارسال کد تایید');
                         showStep('step-national-code');
-                        resetSendOtpButton($checkUserButton, originalText);
+                        var isSmsBlocked = response && (response.suggestVpnOff || response.isTemporaryFailure || response.code === 'SMS_BLOCKED' || response.code === 'SMS_GATEWAY_ERROR');
+                        var cooldownSec = isSmsBlocked ? 45 : 5;
+                        if (isSmsBlocked) {
+                            showSmsBlockedAlert(cooldownSec);
+                        } else {
+                            hideSmsBlockedAlert();
+                            showErrorMessage(response, 'خطا در ارسال کد تایید');
+                        }
+                        resetSendOtpButton($checkUserButton, originalText, cooldownSec);
                     }
                 },
                 error: function(xhr, status, error) {
                     console.error('SendLoginOtp AJAX Error:', { xhr: xhr, status: status, error: error });
                     var errorMessage = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
-                    
+                    var cooldownSec = 5;
+                    var isSmsBlocked = false;
                     if (xhr.status === 400) {
                         try {
                             var errorResponse = JSON.parse(xhr.responseText);
                             errorMessage = errorResponse.message || 'خطا در ارسال کد تایید';
+                            if (errorResponse.suggestVpnOff || errorResponse.code === 'SMS_BLOCKED') {
+                                cooldownSec = 45;
+                                isSmsBlocked = true;
+                            }
                         } catch (e) {
                             errorMessage = 'خطا در ارسال کد تایید';
                         }
                     } else if (xhr.status === 429) {
                         errorMessage = 'تعداد درخواست‌ها بیش از حد مجاز است. لطفاً چند لحظه صبر کنید.';
-                        // Extended cooldown for rate limit
-                        setSendOtpCooldown(30);
+                        cooldownSec = 30;
                     } else if (xhr.status === 0) {
                         errorMessage = 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
                     }
-                    
-                    showErrorMessage({ message: errorMessage }, 'خطا در ارسال کد تایید');
                     showStep('step-national-code');
-                    resetSendOtpButton($checkUserButton, originalText);
+                    if (isSmsBlocked) {
+                        showSmsBlockedAlert(cooldownSec);
+                    } else {
+                        hideSmsBlockedAlert();
+                        showErrorMessage({ message: errorMessage }, 'خطا در ارسال کد تایید');
+                    }
+                    resetSendOtpButton($checkUserButton, originalText, cooldownSec);
                 }
             });
         }
         
-        function resetSendOtpButton($button, originalText) {
+        function resetSendOtpButton($button, originalText, cooldownSeconds) {
             $button.prop('disabled', false);
-            // Set cooldown for 5 seconds after any attempt
-            setSendOtpCooldown(5);
+            setSendOtpCooldown(cooldownSeconds || 5);
         }
         
         function setSendOtpCooldown(seconds) {
@@ -774,7 +822,8 @@
                         }
                         
                         showStep('step-otp');
-                        $('#otp-prompt').text(response.message || 'کد تایید به شماره موبایل شما ارسال شد');
+                        $('#otp-prompt').html((response.message || 'کد تایید به شماره موبایل شما ارسال شد') +
+                            '<br><small class="text-muted">اگر پیام را دریافت نکردید: اینترنت و VPN خود را بررسی کنید؛ ۶۰ ثانیه صبر کنید.</small>');
                         // Clear OTP inputs
                         $('#otp-inputs .otp-input').val('');
                         $('#combined-otp-code').val('');
@@ -787,8 +836,9 @@
                         }, 100);
                     } else {
                         // ✅ Handle errors (response.success === false)
-                        // First, check for specific error codes that need special handling
-                        if (response && response.code === 'DUPLICATE_PHONE_NUMBER') {
+                        if (response && (response.code === 'SMS_BLOCKED' || response.suggestVpnOff)) {
+                            showErrorMessage(response, 'ارسال کد تایید با مشکل مواجه شد');
+                        } else if (response && response.code === 'DUPLICATE_PHONE_NUMBER') {
                             // ✅ Show user-friendly message for duplicate phone number
                             showErrorMessage(response, 'خطا در ارسال کد تایید');
                             // Also show field-level error if field exists

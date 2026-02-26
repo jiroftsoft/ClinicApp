@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -109,6 +110,7 @@ namespace ClinicApp.Services
             // ارسال با Retry
             var rnd = new Random();
             Exception lastEx = null;
+            int? lastHttpStatusCode = null;
 
             for (int attempt = 1; attempt <= Math.Max(1, _maxRetries); attempt++)
             {
@@ -124,6 +126,7 @@ namespace ClinicApp.Services
                         return;
                     }
 
+                    lastHttpStatusCode = (int)response.StatusCode;
                     _log.Error("Asanak SMS failed. Attempt: {Attempt}, To: {Destination}, Status: {Status}, Error: {Error}, Content: {Content}",
                         attempt, destination, response.StatusCode, response.ErrorMessage, Truncate(response.Content, 800));
 
@@ -156,8 +159,10 @@ namespace ClinicApp.Services
                 }
             }
 
-            // اگر بعد از همه تلاش‌ها ناموفق بود
-            _log.Fatal(lastEx, "Asanak SMS permanently failed after {Retries} attempts. To: {Destination}", _maxRetries, message.Destination);
+            // اگر بعد از همه تلاش‌ها ناموفق بود — پرتاب تا caller (مثلاً AuthService) بتواند 403 را تشخیص دهد و UX حرفه‌ای OTP ارائه دهد
+            _log.Fatal(lastEx, "Asanak SMS permanently failed after {Retries} attempts. To: {Destination}, LastStatus: {Status}", _maxRetries, message.Destination, lastHttpStatusCode);
+            var statusCode = lastHttpStatusCode.HasValue ? (HttpStatusCode?)lastHttpStatusCode.Value : (HttpStatusCode?)null;
+            throw new SmsGatewayException("ارسال پیامک از سمت سرور با خطا مواجه شد.", statusCode, lastEx);
         }
 
         /// <summary>
