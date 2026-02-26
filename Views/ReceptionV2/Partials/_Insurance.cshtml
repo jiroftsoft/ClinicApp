@@ -11,15 +11,15 @@
   <div id="insurance-status-badge-container" class="card-body border-bottom"></div>
   <div class="card-body row g-2 align-items-end">
     <div class="col-md-6">
-      @Html.LabelFor(m => m.BasePlanId, new { @class = "form-label" })
-      @Html.DropDownListFor(m => m.BasePlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "BasePlanId" })
+      <label class="form-label" for="BasePlanId">بیمه پایه</label>
+      @Html.DropDownListFor(m => m.BasePlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "BasePlanId", autocomplete = "off" })
       @Html.ValidationMessageFor(m => m.BasePlanId, null, new { @class = "text-danger small" })
     </div>
     <div class="col-md-6">
       <div class="d-flex gap-2 align-items-end">
         <div class="flex-grow-1">
-          @Html.LabelFor(m => m.SupplementaryPlanId, new { @class = "form-label" })
-          @Html.DropDownListFor(m => m.SupplementaryPlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "SuppPlanId" })
+          <label class="form-label" for="SuppPlanId">بیمه تکمیلی</label>
+          @Html.DropDownListFor(m => m.SupplementaryPlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "SuppPlanId", autocomplete = "off" })
           @Html.ValidationMessageFor(m => m.SupplementaryPlanId, null, new { @class = "text-danger small" })
         </div>
         <button id="btnRemoveSupp" class="btn btn-outline-danger btn-sm" type="button" title="حذف بیمه تکمیلی" style="display: none;">

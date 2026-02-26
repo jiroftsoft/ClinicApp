@@ -70,11 +70,36 @@
 @* POS Payment Modal - استفاده از ماژول جدید قابل استفاده مجدد *@
 @Html.Partial("~/Views/Shared/Components/PosPaymentModal.cshtml")
 
+@{
+  var bootstrapJson = Newtonsoft.Json.JsonConvert.SerializeObject(Model?.Bootstrap ?? (object)null);
+  var signalrUrlJson = Newtonsoft.Json.JsonConvert.SerializeObject(signalRUrl ?? "");
+}
 @Styles.Render("~/content/reception.v2")
 @Scripts.Render("~/bundles/reception.v2")
+<textarea id="reception-bootstrap-json" style="display:none" aria-hidden="true">@Html.Raw(bootstrapJson)</textarea>
+<textarea id="saman-kish-signalr-url-json" style="display:none" aria-hidden="true">@Html.Raw(signalrUrlJson)</textarea>
 <script>
-  window.ReceptionBootstrap = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Bootstrap));
-
-  // ✅ تنظیم SignalR URL از Web.config برای استفاده در JavaScript
-  window.SamanKishSignalRUrl = '@Html.Raw(signalRUrl)';
+(function(){
+  try {
+    var el = document.getElementById('reception-bootstrap-json');
+    var raw = el && el.value;
+    window.ReceptionBootstrap = (raw && raw.trim()) ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.warn('[ReceptionV2] Failed to parse ReceptionBootstrap:', e);
+    window.ReceptionBootstrap = null;
+  }
+  try {
+    var urlEl = document.getElementById('saman-kish-signalr-url-json');
+    var urlRaw = urlEl && urlEl.value;
+    if (urlRaw && urlRaw.trim()) {
+      var parsed = JSON.parse(urlRaw);
+      window.SamanKishSignalRUrl = (typeof parsed === 'string') ? parsed : '';
+    } else {
+      window.SamanKishSignalRUrl = '';
+    }
+  } catch (e) {
+    console.warn('[ReceptionV2] Failed to parse SamanKishSignalRUrl:', e);
+    window.SamanKishSignalRUrl = '';
+  }
+})();
 </script>

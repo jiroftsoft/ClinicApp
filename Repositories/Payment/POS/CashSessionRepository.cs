@@ -95,6 +95,43 @@ namespace ClinicApp.Repositories.Payment.POS
             }
         }
 
+        /// <summary>
+        /// بستن جلسه با UPDATE شرطی در تراکنش — فقط در صورت باز بودن ردیف به‌روز می‌شود (جلوگیری از race)
+        /// </summary>
+        public async Task<CashSession> TryCloseSessionConditionalAsync(int sessionId, DateTime closedAt, decimal finalCashBalance, string updatedByUserId)
+        {
+            using (var transaction = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    // UPDATE فقط وقتی ClosedAt IS NULL و Status = Open/Active — یک درخواست موفق می‌شود
+                    const string sql = @"UPDATE CashSessions SET Status = {1}, ClosedAt = {2}, CashBalance = {3}, UpdatedAt = {4}, UpdatedByUserId = {5} 
+WHERE CashSessionId = {0} AND ClosedAt IS NULL AND (Status = 1)";
+                    var rows = await _context.Database.ExecuteSqlCommandAsync(sql,
+                        sessionId,
+                        (int)CashSessionStatus.Closed,
+                        closedAt,
+                        finalCashBalance,
+                        closedAt,
+                        (object)updatedByUserId ?? (object)DBNull.Value);
+                    if (rows == 0)
+                    {
+                        transaction.Rollback();
+                        _logger.Warning("TryCloseSessionConditional: جلسه قبلاً بسته شده یا وجود ندارد. SessionId: {SessionId}", sessionId);
+                        return null;
+                    }
+                    transaction.Commit();
+                    return await GetByIdAsync(sessionId);
+                }
+                catch (Exception ex)
+                {
+                    transaction.Rollback();
+                    _logger.Error(ex, "خطا در بستن شرطی جلسه. SessionId: {SessionId}", sessionId);
+                    throw;
+                }
+            }
+        }
+
         public async Task<ServiceResult> SoftDeleteAsync(int sessionId, string deletedByUserId)
         {
             try
@@ -160,6 +197,31 @@ namespace ClinicApp.Repositories.Payment.POS
             }
         }
 
+        /// <summary>
+        /// دریافت جلسات کاربر با صفحه‌بندی در سطح DB — بدون بارگذاری همه جلسات در حافظه
+        /// </summary>
+        public async Task<IEnumerable<CashSession>> GetByUserIdPagedAsync(string userId, int pageNumber, int pageSize)
+        {
+            try
+            {
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1 || pageSize > 100) pageSize = 50;
+                return await _context.CashSessions
+                    .Include(cs => cs.User)
+                    .Include(cs => cs.UpdatedByUser)
+                    .Where(cs => !cs.IsDeleted && cs.UserId == userId)
+                    .OrderByDescending(cs => cs.OpenedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جلسات صفحه‌بندی‌شده کاربر. UserId: {UserId}, Page: {Page}", userId, pageNumber);
+                throw;
+            }
+        }
+
         public async Task<IEnumerable<CashSession>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
@@ -207,12 +269,18 @@ namespace ClinicApp.Repositories.Payment.POS
                     .Include(cs => cs.UpdatedByUser)
                     .Where(cs => !cs.IsDeleted);
 
-                if (!string.IsNullOrEmpty(searchTerm))
+                if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
-                    query = query.Where(cs => 
-                        cs.SessionNumber.Contains(searchTerm) ||
-                        cs.Description.Contains(searchTerm) ||
-                        cs.User.UserName.Contains(searchTerm));
+                    var term = searchTerm.Trim();
+                    // SessionNumber و Description در entity محاسبه‌شده‌اند و ستون DB نیستند — جستجو با CashSessionId و UserName
+                    int sessionIdVal;
+                    bool searchById = int.TryParse(term, out sessionIdVal)
+                        || (term.Length > 2 && term.StartsWith("CS", StringComparison.OrdinalIgnoreCase)
+                            && int.TryParse(term.Substring(2).Trim(), out sessionIdVal));
+                    if (searchById)
+                        query = query.Where(cs => cs.CashSessionId == sessionIdVal || cs.User.UserName.Contains(searchTerm));
+                    else
+                        query = query.Where(cs => cs.User.UserName.Contains(searchTerm));
                 }
 
                 return await query
@@ -282,28 +350,15 @@ namespace ClinicApp.Repositories.Payment.POS
 
         #region Statistics Operations
 
+        /// <summary>
+        /// آمار جلسات با تجمیع در SQL — بدون بارگذاری همه ردیف‌ها در حافظه
+        /// </summary>
         public async Task<CashSessionStatistics> GetStatisticsAsync()
         {
             try
             {
-                var sessions = await _context.CashSessions
-                    .Where(cs => !cs.IsDeleted)
-                    .ToListAsync();
-
-                return new CashSessionStatistics
-                {
-                    TotalSessions = sessions.Count,
-                    ActiveSessions = sessions.Count(s => s.Status == CashSessionStatus.Active),
-                    CompletedSessions = sessions.Count(s => s.Status == CashSessionStatus.Closed),
-                    CancelledSessions = sessions.Count(s => s.Status == CashSessionStatus.UnderReview),
-                    TotalInitialCash = sessions.Sum(s => s.InitialCashAmount),
-                    TotalFinalCash = sessions.Sum(s => s.FinalCashAmount),
-                    TotalIncome = sessions.Sum(s => s.TotalIncome),
-                    TotalExpense = sessions.Sum(s => s.TotalExpense),
-                    TotalDifference = sessions.Sum(s => s.Difference),
-                    AverageSessionDuration = (decimal)sessions.Where(s => s.EndTime.HasValue).Average(s => (s.EndTime.Value - s.StartTime).TotalMinutes),
-                    LastSessionDate = sessions.OrderByDescending(s => s.StartTime).FirstOrDefault()?.StartTime
-                };
+                var baseQuery = _context.CashSessions.Where(cs => !cs.IsDeleted);
+                return await BuildStatisticsFromQueryAsync(baseQuery);
             }
             catch (Exception ex)
             {
@@ -316,32 +371,64 @@ namespace ClinicApp.Repositories.Payment.POS
         {
             try
             {
-                var sessions = await _context.CashSessions
-                    .Where(cs => !cs.IsDeleted && 
-                               cs.OpenedAt >= startDate && // ✅ استفاده از OpenedAt به جای StartTime (computed property)
-                               cs.OpenedAt <= endDate)
-                    .ToListAsync();
-
-                return new CashSessionStatistics
-                {
-                    TotalSessions = sessions.Count,
-                    ActiveSessions = sessions.Count(s => s.Status == CashSessionStatus.Active),
-                    CompletedSessions = sessions.Count(s => s.Status == CashSessionStatus.Closed),
-                    CancelledSessions = sessions.Count(s => s.Status == CashSessionStatus.UnderReview),
-                    TotalInitialCash = sessions.Sum(s => s.InitialCashAmount),
-                    TotalFinalCash = sessions.Sum(s => s.FinalCashAmount),
-                    TotalIncome = sessions.Sum(s => s.TotalIncome),
-                    TotalExpense = sessions.Sum(s => s.TotalExpense),
-                    TotalDifference = sessions.Sum(s => s.Difference),
-                    AverageSessionDuration = (decimal)sessions.Where(s => s.EndTime.HasValue).Average(s => (s.EndTime.Value - s.StartTime).TotalMinutes),
-                    LastSessionDate = sessions.OrderByDescending(s => s.StartTime).FirstOrDefault()?.StartTime
-                };
+                var baseQuery = _context.CashSessions
+                    .Where(cs => !cs.IsDeleted && cs.OpenedAt >= startDate && cs.OpenedAt <= endDate);
+                return await BuildStatisticsFromQueryAsync(baseQuery);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت آمار جلسات نقدی بر اساس تاریخ");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// ساخت آمار از IQueryable با تجمیع در دیتابیس (Count/Sum در SQL)
+        /// </summary>
+        private async Task<CashSessionStatistics> BuildStatisticsFromQueryAsync(IQueryable<CashSession> baseQuery)
+        {
+            var q = baseQuery.GroupBy(cs => 1).Select(g => new
+            {
+                TotalSessions = g.Count(),
+                ActiveSessions = g.Count(cs => cs.Status == CashSessionStatus.Active),
+                CompletedSessions = g.Count(cs => cs.Status == CashSessionStatus.Closed),
+                CancelledSessions = g.Count(cs => cs.Status == CashSessionStatus.UnderReview),
+                TotalInitialCash = g.Sum(cs => cs.OpeningBalance),
+                TotalFinalCash = g.Sum(cs => cs.CashBalance),
+                TotalIncome = g.Sum(cs => cs.CashBalance + cs.PosBalance),
+                TotalDifference = g.Sum(cs => cs.CashBalance - cs.OpeningBalance - cs.PosBalance),
+                LastSessionDate = g.Max(cs => cs.OpenedAt)
+            });
+            var row = await q.FirstOrDefaultAsync();
+            if (row == null)
+                return new CashSessionStatistics();
+
+            // میانگین مدت جلسه فقط برای جلسات بسته‌شده — کوئری جدا برای سازگاری با EF6
+            decimal avgMinutes = 0;
+            var closedCount = await baseQuery.CountAsync(cs => cs.ClosedAt != null);
+            if (closedCount > 0)
+            {
+                var avgNullable = await baseQuery
+                    .Where(cs => cs.ClosedAt != null)
+                    .Select(cs => System.Data.Entity.DbFunctions.DiffMinutes(cs.OpenedAt, cs.ClosedAt))
+                    .AverageAsync(); // در EF میانگین روی int? به double? برمی‌گردد
+                if (avgNullable.HasValue) avgMinutes = (decimal)avgNullable.Value;
+            }
+
+            return new CashSessionStatistics
+            {
+                TotalSessions = row.TotalSessions,
+                ActiveSessions = row.ActiveSessions,
+                CompletedSessions = row.CompletedSessions,
+                CancelledSessions = row.CancelledSessions,
+                TotalInitialCash = row.TotalInitialCash,
+                TotalFinalCash = row.TotalFinalCash,
+                TotalIncome = row.TotalIncome,
+                TotalExpense = 0m,
+                TotalDifference = row.TotalDifference,
+                AverageSessionDuration = avgMinutes,
+                LastSessionDate = row.LastSessionDate
+            };
         }
 
         #endregion

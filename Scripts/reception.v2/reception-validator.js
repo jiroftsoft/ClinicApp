@@ -267,9 +267,10 @@
     console.log('🔍 Validating Required Fields - Section:', section || 'all');
     
     const errors = [];
-    const fields = section ? REQUIRED_FIELDS[section] : 
-                   [...REQUIRED_FIELDS.patient, ...REQUIRED_FIELDS.clinic];
-    
+    const patientFields = Array.isArray(REQUIRED_FIELDS.patient) ? REQUIRED_FIELDS.patient : [];
+    const clinicFields = Array.isArray(REQUIRED_FIELDS.clinic) ? REQUIRED_FIELDS.clinic : [];
+    const fields = section ? (REQUIRED_FIELDS[section] || []) : [...patientFields, ...clinicFields];
+
     fields.forEach(field => {
       const result = validateRequiredField(field);
       if (!result.isValid) {

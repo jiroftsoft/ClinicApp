@@ -50,6 +50,12 @@ namespace ClinicApp.Interfaces.Payment.POS
         Task<CashSession> UpdateAsync(CashSession session);
 
         /// <summary>
+        /// بستن جلسه فقط در صورت باز بودن (شرط در WHERE) — جلوگیری از بستن همزمان توسط دو درخواست
+        /// </summary>
+        /// <returns>جلسه به‌روز شده در صورت موفقیت؛ null اگر جلسه قبلاً بسته شده (race)</returns>
+        Task<CashSession> TryCloseSessionConditionalAsync(int sessionId, DateTime closedAt, decimal finalCashBalance, string updatedByUserId);
+
+        /// <summary>
         /// حذف نرم جلسه نقدی
         /// </summary>
         /// <param name="sessionId">شناسه جلسه</param>
@@ -73,6 +79,15 @@ namespace ClinicApp.Interfaces.Payment.POS
         /// <param name="userId">شناسه کاربر</param>
         /// <returns>لیست جلسات</returns>
         Task<IEnumerable<CashSession>> GetByUserIdAsync(string userId);
+
+        /// <summary>
+        /// دریافت جلسات کاربر با صفحه‌بندی در سطح DB (بهینه برای حجم بالا)
+        /// </summary>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <param name="pageNumber">شماره صفحه (۱-based)</param>
+        /// <param name="pageSize">تعداد در هر صفحه</param>
+        /// <returns>لیست جلسات همان صفحه</returns>
+        Task<IEnumerable<CashSession>> GetByUserIdPagedAsync(string userId, int pageNumber, int pageSize);
 
         /// <summary>
         /// دریافت جلسات بر اساس تاریخ

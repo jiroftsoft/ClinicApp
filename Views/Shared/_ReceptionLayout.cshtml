@@ -324,7 +324,19 @@
                     new bootstrap.Offcanvas(element);
                 }
             });
-            
+
+            // Production: پس از بستن منو، بلافاصله body را قابل کلیک و اسکرول کن تا صفحه خاکستری نماند
+            var sidebarEl = document.getElementById('receptionSidebar');
+            if (sidebarEl) {
+                sidebarEl.addEventListener('hidden.bs.offcanvas', function() {
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                    var backdrops = document.querySelectorAll('.offcanvas-backdrop');
+                    backdrops.forEach(function(b) { b.remove(); });
+                });
+            }
+
             // Initialize all tooltips
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
             tooltipTriggerList.forEach(function (tooltipTriggerEl) {

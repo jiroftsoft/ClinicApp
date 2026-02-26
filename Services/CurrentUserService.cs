@@ -1,4 +1,4 @@
-﻿using ClinicApp.Helpers;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
@@ -82,9 +82,15 @@ namespace ClinicApp.Services
                         {
                             return userIdClaim.Value;
                         }
+                        // Fallback: کلیم سفارشی UserId (برای سازگاری با برخی روش‌های احراز هویت)
+                        userIdClaim = claimsIdentity.FindFirst("UserId");
+                        if (userIdClaim != null && !string.IsNullOrEmpty(userIdClaim.Value))
+                        {
+                            return userIdClaim.Value;
+                        }
                     }
 
-                    _logger.Warning("NameIdentifier claim not found for authenticated user");
+                    _logger.Warning("NameIdentifier/UserId claim not found for authenticated user");
                     return null;
                 }
                 catch (Exception ex)

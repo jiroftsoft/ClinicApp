@@ -405,7 +405,17 @@ body.reception-layout {
 
 /* ========================================
    OFFCANVAS SIDEBAR - RECEPTION NAVIGATION
+   Production: بک‌دراپ و منو باید سریع بسته شوند تا صفحه بلافاصله فعال شود
    ======================================== */
+/* ترنزیشن کوتاه برای بستن سریع بک‌دراپ خاکستری */
+.reception-layout .offcanvas-backdrop {
+    transition: opacity 0.1s ease-out !important;
+}
+/* ترنزیشن کوتاه برای بستن خود منو */
+.reception-layout #receptionSidebar.offcanvas {
+    transition: transform 0.2s ease-in-out !important;
+}
+
 .offcanvas.offcanvas-start {
     width: 280px;
     background: var(--reception-white);

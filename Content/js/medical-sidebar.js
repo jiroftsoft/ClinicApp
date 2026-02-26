@@ -33,10 +33,9 @@
     // ============================================
     function init() {
         console.log('[Medical Sidebar] Initializing...');
-        
-        const sidebar = document.getElementById('medicalSidebar');
+        // Reception layout uses #receptionSidebar; other pages may use #medicalSidebar
+        const sidebar = document.getElementById('receptionSidebar') || document.getElementById('medicalSidebar');
         if (!sidebar) {
-            console.warn('[Medical Sidebar] Sidebar element not found');
             return;
         }
 

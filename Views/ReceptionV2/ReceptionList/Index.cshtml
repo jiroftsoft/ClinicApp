@@ -43,28 +43,28 @@
             @* فیلترها *@
             <div class="row g-3 mb-3" id="receptionListFilters">
                 <div class="col-md-3">
-                    <label class="form-label">کد ملی بیمار</label>
-                    <input type="text" class="form-control" id="filterNationalCode" placeholder="کد ملی">
+                    <label class="form-label" for="filterNationalCode">کد ملی بیمار</label>
+                    <input type="text" class="form-control" id="filterNationalCode" placeholder="کد ملی" autocomplete="off" aria-label="کد ملی بیمار">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">نام بیمار</label>
-                    <input type="text" class="form-control" id="filterPatientName" placeholder="نام بیمار">
+                    <label class="form-label" for="filterPatientName">نام بیمار</label>
+                    <input type="text" class="form-control" id="filterPatientName" placeholder="نام بیمار" autocomplete="off" aria-label="نام بیمار">
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">تاریخ از</label>
+                    <label class="form-label" for="filterDateFrom">تاریخ از</label>
                     <input type="text" class="form-control" id="filterDateFrom" placeholder="از تاریخ (شمسی)"
                            data-jdp data-jdp-theme="medical" data-jdp-size="medium" data-no-default-date="true"
-                           autocomplete="off" />
+                           autocomplete="off" aria-label="تاریخ از" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">تاریخ تا</label>
+                    <label class="form-label" for="filterDateTo">تاریخ تا</label>
                     <input type="text" class="form-control" id="filterDateTo" placeholder="تا تاریخ (شمسی)"
                            data-jdp data-jdp-theme="medical" data-jdp-size="medium" data-no-default-date="true"
-                           autocomplete="off" />
+                           autocomplete="off" aria-label="تاریخ تا" />
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">وضعیت</label>
-                    <select class="form-select" id="filterStatus">
+                    <label class="form-label" for="filterStatus">وضعیت</label>
+                    <select class="form-select" id="filterStatus" autocomplete="off" aria-label="وضعیت پذیرش">
                         <option value="">همه</option>
                         <option value="0">در انتظار</option>
                         <option value="1">تکمیل شده</option>
@@ -74,12 +74,12 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">شماره پذیرش</label>
-                    <input type="text" class="form-control" id="filterReceptionNo" placeholder="مثل: 1404-0816-00123">
+                    <label class="form-label" for="filterReceptionNo">شماره پذیرش</label>
+                    <input type="text" class="form-control" id="filterReceptionNo" placeholder="مثل: 1404-0816-00123" autocomplete="off" aria-label="شماره پذیرش">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">شماره الکترونیکی</label>
-                    <input type="text" class="form-control" id="filterElectronicReceptionNumber" placeholder="مثل: 167-1404-0816-00123">
+                    <label class="form-label" for="filterElectronicReceptionNumber">شماره الکترونیکی</label>
+                    <input type="text" class="form-control" id="filterElectronicReceptionNumber" placeholder="مثل: 167-1404-0816-00123" autocomplete="off" aria-label="شماره الکترونیکی پذیرش">
                     <small class="form-text text-muted">برای نمایش تمام پذیرش‌های یک بیمار</small>
                 </div>
                 <div class="col-12">

@@ -6,11 +6,13 @@ using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Payment.POS;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Payment.POS;
 using ClinicApp.ViewModels.Validators.Payment.POS;
 using FluentValidation;
+using Microsoft.AspNet.Identity;
 using Serilog;
 
 namespace ClinicApp.Controllers.Payment.POS
@@ -18,6 +20,7 @@ namespace ClinicApp.Controllers.Payment.POS
     /// <summary>
     /// کنترلر مدیریت ترمینال‌های POS و جلسات نقدی
     /// </summary>
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     public class PosManagementController : BaseController
     {
         private readonly IPosManagementService _posManagementService;
@@ -71,11 +74,17 @@ namespace ClinicApp.Controllers.Payment.POS
             {
                 _logger.Information("درخواست لیست جلسات صندوق - کاربر: {UserName}", _currentUserService?.UserName ?? "Unknown");
 
-                // ✅ دریافت UserId (می‌تواند null باشد - Service خودش handle می‌کند)
+                // ✅ دریافت UserId با fallback: اول از CurrentUserService، سپس از User.Identity (برای سازگاری با OTP/کد ملی)
                 var userId = _currentUserService?.UserId;
+                if (string.IsNullOrWhiteSpace(userId) && User?.Identity?.IsAuthenticated == true)
+                {
+                    userId = User.Identity.GetUserId();
+                    if (!string.IsNullOrWhiteSpace(userId))
+                        _logger.Information("UserId از Identity.GetUserId() بازیابی شد: {UserId}", userId);
+                }
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    _logger.Information("UserId از CurrentUserService null یا empty است - نمایش تمام جلسات");
+                    _logger.Information("UserId در دسترس نیست - نمایش تمام جلسات. IsAuthenticated: {IsAuth}", _currentUserService?.IsAuthenticated ?? false);
                 }
                 else
                 {
@@ -90,10 +99,12 @@ namespace ClinicApp.Controllers.Payment.POS
                     return View(new List<CashSession>());
                 }
 
-                // ✅ اگر UserId null بود، پیام اطلاع‌رسانی نمایش دهیم
+                // ✅ پیام اطلاع‌رسانی فقط وقتی نمایش «همه جلسات» است: تفاوت بین کاربر لاگین‌نشده و فیلتر ناموفق
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    TempData["InfoMessage"] = "در حال نمایش تمام جلسات صندوق (کاربر لاگین نشده است)";
+                    TempData["InfoMessage"] = _currentUserService?.IsAuthenticated == true
+                        ? "در حال نمایش تمام جلسات صندوق (فیلتر بر اساس کاربر اعمال نشد)"
+                        : "در حال نمایش تمام جلسات صندوق (کاربر لاگین نشده است)";
                 }
 
                 return View(result.Data);
@@ -598,20 +609,33 @@ namespace ClinicApp.Controllers.Payment.POS
                     return HandleValidationErrors(validation.Errors.Select(e => e.ErrorMessage));
                 }
 
-                // پایان جلسه
+                // ✅ HIS Production: بررسی مالکیت جلسه — فقط صاحب جلسه یا ادمین می‌تواند ببندد
+                var sessionResult = await _posManagementService.GetSessionByIdAsync(sessionId);
+                if (!sessionResult.Success || sessionResult.Data == null)
+                {
+                    return HandleServiceError(sessionResult);
+                }
+                var session = sessionResult.Data;
                 var userId = _currentUserService.UserId;
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
                     userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
                     _logger.Information("استفاده از UserId fallback: {UserId}", userId);
                 }
+                var isAdmin = User?.IsInRole(AppRoles.Admin) ?? false;
+                if (session.UserId != userId && !isAdmin)
+                {
+                    _logger.Warning("کاربر {UserId} تلاش برای بستن جلسه {SessionId} متعلق به {OwnerId}", userId, sessionId, session.UserId);
+                    NotificationHelper.SetError(TempData, "شما مجوز بستن این جلسه را ندارید.");
+                    return RedirectToAction("SessionDetails", new { id = sessionId });
+                }
 
+                // پایان جلسه
                 var result = await _posManagementService.EndCashSessionAsync(
                     sessionId,
                     model.FinalCashAmount,
-                    userId,
-                    model.Description);
+                    model.Description ?? string.Empty,
+                    userId);
 
                 if (!result.Success)
                 {

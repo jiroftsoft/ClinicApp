@@ -629,6 +629,8 @@ namespace ClinicApp.Services.Payment.POS
                 
                 _logger.Information("✅ Cash session started successfully - SessionId: {SessionId}, UserId: {UserId}, InitialAmount: {InitialAmount}",
                     savedSession.CashSessionId, userId, initialAmount);
+                _logger.Information("🏦 AUDIT StartSession | SessionId: {SessionId}, UserId: {UserId}, InitialAmount: {InitialAmount}, OpenedAt: {OpenedAt}",
+                    savedSession.CashSessionId, userId, initialAmount, savedSession.OpenedAt);
                 
                 return ServiceResult<CashSession>.Successful(savedSession, "جلسه صندوق با موفقیت شروع شد.");
             }
@@ -692,22 +694,24 @@ namespace ClinicApp.Services.Payment.POS
                     return ServiceResult<CashSession>.Failed("این جلسه قبلاً بسته شده است.");
                 }
                 
-                // ✅ به‌روزرسانی جلسه
-                session.Status = CashSessionStatus.Closed;
-                session.ClosedAt = DateTime.Now;
-                session.CashBalance = finalAmount; // مبلغ نهایی نقدی
-                session.UpdatedAt = DateTime.Now;
-                session.UpdatedByUserId = endedByUserId;
-                
-                _logger.Information("💾 Updating cash session - SessionId: {SessionId}, FinalAmount: {FinalAmount}, ExpectedBalance: {ExpectedBalance}, Difference: {Difference}",
-                    sessionId, finalAmount, session.ExpectedBalance, session.Difference);
-                
-                var updatedSession = await _cashSessionRepository.UpdateAsync(session);
-                
+                // ✅ Audit: مقادیر قبل از تغییر (برای ردیابی مالی)
+                var oldStatus = session.Status;
+                var oldCashBalance = session.CashBalance;
+                var expectedBalance = session.OpeningBalance + session.CashBalance + session.PosBalance - 0; // TotalExpense=0 در entity
+
+                _logger.Information("💾 Closing cash session (conditional update) - SessionId: {SessionId}, FinalAmount: {FinalAmount}, ExpectedBalance: {ExpectedBalance}, Difference: {Difference}",
+                    sessionId, finalAmount, expectedBalance, finalAmount - expectedBalance);
+                _logger.Information("🏦 AUDIT EndSession | SessionId: {SessionId}, EndedBy: {EndedBy}, OldStatus: {OldStatus}, OldCashBalance: {OldCashBalance}, NewCashBalance: {NewCashBalance}, Difference: {Difference}",
+                    sessionId, endedByUserId, oldStatus, oldCashBalance, finalAmount, finalAmount - expectedBalance);
+
+                // ✅ بستن با UPDATE شرطی در تراکنش — فقط یک درخواست موفق می‌شود (جلوگیری از race)
+                var updatedSession = await _cashSessionRepository.TryCloseSessionConditionalAsync(
+                    sessionId, DateTime.Now, finalAmount, endedByUserId);
+
                 if (updatedSession == null)
                 {
-                    _logger.Error("❌ Failed to update cash session - SessionId: {SessionId}", sessionId);
-                    return ServiceResult<CashSession>.Failed("خطا در به‌روزرسانی جلسه صندوق در دیتابیس.");
+                    _logger.Warning("⚠️ Cash session was already closed (race or duplicate) - SessionId: {SessionId}", sessionId);
+                    return ServiceResult<CashSession>.Failed("این جلسه قبلاً بسته شده است.");
                 }
                 
                 _logger.Information("✅ Cash session ended successfully - SessionId: {SessionId}, FinalAmount: {FinalAmount}, Difference: {Difference}",
@@ -803,16 +807,14 @@ namespace ClinicApp.Services.Payment.POS
                 if (pageNumber < 1) pageNumber = 1;
                 if (pageSize < 1 || pageSize > 100) pageSize = 50;
                 
-                var sessions = await _cashSessionRepository.GetByUserIdAsync(userId);
-                var pagedSessions = sessions
-                    .Skip((pageNumber - 1) * pageSize)
-                    .Take(pageSize)
-                    .ToList();
+                // ✅ صفحه‌بندی در سطح DB — بدون بارگذاری همه جلسات کاربر در حافظه
+                var pagedSessions = await _cashSessionRepository.GetByUserIdPagedAsync(userId, pageNumber, pageSize);
+                var list = pagedSessions as IList<CashSession> ?? pagedSessions.ToList();
                 
-                _logger.Information("✅ Found {Count} cash sessions for user {UserId}",
-                    pagedSessions.Count, userId);
+                _logger.Information("✅ Found {Count} cash sessions for user {UserId} (page {Page})",
+                    list.Count, userId, pageNumber);
                 
-                return ServiceResult<IEnumerable<CashSession>>.Successful(pagedSessions);
+                return ServiceResult<IEnumerable<CashSession>>.Successful(list);
             }
             catch (Exception ex)
             {
