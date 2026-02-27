@@ -17,10 +17,18 @@ namespace ClinicApp.Interfaces.CMS
         Task<List<NewsletterCampaign>> GetByStatusAsync(NewsletterCampaignStatus status, bool includeDeleted = false);
         Task<List<NewsletterCampaign>> GetScheduledAsync(bool includeDeleted = false);
         Task<List<NewsletterCampaign>> SearchAsync(string searchTerm, NewsletterCampaignStatus? status, DateTime? fromDate, DateTime? toDate, bool includeDeleted = false);
+        /// <summary>
+        /// جستجو با صفحه‌بندی در دیتابیس (بدون بارگذاری کل نتیجه در حافظه).
+        /// </summary>
+        Task<Tuple<List<NewsletterCampaign>, int>> SearchPagedAsync(string searchTerm, NewsletterCampaignStatus? status, DateTime? fromDate, DateTime? toDate, int pageNumber, int pageSize, bool includeDeleted = false);
         void Add(NewsletterCampaign campaign);
         void Update(NewsletterCampaign campaign);
         void Delete(NewsletterCampaign campaign);
         Task<bool> ExistsAsync(int campaignId);
+        /// <summary>افزایش اتمیک OpenedCount برای ترافیک بالا (جلوگیری از race).</summary>
+        Task IncrementOpenedCountAsync(int campaignId);
+        /// <summary>افزایش اتمیک ClickedCount برای ترافیک بالا.</summary>
+        Task IncrementClickedCountAsync(int campaignId);
     }
 }
 

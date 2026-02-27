@@ -29,6 +29,10 @@ namespace ClinicApp.Interfaces.CMS
         Task<ServiceResult> TrackEmailClickAsync(int campaignId, int recipientId, string url);
         Task<ServiceResult<int>> ProcessScheduledCampaignsAsync(); // Background Job
         Task<ServiceResult<int>> EstimateRecipientsAsync(List<NewsletterCategory> categories, bool sendToAll);
+        /// <summary>ارسال واقعی به صف گیرندگان و به‌روزرسانی وضعیت به Sent/Failed و SentCount. از طریق Hangfire فراخوانی می‌شود.</summary>
+        Task ProcessCampaignSendQueueAsync(int campaignId, bool sendEmail, bool sendSms);
+        /// <summary>ارسال مجدد برای کمپین در حال ارسال (ادامه صف) یا ناموفق (تلاش مجدد برای گیرندگان ناموفق).</summary>
+        Task<ServiceResult> RetryCampaignSendAsync(int campaignId);
     }
 }
 

@@ -272,6 +272,13 @@ namespace ClinicApp.ViewModels.CMS
 
     #region NewsletterCampaign Details
 
+    /// <summary>یک خطای ارسال برای نمایش به مدیر (منشی).</summary>
+    public class NewsletterCampaignSendErrorItem
+    {
+        public string RecipientEmail { get; set; }
+        public string ErrorMessage { get; set; }
+    }
+
     public class NewsletterCampaignDetailsViewModel
     {
         public int NewsletterCampaignId { get; set; }
@@ -298,6 +305,12 @@ namespace ClinicApp.ViewModels.CMS
         public string CreatedByUserName { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public string UpdatedByUserName { get; set; }
+        /// <summary>خطاهای ارسال برای نمایش به مدیر — لیست گیرندگانی که ارسال برایشان ناموفق بوده.</summary>
+        public List<NewsletterCampaignSendErrorItem> SendErrors { get; set; } = new List<NewsletterCampaignSendErrorItem>();
+        /// <summary>آیا می‌توان دکمه «ارسال مجدد» را نشان داد (وضعیت در حال ارسال یا ناموفق).</summary>
+        public bool CanRetry { get; set; }
+        /// <summary>تعداد گیرندگانی که هنوز در صف ارسال هستند.</summary>
+        public int PendingCount { get; set; }
     }
 
     #endregion

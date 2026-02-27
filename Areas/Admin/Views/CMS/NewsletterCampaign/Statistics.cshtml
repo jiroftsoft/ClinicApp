@@ -1,7 +1,7 @@
 @model ClinicApp.ViewModels.CMS.NewsletterCampaignStatisticsViewModel
 @using ClinicApp.Helpers
 @{
-    ViewBag.Title = "آمار Campaign";
+    ViewBag.Title = "آمار کمپین";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -15,38 +15,21 @@
    ============================================ *@
 
 @section Styles {
+    @Html.Partial("~/Areas/Admin/Views/CMS/NewsletterCampaign/_NewsletterCampaignUX.cshtml")
     <style>
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-success: #28a745;
-            --medical-danger: #dc3545;
-            --medical-warning: #ffc107;
-            --medical-info: #17a2b8;
-            --medical-border: #dee2e6;
-            --medical-bg: #ffffff;
-            --medical-light: #f8f9fa;
-        }
-        .stat-card {
-            background: var(--medical-bg);
-            border: 1px solid var(--medical-border);
+        .newsletter-campaign-module         .newsletter-campaign-module .stat-card {
+            background: var(--ncm-bg);
+            border: 1px solid var(--ncm-border);
             border-radius: 8px;
             padding: 1.5rem;
             text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            font-family: var(--ncm-font);
         }
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-        }
-        .stat-label {
-            font-size: 0.875rem;
-            color: var(--medical-text-muted);
-        }
+        .newsletter-campaign-module .stat-card:hover { transform: translateY(-3px); }
+        .newsletter-campaign-module .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .newsletter-campaign-module .stat-label { font-size: 0.875rem; color: var(--ncm-text-muted); }
+        .newsletter-campaign-module { --medical-primary: var(--ncm-primary); --medical-success: var(--ncm-success); --medical-info: var(--ncm-info); --medical-warning: var(--ncm-warning); }
         .progress-ring {
             width: 150px;
             height: 150px;
@@ -68,18 +51,17 @@
     </style>
 }
 
-<div class="container-fluid">
+<div class="container-fluid newsletter-campaign-module">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-chart-bar text-primary"></i> آمار Campaign: @Model.Title
-        </h1>
         <div>
-            <a href="@Url.Action("Details", new { id = Model.NewsletterCampaignId })" class="btn btn-info">
-                <i class="fas fa-info-circle"></i> جزئیات
-            </a>
-            <a href="@Url.Action("Index")" class="btn btn-secondary">
-                <i class="fas fa-arrow-right"></i> بازگشت به لیست
-            </a>
+            <h1 class="page-title mb-1">
+                <i class="fas fa-chart-bar text-primary me-2" aria-hidden="true"></i>آمار کمپین
+            </h1>
+            <p class="page-subtitle mb-0">@Model.Title</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Details", new { id = Model.NewsletterCampaignId })" class="btn btn-info me-2"><i class="fas fa-info-circle me-1"></i> جزئیات</a>
+            <a href="@Url.Action("Index")" class="btn btn-secondary"><i class="fas fa-arrow-right me-1"></i> بازگشت به لیست</a>
         </div>
     </div>
 

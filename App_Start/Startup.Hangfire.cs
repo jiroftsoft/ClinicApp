@@ -11,10 +11,16 @@ using Hangfire.SqlServer;
 using Microsoft.Owin;
 using Owin;
 using ClinicApp.Infrastructure.Hangfire;
+using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.CMS;
 using ClinicApp.Interfaces.Notification;
 using ClinicApp.Models;
+using ClinicApp.Repositories.CMS;
 using ClinicApp.Repositories.Notification;
+using ClinicApp.Services;
+using ClinicApp.Services.CMS;
 using ClinicApp.Services.Notification;
+using Serilog;
 using Unity;
 using Unity.Lifetime;
 
@@ -122,6 +128,53 @@ namespace ClinicApp
             child.RegisterType<AppointmentReminderScheduler>(transient);
 
             return child;
+        }
+
+        /// <summary>
+        /// اسکوپ Unity برای Job ارسال کمپین خبرنامه (بدون HttpContext).
+        /// </summary>
+        private static IUnityContainer CreateNewsletterScopeContainer()
+        {
+            var parent = UnityConfig.Container;
+            var child = parent.CreateChildContainer();
+            var transient = new TransientLifetimeManager();
+
+            child.RegisterType<DbContext, ApplicationDbContext>(transient);
+            child.RegisterType<ApplicationDbContext>(transient);
+            child.RegisterInstance<ICurrentUserService>(new NewsletterJobUserStub());
+            child.RegisterType<IChannelConfigRepository, ClinicApp.Repositories.CMS.ChannelConfigRepository>(transient);
+            child.RegisterType<IChannelConfigProvider, ClinicApp.Services.CMS.ChannelConfigProviderService>(transient);
+            child.RegisterType<INewsletterCampaignRepository, NewsletterCampaignRepository>(transient);
+            child.RegisterType<INewsletterCampaignRecipientRepository, NewsletterCampaignRecipientRepository>(transient);
+            child.RegisterType<INewsletterSubscriptionRepository, NewsletterSubscriptionRepository>(transient);
+            child.RegisterType<INewsletterEmailService, NewsletterEmailService>(transient);
+            child.RegisterType<INewsletterSmsService, NewsletterSmsService>(transient);
+            child.RegisterType<INewsletterCampaignService, NewsletterCampaignService>(transient);
+
+            return child;
+        }
+
+        /// <summary>
+        /// Job ارسال واقعی کمپین خبرنامه (ایمیل/SMS) و به‌روزرسانی وضعیت به Sent/Failed و SentCount.
+        /// از SendCampaignAsync با BackgroundJob.Enqueue فراخوانی می‌شود.
+        /// </summary>
+        public static async Task ProcessCampaignSendQueue(int campaignId, bool sendEmail, bool sendSms)
+        {
+            var scope = CreateNewsletterScopeContainer();
+            try
+            {
+                var service = scope.Resolve<INewsletterCampaignService>();
+                await service.ProcessCampaignSendQueueAsync(campaignId, sendEmail, sendSms);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "خطا در Job ارسال کمپین خبرنامه - CampaignId: {CampaignId}", campaignId);
+                throw;
+            }
+            finally
+            {
+                scope.Dispose();
+            }
         }
 
         // Recurring Jobs: resolve from a child container with Transient overrides (no HTTP context in background)

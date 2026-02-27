@@ -2,7 +2,7 @@
 @using ClinicApp.Models.Enums
 @using ClinicApp.Helpers
 @{
-    ViewBag.Title = "جزئیات Campaign";
+    ViewBag.Title = "جزئیات کمپین";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -14,12 +14,41 @@
    - UI/UX: طراحی ماژولار و کامپوننت محور
    ============================================ *@
 
-<div class="container-fluid">
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-paper-plane text-primary"></i> جزئیات Campaign
-        </h1>
-        <div>
+@section Styles {
+    @Html.Partial("~/Areas/Admin/Views/CMS/NewsletterCampaign/_NewsletterCampaignUX.cshtml")
+    <style>
+        .newsletter-campaign-module .details-page-title { font-size: 1.35rem; font-weight: 700; color: var(--ncm-text); line-height: 1.45; margin-bottom: 0.25rem; }
+        .newsletter-campaign-module .details-page-subtitle { font-size: 1rem; color: var(--ncm-text-muted); line-height: 1.5; }
+        .newsletter-campaign-module .details-card .card-header { font-weight: 600; font-size: 1rem; color: var(--ncm-text); }
+        .newsletter-campaign-module .details-card .card-body dl { font-size: 1rem; line-height: 1.7; }
+        .newsletter-campaign-module .details-card dt { font-weight: 600; color: var(--ncm-text); margin-bottom: 0.25rem; }
+        .newsletter-campaign-module .details-card dd { color: var(--ncm-text); margin-bottom: 0.85rem; }
+        .newsletter-campaign-module .details-card dd:last-child { margin-bottom: 0; }
+        .newsletter-campaign-module .details-value-title { font-size: 1.05rem; font-weight: 700; color: var(--ncm-primary); }
+        .newsletter-campaign-module .details-value-text { font-size: 1rem; color: var(--ncm-text); }
+        .newsletter-campaign-module .details-value-template { font-size: 1rem; font-weight: 600; color: #0f172a; background: #e0e7ff; padding: 0.4rem 0.75rem; border-radius: 6px; border: 1px solid #a5b4fc; display: inline-block; }
+        .newsletter-campaign-module .details-categories { font-size: 0.9375rem; font-weight: 500; color: var(--ncm-text); padding: 0.5rem 0.75rem; background: var(--ncm-bg-subtle); border: 1px solid var(--ncm-border); border-radius: 6px; line-height: 1.6; }
+        .newsletter-campaign-module .stat-item { text-align: center; padding: 0.5rem; }
+        .newsletter-campaign-module .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--ncm-primary); }
+        .newsletter-campaign-module .stat-label { font-size: 0.875rem; font-weight: 500; color: var(--ncm-text-muted); }
+        .newsletter-campaign-module .campaign-content-preview { border: 1px solid var(--ncm-border); padding: 1.25rem; border-radius: 8px; background: var(--ncm-bg-subtle); direction: rtl; text-align: right; font-size: 1rem; line-height: 1.75; color: var(--ncm-text); }
+        .newsletter-campaign-module .badge-status-sending { background: linear-gradient(135deg, #c2410c 0%, #ea580c 100%) !important; color: #fff !important; font-weight: 700; font-size: 0.9375rem; padding: 0.5rem 1rem; border: 1px solid #b43a0a; box-shadow: 0 1px 3px rgba(194, 65, 12, 0.35); animation: ncm-pulse-sending 1.8s ease-in-out infinite; }
+        .newsletter-campaign-module .badge-status-sending .fa-paper-plane { animation: ncm-icon-sending 0.6s ease-in-out infinite; }
+        @@keyframes ncm-pulse-sending { 0%, 100% { opacity: 1; } 50% { opacity: 0.92; } }
+        @@keyframes ncm-icon-sending { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-2px); } }
+    </style>
+}
+
+<div class="container-fluid newsletter-campaign-module">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
+        <div class="flex-grow-1">
+            <h1 class="page-title mb-1">
+                <i class="fas fa-eye text-primary me-2" aria-hidden="true"></i>جزئیات کمپین
+            </h1>
+            <p class="details-page-title mb-0">@Model.Title</p>
+            <p class="details-page-subtitle mb-0 mt-1">@Model.Subject</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
             @if (Model.Status == NewsletterCampaignStatus.Draft || Model.Status == NewsletterCampaignStatus.Scheduled)
             {
                 <a href="@Url.Action("Send", new { id = Model.NewsletterCampaignId })" class="btn btn-success">
@@ -28,6 +57,16 @@
                 <a href="@Url.Action("Edit", new { id = Model.NewsletterCampaignId })" class="btn btn-warning">
                     <i class="fas fa-edit"></i> ویرایش
                 </a>
+            }
+            @if (Model.CanRetry)
+            {
+                using (Html.BeginForm("RetrySend", "NewsletterCampaign", new { area = "Admin", id = Model.NewsletterCampaignId }, FormMethod.Post, new { @class = "d-inline", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-warning" aria-label="ارسال مجدد">
+                        <i class="fas fa-redo me-1"></i> ارسال مجدد
+                    </button>
+                }
             }
             <a href="@Url.Action("Statistics", new { id = Model.NewsletterCampaignId })" class="btn btn-info">
                 <i class="fas fa-chart-bar"></i> آمار
@@ -38,32 +77,78 @@
         </div>
     </div>
 
+    @if (Model.Status == NewsletterCampaignStatus.Sending && Model.CanRetry)
+    {
+        <div class="alert alert-info mb-4 d-flex align-items-start" role="alert">
+            <i class="fas fa-info-circle mt-1 me-2" aria-hidden="true"></i>
+            <div>
+                <strong>ارسال در پس‌زمینه انجام می‌شود.</strong>
+                @if (Model.PendingCount > 0)
+                {
+                    <span>@Model.PendingCount نفر در صف ارسال هستند.</span>
+                }
+                اگر پس از چند دقیقه وضعیت عوض نشد، دکمه <strong>«ارسال مجدد»</strong> را بزنید یا تنظیمات ایمیل/سرور (Web.config) را بررسی کنید.
+            </div>
+        </div>
+    }
+
+    @if (Model.SendErrors != null && Model.SendErrors.Any())
+    {
+        <div class="card border-danger mb-4 details-card">
+            <div class="card-header bg-danger text-white py-2">
+                <i class="fas fa-exclamation-triangle me-2"></i>خطاهای ارسال — برای مدیر
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">برای گیرندگانی که ارسال ناموفق بوده، دلیل خطا در جدول زیر نمایش داده شده است. پس از رفع مشکل (مثلاً تنظیم SMTP یا اصلاح ایمیل مشترک) می‌توانید «ارسال مجدد» را بزنید.</p>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th scope="col">ایمیل گیرنده</th>
+                                <th scope="col">دلیل خطا</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var err in Model.SendErrors)
+                            {
+                                <tr>
+                                    <td class="font-weight-bold">@err.RecipientEmail</td>
+                                    <td class="text-danger">@err.ErrorMessage</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+
     <div class="row">
         <div class="col-md-8">
             <!-- Campaign Information -->
-            <div class="card shadow mb-4">
+            <div class="card shadow mb-4 details-card">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-info-circle"></i> اطلاعات Campaign
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="fas fa-info-circle text-primary me-2"></i>اطلاعات کمپین
                     </h6>
                 </div>
                 <div class="card-body">
                     <dl class="row">
-                        <dt class="col-sm-4">عنوان:</dt>
-                        <dd class="col-sm-8"><strong>@Model.Title</strong></dd>
+                        <dt class="col-sm-4">عنوان</dt>
+                        <dd class="col-sm-8 details-value-title">@Model.Title</dd>
 
-                        <dt class="col-sm-4">موضوع ایمیل:</dt>
-                        <dd class="col-sm-8">@Model.Subject</dd>
+                        <dt class="col-sm-4">موضوع ایمیل</dt>
+                        <dd class="col-sm-8 details-value-text">@Model.Subject</dd>
 
                         @if (Model.NewsletterTemplateId.HasValue)
                         {
-                            <dt class="col-sm-4">Template:</dt>
+                            <dt class="col-sm-4">قالب</dt>
                             <dd class="col-sm-8">
-                                <span class="badge badge-info">@Model.TemplateName</span>
+                                <span class="details-value-template">@Model.TemplateName</span>
                             </dd>
                         }
 
-                        <dt class="col-sm-4">ارسال به:</dt>
+                        <dt class="col-sm-4">ارسال به</dt>
                         <dd class="col-sm-8">
                             @if (Model.SendToAll)
                             {
@@ -71,11 +156,11 @@
                             }
                             else
                             {
-                                <span class="badge badge-info">@Model.CategoriesDisplay</span>
+                                <span class="details-categories d-inline-block">@Model.CategoriesDisplay</span>
                             }
                         </dd>
 
-                        <dt class="col-sm-4">وضعیت:</dt>
+                        <dt class="col-sm-4">وضعیت</dt>
                         <dd class="col-sm-8">
                             @{
                                 var statusClass = "badge-secondary";
@@ -92,7 +177,7 @@
                                 }
                                 else if (Model.Status == NewsletterCampaignStatus.Sending)
                                 {
-                                    statusClass = "badge-warning";
+                                    statusClass = "badge-status-sending";
                                     statusIcon = "fa-paper-plane";
                                 }
                                 else if (Model.Status == NewsletterCampaignStatus.Sent)
@@ -106,40 +191,37 @@
                                     statusIcon = "fa-exclamation-circle";
                                 }
                             }
-                            <span class="badge @statusClass">
-                                <i class="fas @statusIcon"></i> @Model.StatusDisplay
+                            <span class="badge @statusClass" role="status">
+                                <i class="fas @statusIcon me-1"></i>@Model.StatusDisplay
                             </span>
                         </dd>
 
                         @if (Model.ScheduledAt.HasValue)
                         {
-                            <dt class="col-sm-4">زمان‌بندی شده برای:</dt>
-                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.ScheduledAt.Value)</dd>
+                            <dt class="col-sm-4">زمان‌بندی شده برای</dt>
+                            <dd class="col-sm-8 details-value-text">@PersianDateHelper.ToPersianDate(Model.ScheduledAt.Value)</dd>
                         }
 
                         @if (Model.SentAt.HasValue)
                         {
-                            <dt class="col-sm-4">ارسال شده در:</dt>
-                            <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.SentAt.Value)</dd>
+                            <dt class="col-sm-4">ارسال شده در</dt>
+                            <dd class="col-sm-8 details-value-text">@PersianDateHelper.ToPersianDate(Model.SentAt.Value)</dd>
                         }
 
-                        <dt class="col-sm-4">تاریخ ایجاد:</dt>
-                        <dd class="col-sm-8">@PersianDateHelper.ToPersianDate(Model.CreatedAt)</dd>
+                        <dt class="col-sm-4">تاریخ ایجاد</dt>
+                        <dd class="col-sm-8 details-value-text">@PersianDateHelper.ToPersianDate(Model.CreatedAt)</dd>
                     </dl>
                 </div>
             </div>
 
-            <!-- Campaign Content -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-code"></i> محتوای Campaign
-                    </h6>
+            <div class="card shadow-sm mb-4 details-card">
+                <div class="card-header">
+                    <span class="section-header mb-0"><i class="fas fa-code text-primary me-2" aria-hidden="true"></i>محتوای کمپین</span>
                 </div>
                 <div class="card-body">
                     @if (!string.IsNullOrEmpty(Model.Content))
                     {
-                        <div class="campaign-content-preview" style="border: 1px solid #dee2e6; padding: 1rem; border-radius: 4px; background: #f8f9fa; direction: rtl; text-align: right;">
+                        <div class="campaign-content-preview">
                             @Html.Raw(Model.Content)
                         </div>
                     }
@@ -152,12 +234,9 @@
         </div>
 
         <div class="col-md-4">
-            <!-- Statistics -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3" style="background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3f73 100%); color: white;">
-                    <h6 class="m-0 font-weight-bold">
-                        <i class="fas fa-chart-bar"></i> آمار Campaign
-                    </h6>
+            <div class="card shadow-sm mb-4 details-card">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--ncm-primary) 0%, #153a5e 100%); color: #fff;">
+                    <span class="section-header mb-0" style="color: #fff;"><i class="fas fa-chart-bar me-2" aria-hidden="true"></i>آمار کمپین</span>
                 </div>
                 <div class="card-body">
                     <div class="stat-item mb-3">
@@ -192,24 +271,21 @@
                 </div>
             </div>
 
-            <!-- System Information -->
-            <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">
-                        <i class="fas fa-cog"></i> اطلاعات سیستم
-                    </h6>
+            <div class="card shadow-sm mb-4 details-card">
+                <div class="card-header">
+                    <span class="section-header mb-0"><i class="fas fa-cog text-primary me-2" aria-hidden="true"></i>اطلاعات سیستم</span>
                 </div>
                 <div class="card-body">
                     <dl class="mb-0">
-                        <dt>ایجاد شده توسط:</dt>
-                        <dd>@(Model.CreatedByUserName ?? "سیستم")</dd>
+                        <dt>ایجاد شده توسط</dt>
+                        <dd class="details-value-text">@(Model.CreatedByUserName ?? "سیستم")</dd>
 
                         @if (Model.UpdatedAt.HasValue)
                         {
-                            <dt>آخرین به‌روزرسانی:</dt>
-                            <dd>@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</dd>
-                            <dt>به‌روزرسانی شده توسط:</dt>
-                            <dd>@(Model.UpdatedByUserName ?? "-")</dd>
+                            <dt>آخرین به‌روزرسانی</dt>
+                            <dd class="details-value-text">@PersianDateHelper.ToPersianDate(Model.UpdatedAt.Value)</dd>
+                            <dt>به‌روزرسانی شده توسط</dt>
+                            <dd class="details-value-text">@(Model.UpdatedByUserName ?? "-")</dd>
                         }
                     </dl>
                 </div>
@@ -217,22 +293,4 @@
         </div>
     </div>
 </div>
-
-@section Styles {
-    <style>
-        .stat-item {
-            text-align: center;
-            padding: 0.5rem;
-        }
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: var(--medical-primary);
-        }
-        .stat-label {
-            font-size: 0.75rem;
-            color: var(--medical-text-muted);
-        }
-    </style>
-}
 

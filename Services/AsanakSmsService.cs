@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Configuration;
+using ClinicApp.Interfaces.CMS;
 using Microsoft.AspNet.Identity;
 using RestSharp;
 using Serilog;
@@ -41,17 +42,19 @@ namespace ClinicApp.Services
         // حذف هر چیزی جز + و ارقام
         private static readonly Regex NonDigitExceptPlus = new Regex(@"(?!^\+)[^\d]", RegexOptions.Compiled);
 
-        public AsanakSmsService()
+        public AsanakSmsService(IChannelConfigProvider configProvider = null)
         {
-            _username = ConfigurationManager.AppSettings["Asanak:Username"];
-            _password = ConfigurationManager.AppSettings["Asanak:Password"];
-            _sourceNumber = ConfigurationManager.AppSettings["Asanak:SourceNumber"];
+            var get = configProvider != null
+                ? (Func<string, string>)(key => configProvider.GetValue(key) ?? ConfigurationManager.AppSettings[key] ?? string.Empty)
+                : (key => ConfigurationManager.AppSettings[key] ?? string.Empty);
 
-            // پیش‌فرض‌ها با قابلیت override از طریق Web.config
-            _enabled = GetBool("Asanak:Enabled", defaultValue: true);
-            _timeoutMs = GetInt("Asanak:TimeoutMs", defaultValue: 15000);
-            _maxRetries = GetInt("Asanak:MaxRetries", defaultValue: 3);
-            _retryBaseDelayMs = GetInt("Asanak:RetryBaseDelayMs", defaultValue: 400);
+            _username = get("Asanak:Username");
+            _password = get("Asanak:Password");
+            _sourceNumber = get("Asanak:SourceNumber");
+            _enabled = GetBool(get, "Asanak:Enabled", true);
+            _timeoutMs = GetInt(get, "Asanak:TimeoutMs", 15000);
+            _maxRetries = GetInt(get, "Asanak:MaxRetries", 3);
+            _retryBaseDelayMs = GetInt(get, "Asanak:RetryBaseDelayMs", 400);
         }
 
         /// <summary>
@@ -268,9 +271,21 @@ namespace ClinicApp.Services
             return int.TryParse(val, out var n) ? n : defaultValue;
         }
 
+        private static int GetInt(Func<string, string> get, string key, int defaultValue)
+        {
+            var val = get(key);
+            return int.TryParse(val, out var n) ? n : defaultValue;
+        }
+
         private static bool GetBool(string key, bool defaultValue)
         {
             var val = ConfigurationManager.AppSettings[key];
+            return bool.TryParse(val, out var b) ? b : defaultValue;
+        }
+
+        private static bool GetBool(Func<string, string> get, string key, bool defaultValue)
+        {
+            var val = get(key);
             return bool.TryParse(val, out var b) ? b : defaultValue;
         }
     }

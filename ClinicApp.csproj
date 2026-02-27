@@ -554,6 +554,7 @@
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalEquipmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\MedicalServiceInfoController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\NewsletterCampaignController.cs" />
+    <Compile Include="Areas\Admin\Controllers\CMS\NewsletterSettingsController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\NewsletterSubscriptionController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\NewsletterTemplateController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\PatientEducationMaterialController.cs" />
@@ -869,6 +870,8 @@
     <Compile Include="Interfaces\CMS\IMedicalEquipmentService.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoRepository.cs" />
     <Compile Include="Interfaces\CMS\IMedicalServiceInfoService.cs" />
+    <Compile Include="Interfaces\CMS\IChannelConfigProvider.cs" />
+    <Compile Include="Interfaces\CMS\IChannelConfigRepository.cs" />
     <Compile Include="Interfaces\CMS\INewsletterCampaignRecipientRepository.cs" />
     <Compile Include="Interfaces\CMS\INewsletterCampaignRepository.cs" />
     <Compile Include="Interfaces\CMS\INewsletterCampaignService.cs" />
@@ -1150,6 +1153,10 @@
     <Compile Include="Migrations\202602271142475_AddInsuranceClaimsAndBatches.Designer.cs">
       <DependentUpon>202602271142475_AddInsuranceClaimsAndBatches.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202602271752331_AddChannelConfigs.cs" />
+    <Compile Include="Migrations\202602271752331_AddChannelConfigs.Designer.cs">
+      <DependentUpon>202602271752331_AddChannelConfigs.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
@@ -1184,6 +1191,7 @@
     <Compile Include="Models\Entities\CMS\BlogPostComment.cs" />
     <Compile Include="Models\Entities\CMS\BlogPostLike.cs" />
     <Compile Include="Models\Entities\CMS\ClinicWorkingHours.cs" />
+    <Compile Include="Models\Entities\CMS\ChannelConfig.cs" />
     <Compile Include="Models\Entities\CMS\ContactForm.cs" />
     <Compile Include="Models\Entities\CMS\EmergencyContact.cs" />
     <Compile Include="Models\Entities\CMS\FAQ.cs" />
@@ -1250,6 +1258,7 @@
     <Compile Include="Repositories\CMS\InsuranceInfoRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalEquipmentRepository.cs" />
     <Compile Include="Repositories\CMS\MedicalServiceInfoRepository.cs" />
+    <Compile Include="Repositories\CMS\ChannelConfigRepository.cs" />
     <Compile Include="Repositories\CMS\NewsletterCampaignRecipientRepository.cs" />
     <Compile Include="Repositories\CMS\NewsletterCampaignRepository.cs" />
     <Compile Include="Repositories\CMS\NewsletterSubscriptionRepository.cs" />
@@ -1592,6 +1601,8 @@
     <Compile Include="Services\Appointment\AppointmentBookingService.cs" />
     <Compile Include="Services\Appointment\AppointmentNotificationService.cs" />
     <Compile Include="Services\Appointment\OnlineConsultationService.cs" />
+    <Compile Include="Services\CMS\ChannelConfigProviderService.cs" />
+    <Compile Include="Services\NewsletterJobUserStub.cs" />
     <Compile Include="Services\Notification\NotificationTemplateEngine.cs" />
     <Compile Include="Services\Notification\NotificationService.cs" />
     <Compile Include="Services\Notification\NotificationQueueProcessor.cs" />
@@ -1873,6 +1884,7 @@
     <Compile Include="ViewModels\CMS\InsuranceInfoViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalEquipmentViewModels.cs" />
     <Compile Include="ViewModels\CMS\MedicalServiceInfoViewModels.cs" />
+    <Compile Include="ViewModels\CMS\NewsletterSettingsViewModel.cs" />
     <Compile Include="ViewModels\CMS\NewsletterViewModels.cs" />
     <Compile Include="ViewModels\CMS\PatientEducationMaterialViewModels.cs" />
     <Compile Include="ViewModels\CMS\SliderViewModels.cs" />
@@ -5008,6 +5020,7 @@
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Send.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\Statistics.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterSettings\Index.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Create.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Details.cshtml" />
     <Content Include="Areas\Admin\Views\CMS\AboutPage\Edit.cshtml" />
@@ -5433,6 +5446,7 @@
     <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayStats.cshtml" />
     <Content Include="Areas\Admin\Views\ReceptionistReports\PatientBookedAppointments.cshtml" />
     <Content Include="Areas\Admin\Views\ReceptionistReports\PatientBookedAppointmentsPrint.cshtml" />
+    <Content Include="Areas\Admin\Views\CMS\NewsletterCampaign\_NewsletterCampaignUX.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />
@@ -7845,6 +7859,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602271142475_AddInsuranceClaimsAndBatches.resx">
       <DependentUpon>202602271142475_AddInsuranceClaimsAndBatches.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602271752331_AddChannelConfigs.resx">
+      <DependentUpon>202602271752331_AddChannelConfigs.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

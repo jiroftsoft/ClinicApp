@@ -1,0 +1,147 @@
+@* طراحی UX یکپارچه ماژول کمپین خبرنامه — منشی، واحد تبلیغات، فروش
+   فونت: Vazir | خوانایی بالا | رسمی و مدرن | محیط بیمارستانی *@
+<style>
+    /* ========== Design tokens */
+    .newsletter-campaign-module {
+        --ncm-font: 'Vazir', 'Vazirmatn', 'Shabnam', 'Tahoma', 'Arial', sans-serif;
+        --ncm-primary: #1e4976;
+        --ncm-primary-light: #2c5aa0;
+        --ncm-success: #0d7a4a;
+        --ncm-danger: #b91c1c;
+        --ncm-warning: #b45309;
+        --ncm-info: #0e7490;
+        --ncm-border: #d1dae6;
+        --ncm-bg: #ffffff;
+        --ncm-bg-subtle: #f0f4f8;
+        --ncm-bg-page: #e4eaf2;
+        /* پس‌زمینه جدول — استاندارد محیط درمانی، بدون سفید خالص و کاهش خیرگی */
+        --ncm-bg-table: #f5f8fc;
+        --ncm-bg-table-alt: #eef2f7;
+        --ncm-bg-table-hover: #e2e8f0;
+        --ncm-text: #1e293b;
+        --ncm-text-muted: #64748b;
+        --ncm-radius: 8px;
+        --ncm-shadow: 0 1px 4px rgba(30, 73, 118, 0.08);
+        --ncm-shadow-card: 0 2px 8px rgba(30, 73, 118, 0.12);
+        --ncm-shadow-hover: 0 4px 12px rgba(0,0,0,0.1);
+        font-family: var(--ncm-font) !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background: var(--ncm-bg-page);
+        min-height: 100%;
+        padding: 1.25rem 0 2rem;
+    }
+
+    .newsletter-campaign-module,
+    .newsletter-campaign-module .card,
+    .newsletter-campaign-module .form-control,
+    .newsletter-campaign-module .btn,
+    .newsletter-campaign-module .table,
+    .newsletter-campaign-module label,
+    .newsletter-campaign-module h1, .newsletter-campaign-module h2, .newsletter-campaign-module h3,
+    .newsletter-campaign-module .page-title {
+        font-family: var(--ncm-font) !important;
+    }
+
+    .newsletter-campaign-module .page-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--ncm-text);
+        letter-spacing: -0.02em;
+        line-height: 1.35;
+    }
+
+    .newsletter-campaign-module .page-subtitle {
+        font-size: 0.9375rem;
+        color: var(--ncm-text-muted);
+        margin-top: 0.25rem;
+    }
+
+    .newsletter-campaign-module .card {
+        border: 1px solid var(--ncm-border);
+        border-radius: var(--ncm-radius);
+        box-shadow: var(--ncm-shadow-card);
+        background: var(--ncm-bg);
+    }
+
+    .newsletter-campaign-module .card-header {
+        font-family: var(--ncm-font) !important;
+        font-weight: 600;
+        font-size: 1rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--ncm-border);
+        background: var(--ncm-bg-subtle);
+        color: var(--ncm-text);
+    }
+
+    .newsletter-campaign-module .card-body {
+        padding: 1.25rem;
+        font-size: 0.9375rem;
+        line-height: 1.65;
+        background: var(--ncm-bg);
+    }
+
+    .newsletter-campaign-module .form-control {
+        font-size: 0.9375rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        border: 1px solid var(--ncm-border);
+    }
+
+    .newsletter-campaign-module label {
+        font-weight: 500;
+        color: var(--ncm-text);
+        font-size: 0.9375rem;
+    }
+
+    .newsletter-campaign-module .table {
+        font-size: 0.9375rem;
+    }
+
+    .newsletter-campaign-module .table th {
+        font-weight: 600;
+        color: var(--ncm-text);
+        border-bottom: 2px solid var(--ncm-border);
+        padding: 0.75rem;
+    }
+
+    .newsletter-campaign-module .table td {
+        padding: 0.75rem;
+        vertical-align: middle !important;
+    }
+
+    .newsletter-campaign-module .btn {
+        font-family: var(--ncm-font) !important;
+        font-weight: 500;
+        font-size: 0.9375rem;
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        min-height: 2.5rem;
+    }
+
+    .newsletter-campaign-module .btn-sm {
+        min-height: 2rem;
+        padding: 0.35rem 0.65rem;
+    }
+
+    .newsletter-campaign-module .badge {
+        font-family: var(--ncm-font) !important;
+        font-weight: 500;
+        font-size: 0.8125rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 6px;
+    }
+
+    .newsletter-campaign-module .section-header {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--ncm-text);
+        margin-bottom: 1rem;
+    }
+
+    @@media (max-width: 768px) {
+        .newsletter-campaign-module .page-title { font-size: 1.25rem; }
+        .newsletter-campaign-module .table { font-size: 0.875rem; }
+        .newsletter-campaign-module .btn-group .btn { margin-bottom: 0.25rem; }
+    }
+</style>

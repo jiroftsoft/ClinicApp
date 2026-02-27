@@ -1,6 +1,6 @@
 @model ClinicApp.ViewModels.CMS.NewsletterCampaignSendViewModel
 @{
-    ViewBag.Title = "ارسال Campaign";
+    ViewBag.Title = "ارسال کمپین";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -15,75 +15,45 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
+    @Html.Partial("~/Areas/Admin/Views/CMS/NewsletterCampaign/_NewsletterCampaignUX.cshtml")
     <style>
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-success: #28a745;
-            --medical-danger: #dc3545;
-            --medical-border: #dee2e6;
-            --medical-bg: #ffffff;
-            --medical-light: #f8f9fa;
-        }
-        .send-container {
-            background: var(--medical-bg);
-            border: 1px solid var(--medical-border);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-        .campaign-preview {
-            border: 1px solid var(--medical-border);
-            border-radius: 4px;
-            padding: 1rem;
-            background: var(--medical-light);
-            margin-bottom: 1rem;
-        }
-        .recipient-count {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--medical-primary);
-            text-align: center;
-            padding: 1rem;
-            background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3f73 100%);
-            color: white;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        @@media (max-width: 768px) {
-            .send-container { padding: 1rem; }
-        }
+        .newsletter-campaign-module .send-container { border: 1px solid var(--ncm-border); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 1.5rem; background: var(--ncm-bg); }
+        .newsletter-campaign-module .campaign-preview { border: 1px solid var(--ncm-border); border-radius: 6px; padding: 1rem; background: var(--ncm-bg-subtle); margin-bottom: 1rem; font-size: 0.9375rem; }
+        .newsletter-campaign-module .recipient-count { font-family: var(--ncm-font); font-size: 2rem; font-weight: 700; text-align: center; padding: 1.25rem; background: linear-gradient(135deg, var(--ncm-primary) 0%, #153a5e 100%); color: #fff; border-radius: 8px; margin-bottom: 1.25rem; line-height: 1.3; }
+        .newsletter-campaign-module .recipient-count small { opacity: 0.9; font-size: 0.875rem; }
     </style>
 }
 
-<div class="container-fluid">
+<div class="container-fluid newsletter-campaign-module">
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-paper-plane text-primary"></i> ارسال Campaign
-        </h1>
         <div>
-            <a href="@Url.Action("Index")" class="btn btn-secondary">
-                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            <h1 class="page-title mb-1">
+                <i class="fas fa-paper-plane text-primary me-2" aria-hidden="true"></i>
+                ارسال کمپین
+            </h1>
+            <p class="page-subtitle mb-0">ارسال فوری یا زمان‌بندی ارسال به مشترکین — برای واحد تبلیغات و فروش</p>
+        </div>
+        <div>
+            <a href="@Url.Action("Index")" class="btn btn-secondary" role="button">
+                <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
             </a>
         </div>
     </div>
 
-    <div class="send-container">
-        <!-- Campaign Preview -->
+    <div class="send-container card border-0">
         <div class="campaign-preview">
-            <h5><i class="fas fa-info-circle"></i> اطلاعات Campaign</h5>
+            <h2 class="section-header h6 mb-3"><i class="fas fa-info-circle text-primary me-2" aria-hidden="true"></i>اطلاعات کمپین</h2>
             <dl class="row mb-0">
-                <dt class="col-sm-3">عنوان:</dt>
-                <dd class="col-sm-9"><strong>@Model.Title</strong></dd>
-                <dt class="col-sm-3">موضوع:</dt>
+                <dt class="col-sm-3 text-muted">عنوان</dt>
+                <dd class="col-sm-9 fw-bold">@Model.Title</dd>
+                <dt class="col-sm-3 text-muted">موضوع</dt>
                 <dd class="col-sm-9">@Model.Subject</dd>
             </dl>
         </div>
 
-        <!-- Recipient Count -->
         <div class="recipient-count">
             <div>@Model.EstimatedRecipients</div>
-            <small style="opacity: 0.9;">مشترک فعال</small>
+            <small>مشترک فعال</small>
         </div>
 
         @using (Html.BeginForm("Send", "NewsletterCampaign", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
@@ -95,9 +65,9 @@
             @Html.HiddenFor(m => m.Content)
             @Html.HiddenFor(m => m.EstimatedRecipients)
 
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                <strong>توجه:</strong> این Campaign به <strong>@Model.EstimatedRecipients</strong> مشترک فعال ارسال خواهد شد.
+            <div class="alert alert-info d-flex align-items-start mb-4">
+                <i class="fas fa-info-circle me-2 mt-1" aria-hidden="true"></i>
+                <span>این کمپین به <strong>@Model.EstimatedRecipients</strong> مشترک فعال ارسال خواهد شد. با دکمه «ارسال کمپین» تأیید نهایی را انجام دهید.</span>
             </div>
 
             <div class="row">
@@ -161,12 +131,12 @@
                 </div>
             </div>
 
-            <div class="form-group mt-4">
-                <button type="submit" class="btn btn-success btn-lg">
-                    <i class="fas fa-paper-plane"></i> ارسال Campaign
+            <div class="mt-4 pt-3 border-top">
+                <button type="submit" class="btn btn-success btn-lg" aria-label="ارسال کمپین">
+                    <i class="fas fa-paper-plane me-1" aria-hidden="true"></i> ارسال کمپین
                 </button>
-                <a href="@Url.Action("Index")" class="btn btn-secondary">
-                    <i class="fas fa-times"></i> لغو
+                <a href="@Url.Action("Index")" class="btn btn-secondary ms-2" role="button">
+                    <i class="fas fa-times me-1" aria-hidden="true"></i> انصراف
                 </a>
             </div>
         }
@@ -179,22 +149,18 @@
     
     <script>
         $(document).ready(function() {
-            // Validation
+            var formSubmitted = false;
             $('form').on('submit', function(e) {
+                if (formSubmitted) return true;
+                e.preventDefault();
+
                 if (!$('#sendEmail').is(':checked') && !$('#sendSms').is(':checked')) {
-                    e.preventDefault();
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'هشدار',
-                        text: 'لطفاً حداقل یکی از روش‌های ارسال (ایمیل یا SMS) را انتخاب کنید.'
-                    });
+                    Swal.fire({ icon: 'warning', title: 'هشدار', text: 'لطفاً حداقل یکی از روش‌های ارسال (ایمیل یا SMS) را انتخاب کنید.' });
                     return false;
                 }
 
-                // ترکیب تاریخ و زمان قبل از بررسی
                 var persianDate = $('#scheduledAtDatePicker').val();
                 var time = $('#scheduledAtTimePicker').val();
-                
                 if (persianDate && persianDate.trim() !== '') {
                     var hiddenDate = $('input[name="ScheduledAtDate_Hidden"]').val();
                     if (hiddenDate) {
@@ -203,30 +169,39 @@
                             var datePart = hiddenDate.split('T')[0];
                             dateTimeStr = datePart + 'T' + time + ':00';
                         }
-                        var $scheduledAtHidden = $('input[name="ScheduledAt_Hidden"]');
-                        if ($scheduledAtHidden.length === 0) {
-                            $scheduledAtHidden = $('<input>').attr({
-                                type: 'hidden',
-                                name: 'ScheduledAt_Hidden'
-                            });
-                            $('form').append($scheduledAtHidden);
-                        }
-                        $scheduledAtHidden.val(dateTimeStr);
-
-                        // بررسی اینکه تاریخ در آینده باشد
+                        var $h = $('input[name="ScheduledAt_Hidden"]');
+                        if ($h.length === 0) { $h = $('<input>').attr({ type: 'hidden', name: 'ScheduledAt_Hidden' }); $('form').append($h); }
+                        $h.val(dateTimeStr);
                         var scheduledDate = new Date(dateTimeStr);
-                        var now = new Date();
-                        if (scheduledDate <= now) {
-                            e.preventDefault();
-                            Swal.fire({
-                                icon: 'warning',
-                                title: 'هشدار',
-                                text: 'تاریخ زمان‌بندی باید در آینده باشد.'
-                            });
+                        if (scheduledDate <= new Date()) {
+                            Swal.fire({ icon: 'warning', title: 'هشدار', text: 'تاریخ زمان‌بندی باید در آینده باشد.' });
                             return false;
                         }
                     }
                 }
+
+                var count = parseInt('@Model.EstimatedRecipients', 10) || 0;
+                var isScheduled = $('#scheduledAtDatePicker').val() && $('#scheduledAtDatePicker').val().trim() !== '';
+                var actionText = isScheduled ? 'زمان‌بندی ارسال' : 'ارسال فوری';
+                var msg = count > 0
+                    ? 'این کمپین به ' + count + ' مشترک ' + (isScheduled ? 'در زمان مشخص شده ارسال خواهد شد.' : 'همین الان ارسال خواهد شد.') + ' آیا مطمئن هستید؟'
+                    : 'آیا از ' + actionText + ' مطمئن هستید؟';
+
+                Swal.fire({
+                    icon: 'question',
+                    title: 'تأیید ' + actionText,
+                    text: msg,
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، ادامه'
+                }).then(function(result) {
+                    if (result.isConfirmed) {
+                        formSubmitted = true;
+                        $('form').off('submit').submit();
+                    }
+                });
+                return false;
             });
         });
     </script>

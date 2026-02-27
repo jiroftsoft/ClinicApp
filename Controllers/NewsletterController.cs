@@ -6,6 +6,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.ViewModels.CMS;
 using Serilog;
+using System.Web;
 
 namespace ClinicApp.Controllers
 {
@@ -214,23 +215,44 @@ namespace ClinicApp.Controllers
                     return RedirectToAction("Index", "Home");
                 }
 
-                // Tracking کلیک
-                var decodedUrl = System.Web.HttpUtility.UrlDecode(url);
+                var decodedUrl = HttpUtility.UrlDecode(url);
                 var result = await _campaignService.TrackEmailClickAsync(campaignId, recipientId, decodedUrl);
 
-                // Redirect به URL اصلی
-                return Redirect(decodedUrl);
+                // امنیت: فقط ریدایرکت به همان دامنه یا مسیر نسبی (جلوگیری از Open Redirect)
+                if (IsSafeRedirectUrl(decodedUrl))
+                {
+                    return Redirect(decodedUrl);
+                }
+                _logger.Warning("ریدایرکت نامعتبر در TrackClick - Url: {Url}, CampaignId: {CampaignId}", decodedUrl, campaignId);
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در Tracking کلیک - CampaignId: {CampaignId}, RecipientId: {RecipientId}, Url: {Url}", 
+                _logger.Error(ex, "خطا در Tracking کلیک - CampaignId: {CampaignId}, RecipientId: {RecipientId}, Url: {Url}",
                     campaignId, recipientId, url);
-                // حتی در صورت خطا، به URL اصلی Redirect می‌کنیم
-                if (!string.IsNullOrWhiteSpace(url))
-                {
-                    return Redirect(System.Web.HttpUtility.UrlDecode(url));
-                }
                 return RedirectToAction("Index", "Home");
+            }
+        }
+
+        /// <summary>
+        /// فقط مسیر نسبی (/) یا همان دامنه فعلی را برای ریدایرکت مجاز می‌داند.
+        /// </summary>
+        private bool IsSafeRedirectUrl(string url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return false;
+            url = url.Trim();
+            if (url.StartsWith("/", StringComparison.Ordinal) && !url.StartsWith("//", StringComparison.Ordinal))
+                return true;
+            try
+            {
+                var uri = new Uri(url, UriKind.RelativeOrAbsolute);
+                if (!uri.IsAbsoluteUri) return true;
+                var requestHost = Request?.Url?.Host ?? "";
+                return string.Equals(uri.Host, requestHost, StringComparison.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                return false;
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using ClinicApp.Helpers;
+using ClinicApp.Helpers;
+using ClinicApp.Interfaces.CMS;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Services;
@@ -27,8 +28,9 @@ namespace ClinicApp
     #region Email Service (بهینه‌سازی شده برای محیط عملیاتی)
 
     /// <summary>
-    /// سرویس ایمیل حرفه‌ای برای سیستم کلینیک شفا
-    /// این سرویس با توجه به استانداردهای سیستم‌های پزشکی طراحی شده است
+    /// سرویس ایمیل حرفه‌ای برای سیستم کلینیک شفا.
+    /// آدرس فرستنده (From) از appSettings با کلید Email:FromAddress در Web.config تنظیم می‌شود.
+    /// در صورت خالی بودن یا شکست ارسال پس از Retry، خطا لاگ و در صورت شکست نهایی Exception پرتاب می‌شود.
     /// </summary>
     public class EmailService : IIdentityMessageService
     {
@@ -36,19 +38,19 @@ namespace ClinicApp
         private readonly int _maxRetries;
         private readonly int _retryBaseDelayMs;
         private readonly int _timeoutMs;
+        private readonly IChannelConfigProvider _configProvider;
 
-        public EmailService()
+        public EmailService(IChannelConfigProvider configProvider = null)
         {
-            // پیکربندی از طریق Web.config
-            _maxRetries = GetInt("Email:MaxRetries", 3);
-            _retryBaseDelayMs = GetInt("Email:RetryBaseDelayMs", 400);
-            _timeoutMs = GetInt("Email:TimeoutMs", 15000);
+            _configProvider = configProvider;
+            _maxRetries = GetIntInternal("Email:MaxRetries", 3);
+            _retryBaseDelayMs = GetIntInternal("Email:RetryBaseDelayMs", 400);
+            _timeoutMs = GetIntInternal("Email:TimeoutMs", 15000);
         }
 
         public async Task SendAsync(IdentityMessage message)
         {
-            // در سیستم پسورد‌لس، ممکن است نیازی به ارسال ایمیل نباشد
-            var enabled = GetBool("Email:Enabled", false);
+            var enabled = GetBoolInternal("Email:Enabled", false);
             if (!enabled)
             {
                 _log.Information("Email sending is DISABLED via config. Destination: {Destination}", message?.Destination);
@@ -61,26 +63,30 @@ namespace ClinicApp
                 return;
             }
 
-            // اعتبارسنجی پایه
-            var fromAddress = ConfigurationManager.AppSettings["Email:FromAddress"];
+            var fromAddress = (await GetConfigAsync("Email:FromAddress")).Trim();
             if (string.IsNullOrEmpty(fromAddress))
             {
-                _log.Error("Email:FromAddress is not configured in appSettings");
-                return;
+                _log.Error("Email:FromAddress is not configured in appSettings or DB");
+                throw new InvalidOperationException("تنظیم Email:FromAddress الزامی است (تنظیمات ارسال یا Web.config).");
+            }
+            if (!IsValidEmailFormat(fromAddress))
+            {
+                _log.Error("Email:FromAddress format is invalid: {FromAddress}", fromAddress);
+                throw new InvalidOperationException("فرمت آدرس فرستنده (Email:FromAddress) نامعتبر است.");
             }
 
-            var smtpServer = ConfigurationManager.AppSettings["Email:SmtpServer"];
-            var portStr = ConfigurationManager.AppSettings["Email:Port"];
+            var smtpServer = (await GetConfigAsync("Email:SmtpServer")).Trim();
+            var portStr = (await GetConfigAsync("Email:Port")).Trim();
             if (string.IsNullOrEmpty(smtpServer) || string.IsNullOrEmpty(portStr))
             {
-                _log.Error("Email configuration is incomplete in appSettings");
-                return;
+                _log.Error("Email configuration is incomplete in appSettings (SmtpServer, Port)");
+                throw new InvalidOperationException("تنظیمات Email:SmtpServer و Email:Port در Web.config الزامی است.");
             }
 
             if (string.IsNullOrWhiteSpace(message.Destination) || string.IsNullOrWhiteSpace(message.Body))
             {
                 _log.Warning("Destination or Body is empty for email");
-                return;
+                throw new ArgumentException("گیرنده یا متن ایمیل خالی است.", nameof(message));
             }
 
             // ارسال با مکانیزم Retry
@@ -92,7 +98,7 @@ namespace ClinicApp
                 using var cts = new CancellationTokenSource(_timeoutMs);
                 try
                 {
-                    await SendInternalAsync(fromAddress, message, cts.Token);
+                    await SendInternalAsync(fromAddress, message, cts.Token).ConfigureAwait(false);
                     _log.Information("Email sent successfully to {Destination}. Attempt: {Attempt}",
                         message.Destination, attempt);
                     return;
@@ -118,18 +124,20 @@ namespace ClinicApp
                 }
             }
 
-            // اگر بعد از همه تلاش‌ها ناموفق بود
+            // اگر بعد از همه تلاش‌ها ناموفق بود — پرتاب خطا تا caller بتواند ServiceResult.Failed برگرداند
             _log.Fatal(lastEx, "Email permanently failed after {Retries} attempts. To: {Destination}",
                 _maxRetries, message.Destination);
+            throw new InvalidOperationException(
+                "ارسال ایمیل پس از تلاش‌های مجدد ناموفق بود.", lastEx);
         }
 
         private async Task SendInternalAsync(string fromAddress, IdentityMessage message, CancellationToken ct)
         {
-            var smtpServer = ConfigurationManager.AppSettings["Email:SmtpServer"];
-            var portStr = ConfigurationManager.AppSettings["Email:Port"];
-            var username = ConfigurationManager.AppSettings["Email:Username"];
-            var password = ConfigurationManager.AppSettings["Email:Password"];
-            var enableSsl = GetBool("Email:EnableSsl", true);
+            var smtpServer = await GetConfigAsync("Email:SmtpServer");
+            var portStr = await GetConfigAsync("Email:Port");
+            var username = await GetConfigAsync("Email:Username");
+            var password = await GetConfigAsync("Email:Password");
+            var enableSsl = GetBoolInternal("Email:EnableSsl", true);
 
             var port = int.TryParse(portStr, out int p) ? p : 587;
 
@@ -141,7 +149,8 @@ namespace ClinicApp
                 EnableSsl = enableSsl
             };
 
-            using var mailMessage = new MailMessage(fromAddress, message.Destination, message.Subject, message.Body)
+            var subject = message.Subject ?? string.Empty;
+            using var mailMessage = new MailMessage(fromAddress, message.Destination, subject, message.Body ?? string.Empty)
             {
                 IsBodyHtml = true
             };
@@ -161,16 +170,43 @@ namespace ClinicApp
             return delay;
         }
 
-        private static int GetInt(string key, int defaultValue)
+        private string GetConfig(string key)
         {
-            var val = ConfigurationManager.AppSettings[key];
+            return _configProvider?.GetValue(key) ?? ConfigurationManager.AppSettings[key] ?? string.Empty;
+        }
+
+        private async Task<string> GetConfigAsync(string key)
+        {
+            if (_configProvider != null)
+            {
+                var v = await _configProvider.GetValueAsync(key).ConfigureAwait(false);
+                return v ?? string.Empty;
+            }
+            return ConfigurationManager.AppSettings[key] ?? string.Empty;
+        }
+
+        private int GetIntInternal(string key, int defaultValue)
+        {
+            var val = GetConfig(key);
             return int.TryParse(val, out var n) ? n : defaultValue;
         }
 
-        private static bool GetBool(string key, bool defaultValue)
+        private bool GetBoolInternal(string key, bool defaultValue)
         {
-            var val = ConfigurationManager.AppSettings[key];
+            var val = GetConfig(key);
             return bool.TryParse(val, out var b) ? b : defaultValue;
+        }
+
+        private static bool IsValidEmailFormat(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || email.Length > 254) return false;
+            try
+            {
+                return System.Text.RegularExpressions.Regex.IsMatch(email,
+                    @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+                    System.Text.RegularExpressions.RegexOptions.Compiled);
+            }
+            catch { return false; }
         }
 
         #endregion

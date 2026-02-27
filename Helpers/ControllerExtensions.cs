@@ -102,6 +102,39 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// ترکیب تاریخ از hidden input و زمان از فیلد time (HH:mm) — بدون پرتاب استثنا.
+        /// </summary>
+        /// <param name="controller">Controller</param>
+        /// <param name="dateFieldName">نام فیلد تاریخ (مثلاً ScheduledAtDate)</param>
+        /// <param name="timeFieldName">نام فیلد زمان در Form (مثلاً ScheduledAtTime)</param>
+        /// <param name="logger">Logger اختیاری</param>
+        /// <returns>ترکیب تاریخ و زمان یا فقط تاریخ اگر زمان نامعتبر باشد؛ در غیر این صورت null</returns>
+        public static DateTime? ParseDateAndTimeFromForm(this Controller controller, string dateFieldName, string timeFieldName, Serilog.ILogger logger = null)
+        {
+            var date = controller.ParseDateFromHiddenInput(dateFieldName, logger);
+            if (!date.HasValue)
+                return null;
+
+            var timeValue = controller.Request.Form[timeFieldName];
+            if (string.IsNullOrWhiteSpace(timeValue))
+                return date.Value.Date;
+
+            var parts = timeValue.Trim().Split(':');
+            if (parts.Length < 2)
+                return date.Value.Date;
+
+            if (int.TryParse(parts[0], out int hour) && int.TryParse(parts[1], out int minute))
+            {
+                if (hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59)
+                    return date.Value.Date.AddHours(hour).AddMinutes(minute);
+            }
+
+            if (logger != null)
+                logger.Warning("مقدار زمان نامعتبر در فرم - Field: {TimeField}, Value: {Value}", timeFieldName, timeValue);
+            return date.Value.Date;
+        }
+
+        /// <summary>
         /// تبدیل تاریخ‌های شمسی به میلادی برای یک ViewModel
         /// این متد تمام فیلدهای تاریخ را از hidden inputs می‌خواند و تبدیل می‌کند
         /// </summary>

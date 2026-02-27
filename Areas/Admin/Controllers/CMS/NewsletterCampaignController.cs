@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.CMS;
+using ClinicApp.Models.Core;
 using ClinicApp.ViewModels.CMS;
 using Serilog;
 
@@ -13,7 +14,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
     /// کنترلر مدیریت Campaign های خبرنامه
     /// طراحی شده بر اساس اصول SRP و Strongly-Typed
     /// </summary>
-    //[Authorize(Roles = "Admin")]
+    [Authorize(Roles = AppRoles.Admin)]
     public class NewsletterCampaignController : BaseCMSController
     {
         private readonly INewsletterCampaignService _campaignService;
@@ -153,33 +154,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
-                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
-                var scheduledTime = Request.Form["ScheduledAtTime"];
-                
-                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                if (model == null)
                 {
-                    // ترکیب تاریخ و زمان
-                    var timeParts = scheduledTime.Split(':');
-                    if (timeParts.Length >= 2)
-                    {
-                        var hour = int.Parse(timeParts[0]);
-                        var minute = int.Parse(timeParts[1]);
-                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
-                    }
-                    else
-                    {
-                        model.ScheduledAt = scheduledDate.Value;
-                    }
+                    NotificationHelper.SetError(TempData, "اطلاعات فرم نامعتبر است.");
+                    return RedirectToAction("Index");
                 }
-                else if (scheduledDate.HasValue)
-                {
-                    model.ScheduledAt = scheduledDate.Value;
-                }
-                else
-                {
-                    model.ScheduledAt = null;
-                }
+                model.ScheduledAt = this.ParseDateAndTimeFromForm("ScheduledAtDate", "ScheduledAtTime", _logger);
 
                 if (!ModelState.IsValid)
                 {
@@ -210,7 +190,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 NotificationHelper.SetError(TempData, "خطا در ایجاد Campaign");
                 var templatesResult = await _templateService.GetTemplatesAsync();
                 ViewBag.Templates = templatesResult.Success ? templatesResult.Data : new System.Collections.Generic.List<NewsletterTemplateIndexViewModel>();
-                return View(GetViewPath("Create"), model);
+                return View(GetViewPath("Create"), model ?? new NewsletterCampaignCreateEditViewModel { SelectedCategories = new System.Collections.Generic.List<Models.Enums.NewsletterCategory>() });
             }
         }
 
@@ -251,33 +231,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
-                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
-                var scheduledTime = Request.Form["ScheduledAtTime"];
-                
-                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                if (model == null)
                 {
-                    // ترکیب تاریخ و زمان
-                    var timeParts = scheduledTime.Split(':');
-                    if (timeParts.Length >= 2)
-                    {
-                        var hour = int.Parse(timeParts[0]);
-                        var minute = int.Parse(timeParts[1]);
-                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
-                    }
-                    else
-                    {
-                        model.ScheduledAt = scheduledDate.Value;
-                    }
+                    NotificationHelper.SetError(TempData, "اطلاعات فرم نامعتبر است.");
+                    return RedirectToAction("Index");
                 }
-                else if (scheduledDate.HasValue)
-                {
-                    model.ScheduledAt = scheduledDate.Value;
-                }
-                else
-                {
-                    model.ScheduledAt = null;
-                }
+                model.ScheduledAt = this.ParseDateAndTimeFromForm("ScheduledAtDate", "ScheduledAtTime", _logger);
 
                 if (!ModelState.IsValid)
                 {
@@ -308,7 +267,9 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 NotificationHelper.SetError(TempData, "خطا در به‌روزرسانی Campaign");
                 var templatesResult = await _templateService.GetTemplatesAsync();
                 ViewBag.Templates = templatesResult.Success ? templatesResult.Data : new System.Collections.Generic.List<NewsletterTemplateIndexViewModel>();
-                return View(GetViewPath("Edit"), model);
+                if (model != null)
+                    return View(GetViewPath("Edit"), model);
+                return RedirectToAction("Index");
             }
         }
 
@@ -376,33 +337,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         {
             try
             {
-                // Parse تاریخ و زمان زمان‌بندی از hidden inputs
-                var scheduledDate = this.ParseDateFromHiddenInput("ScheduledAtDate", _logger);
-                var scheduledTime = Request.Form["ScheduledAtTime"];
-                
-                if (scheduledDate.HasValue && !string.IsNullOrEmpty(scheduledTime))
+                if (model == null)
                 {
-                    // ترکیب تاریخ و زمان
-                    var timeParts = scheduledTime.Split(':');
-                    if (timeParts.Length >= 2)
-                    {
-                        var hour = int.Parse(timeParts[0]);
-                        var minute = int.Parse(timeParts[1]);
-                        model.ScheduledAt = scheduledDate.Value.Date.AddHours(hour).AddMinutes(minute);
-                    }
-                    else
-                    {
-                        model.ScheduledAt = scheduledDate.Value;
-                    }
+                    NotificationHelper.SetError(TempData, "اطلاعات فرم نامعتبر است.");
+                    return RedirectToAction("Index");
                 }
-                else if (scheduledDate.HasValue)
-                {
-                    model.ScheduledAt = scheduledDate.Value;
-                }
-                else
-                {
-                    model.ScheduledAt = null;
-                }
+                model.ScheduledAt = this.ParseDateAndTimeFromForm("ScheduledAtDate", "ScheduledAtTime", _logger);
 
                 if (model.ScheduledAt.HasValue && model.ScheduledAt.Value > DateTime.Now)
                 {
@@ -478,6 +418,31 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 _logger.Error(ex, "خطا در لغو زمان‌بندی Campaign - CampaignId: {CampaignId}", id);
                 NotificationHelper.SetError(TempData, "خطا در لغو زمان‌بندی");
                 return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region Retry Send (ارسال مجدد)
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> RetrySend(int id)
+        {
+            try
+            {
+                var result = await _campaignService.RetryCampaignSendAsync(id);
+                if (result.Success)
+                    NotificationHelper.SetSuccess(TempData, result.Message);
+                else
+                    NotificationHelper.SetError(TempData, result.Message);
+                return RedirectToAction("Details", new { id });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ارسال مجدد Campaign - CampaignId: {CampaignId}", id);
+                NotificationHelper.SetError(TempData, "خطا در ارسال مجدد.");
+                return RedirectToAction("Details", new { id });
             }
         }
 

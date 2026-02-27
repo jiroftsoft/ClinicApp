@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
+using System.Configuration;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.CMS;
 using ClinicApp.Models.Entities.CMS;
 using Microsoft.AspNet.Identity;
 using Serilog;
 using System.Text.RegularExpressions;
-using System.Configuration;
 
 namespace ClinicApp.Services
 {
@@ -23,9 +24,9 @@ namespace ClinicApp.Services
         private readonly ILogger _logger;
         private readonly string _baseUrl;
 
-        public NewsletterEmailService(ILogger logger)
+        public NewsletterEmailService(ILogger logger, IChannelConfigProvider configProvider = null)
         {
-            _emailService = new EmailService();
+            _emailService = new EmailService(configProvider);
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _baseUrl = ConfigurationManager.AppSettings["SiteUrl"] ?? "http://localhost";
         }
@@ -35,12 +36,19 @@ namespace ClinicApp.Services
             try
             {
                 if (campaign == null || subscription == null)
-                {
                     return ServiceResult.Failed("Campaign یا Subscription نامعتبر است");
-                }
+
+                var email = subscription.Email?.Trim();
+                if (string.IsNullOrWhiteSpace(email))
+                    return ServiceResult.Failed("آدرس ایمیل مشترک خالی است");
+                if (!IsValidEmail(email))
+                    return ServiceResult.Failed("فرمت آدرس ایمیل نامعتبر است");
+
+                if (string.IsNullOrWhiteSpace(campaign.Subject))
+                    return ServiceResult.Failed("عنوان کمپین خالی است");
 
                 // Render محتوا با Variables پیشرفته
-                var unsubscribeUrl = GenerateUnsubscribeUrl(subscription.UnsubscribeToken);
+                var unsubscribeUrl = GenerateUnsubscribeUrl(subscription.UnsubscribeToken ?? string.Empty);
                 var variables = SmartTemplateVariableHelper.BuildAdvancedVariables(subscription, unsubscribeUrl);
 
                 var renderResult = await RenderContentAsync(campaign.Content, variables);
@@ -61,9 +69,9 @@ namespace ClinicApp.Services
                 // ارسال ایمیل
                 var message = new IdentityMessage
                 {
-                    Destination = subscription.Email,
+                    Destination = email,
                     Subject = campaign.Subject,
-                    Body = renderedContent
+                    Body = renderedContent ?? string.Empty
                 };
 
                 await _emailService.SendAsync(message);
@@ -77,8 +85,20 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در ارسال ایمیل خبرنامه - CampaignId: {CampaignId}, Email: {Email}", 
                     campaign?.NewsletterCampaignId, subscription?.Email);
-                return ServiceResult.Failed("خطا در ارسال ایمیل");
+                return ServiceResult.Failed("خطا در ارسال ایمیل. لطفاً تنظیمات SMTP و آدرس گیرنده را بررسی کنید.");
             }
+        }
+
+        private static bool IsValidEmail(string email)
+        {
+            if (string.IsNullOrWhiteSpace(email) || email.Length > 254) return false;
+            try
+            {
+                return Regex.IsMatch(email,
+                    @"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+                    RegexOptions.Compiled | RegexOptions.Singleline);
+            }
+            catch { return false; }
         }
 
         public async Task<ServiceResult> SendVerificationEmailAsync(NewsletterSubscription subscription)
@@ -86,9 +106,14 @@ namespace ClinicApp.Services
             try
             {
                 if (subscription == null)
-                {
                     return ServiceResult.Failed("Subscription نامعتبر است");
-                }
+                var email = subscription.Email?.Trim();
+                if (string.IsNullOrWhiteSpace(email))
+                    return ServiceResult.Failed("آدرس ایمیل مشترک خالی است");
+                if (!IsValidEmail(email))
+                    return ServiceResult.Failed("فرمت آدرس ایمیل نامعتبر است");
+                if (string.IsNullOrWhiteSpace(subscription.VerificationToken))
+                    return ServiceResult.Failed("توکن تایید اشتراک موجود نیست");
 
                 var verificationUrl = $"{_baseUrl}/Newsletter/Verify?token={HttpUtility.UrlEncode(subscription.VerificationToken)}";
 
@@ -123,7 +148,7 @@ namespace ClinicApp.Services
 
                 var message = new IdentityMessage
                 {
-                    Destination = subscription.Email,
+                    Destination = email,
                     Subject = "تایید اشتراک خبرنامه - کلینیک شفا جیرفت",
                     Body = content
                 };
@@ -131,7 +156,7 @@ namespace ClinicApp.Services
                 await _emailService.SendAsync(message);
 
                 _logger.Information("ایمیل تایید ارسال شد - Email: {Email}, SubscriptionId: {SubscriptionId}", 
-                    subscription.Email, subscription.NewsletterSubscriptionId);
+                    email, subscription.NewsletterSubscriptionId);
 
                 return ServiceResult.Successful("ایمیل تایید با موفقیت ارسال شد");
             }
@@ -147,9 +172,10 @@ namespace ClinicApp.Services
             try
             {
                 if (subscription == null)
-                {
                     return ServiceResult.Failed("Subscription نامعتبر است");
-                }
+                var email = subscription.Email?.Trim();
+                if (string.IsNullOrWhiteSpace(email) || !IsValidEmail(email))
+                    return ServiceResult.Failed("آدرس ایمیل مشترک نامعتبر است");
 
                 var content = $@"
 <div dir=""rtl"" style=""font-family: Vazir, Arial, sans-serif; padding: 20px; background-color: #f5f5f5;"">
@@ -176,14 +202,14 @@ namespace ClinicApp.Services
 
                 var message = new IdentityMessage
                 {
-                    Destination = subscription.Email,
+                    Destination = email,
                     Subject = "لغو اشتراک خبرنامه - کلینیک شفا جیرفت",
                     Body = content
                 };
 
                 await _emailService.SendAsync(message);
 
-                _logger.Information("ایمیل تایید لغو اشتراک ارسال شد - Email: {Email}", subscription.Email);
+                _logger.Information("ایمیل تایید لغو اشتراک ارسال شد - Email: {Email}", email);
 
                 return ServiceResult.Successful("ایمیل تایید لغو اشتراک با موفقیت ارسال شد");
             }

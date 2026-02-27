@@ -445,6 +445,8 @@ namespace ClinicApp
                 container.RegisterType<INewsletterTemplateRepository, NewsletterTemplateRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterCampaignRepository, NewsletterCampaignRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<INewsletterCampaignRecipientRepository, NewsletterCampaignRecipientRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IChannelConfigRepository, ChannelConfigRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IChannelConfigProvider, ClinicApp.Services.CMS.ChannelConfigProviderService>(new PerRequestLifetimeManager());
                 container.RegisterType<IStoryRepository, StoryRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IFooterSettingsRepository, FooterSettingsRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IFooterLinkRepository, FooterLinkRepository>(new PerRequestLifetimeManager());

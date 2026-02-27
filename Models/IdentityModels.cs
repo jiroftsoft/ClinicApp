@@ -188,6 +188,7 @@ namespace ClinicApp.Models
         public DbSet<NewsletterTemplate> NewsletterTemplates { get; set; }
         public DbSet<NewsletterCampaign> NewsletterCampaigns { get; set; }
         public DbSet<NewsletterCampaignRecipient> NewsletterCampaignRecipients { get; set; }
+        public DbSet<ChannelConfig> ChannelConfigs { get; set; }
         public DbSet<AboutPage> AboutPages { get; set; }
         public DbSet<Story> Stories { get; set; }
         public DbSet<FooterSettings> FooterSettings { get; set; }

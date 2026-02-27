@@ -24,6 +24,8 @@ namespace ClinicApp.Services.CMS
         private readonly INewsletterCampaignRepository _campaignRepository;
         private readonly INewsletterCampaignRecipientRepository _recipientRepository;
         private readonly INewsletterSubscriptionRepository _subscriptionRepository;
+        private readonly INewsletterEmailService _emailService;
+        private readonly INewsletterSmsService _smsService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
@@ -32,6 +34,8 @@ namespace ClinicApp.Services.CMS
             INewsletterCampaignRepository campaignRepository,
             INewsletterCampaignRecipientRepository recipientRepository,
             INewsletterSubscriptionRepository subscriptionRepository,
+            INewsletterEmailService emailService,
+            INewsletterSmsService smsService,
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
             ILogger logger)
@@ -39,6 +43,8 @@ namespace ClinicApp.Services.CMS
             _campaignRepository = campaignRepository ?? throw new ArgumentNullException(nameof(campaignRepository));
             _recipientRepository = recipientRepository ?? throw new ArgumentNullException(nameof(recipientRepository));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _smsService = smsService ?? throw new ArgumentNullException(nameof(smsService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -57,17 +63,19 @@ namespace ClinicApp.Services.CMS
                     };
                 }
 
-                var campaigns = await _campaignRepository.SearchAsync(
+                var pageSize = Math.Max(1, Math.Min(searchModel.PageSize, 100));
+                var pageNumber = Math.Max(1, searchModel.PageNumber);
+
+                var (campaigns, totalCount) = await _campaignRepository.SearchPagedAsync(
                     searchModel.SearchTerm,
                     searchModel.Status,
                     searchModel.FromDate,
                     searchModel.ToDate,
+                    pageNumber,
+                    pageSize,
                     includeDeleted: false);
 
-                var totalCount = campaigns.Count;
                 var pagedItems = campaigns
-                    .Skip((searchModel.PageNumber - 1) * searchModel.PageSize)
-                    .Take(searchModel.PageSize)
                     .Select(c => new NewsletterCampaignIndexViewModel
                     {
                         NewsletterCampaignId = c.NewsletterCampaignId,
@@ -90,8 +98,8 @@ namespace ClinicApp.Services.CMS
                 var pagedResult = new PagedResult<NewsletterCampaignIndexViewModel>(
                     pagedItems,
                     totalCount,
-                    searchModel.PageNumber,
-                    searchModel.PageSize);
+                    pageNumber,
+                    pageSize);
 
                 return ServiceResult<PagedResult<NewsletterCampaignIndexViewModel>>.Successful(pagedResult);
             }
@@ -141,6 +149,19 @@ namespace ClinicApp.Services.CMS
                     UpdatedAt = campaign.UpdatedAt,
                     UpdatedByUserName = campaign.UpdatedByUser?.UserName
                 };
+
+                if (campaign.Status == NewsletterCampaignStatus.Sending || campaign.Status == NewsletterCampaignStatus.Failed)
+                {
+                    var recipients = await _recipientRepository.GetByCampaignIdAsync(campaign.NewsletterCampaignId);
+                    var failed = recipients.Where(r => r.Status == NewsletterRecipientStatus.Failed && !string.IsNullOrWhiteSpace(r.ErrorMessage)).ToList();
+                    viewModel.SendErrors = failed.Select(r => new NewsletterCampaignSendErrorItem
+                    {
+                        RecipientEmail = r.Email ?? "—",
+                        ErrorMessage = r.ErrorMessage
+                    }).ToList();
+                    viewModel.PendingCount = recipients.Count(r => r.Status == NewsletterRecipientStatus.Pending);
+                    viewModel.CanRetry = true;
+                }
 
                 return ServiceResult<NewsletterCampaignDetailsViewModel>.Successful(viewModel);
             }
@@ -286,8 +307,8 @@ namespace ClinicApp.Services.CMS
                     return ServiceResult.Failed("Campaign در حال ارسال است و نمی‌توان آن را حذف کرد");
                 }
 
-                _campaignRepository.Delete(campaign);
                 campaign.DeletedByUserId = _currentUserService.UserId;
+                _campaignRepository.Delete(campaign);
                 await _context.SaveChangesAsync();
 
                 _logger.Information("Campaign حذف شد - CampaignId: {CampaignId}", campaignId);
@@ -352,6 +373,17 @@ namespace ClinicApp.Services.CMS
                     return ServiceResult.Failed("Campaign در وضعیت قابل ارسال نیست");
                 }
 
+                _logger.Information(
+                    "NewsletterCampaign Send شروع - CampaignId: {CampaignId}, UserId: {UserId}, SendToAll: {SendToAll}",
+                    campaignId, _currentUserService.UserId, campaign.SendToAll);
+
+                // قفل همزمانی: بلافاصله وضعیت را Sending می‌کنیم تا درخواست دوم همان کمپین خطا بگیرد
+                campaign.Status = NewsletterCampaignStatus.Sending;
+                campaign.UpdatedAt = DateTime.Now;
+                campaign.UpdatedByUserId = _currentUserService.UserId;
+                _campaignRepository.Update(campaign);
+                await _context.SaveChangesAsync();
+
                 // دریافت لیست Recipients
                 List<NewsletterSubscription> recipients;
                 if (campaign.SendToAll)
@@ -381,23 +413,31 @@ namespace ClinicApp.Services.CMS
 
                 await _recipientRepository.BulkInsertAsync(recipientRecords);
 
-                // به‌روزرسانی Campaign
-                campaign.Status = NewsletterCampaignStatus.Sending;
+                // به‌روزرسانی آمار Campaign (وضعیت قبلاً Sending شده)
                 campaign.TotalRecipients = recipients.Count;
                 campaign.SentAt = DateTime.Now;
                 campaign.UpdatedAt = DateTime.Now;
                 campaign.UpdatedByUserId = _currentUserService.UserId;
-
                 _campaignRepository.Update(campaign);
                 await _context.SaveChangesAsync();
 
                 _logger.Information("Campaign شروع به ارسال شد - CampaignId: {CampaignId}, Recipients: {Count}", 
                     campaignId, recipients.Count);
 
-                // TODO: در Phase 3، ارسال واقعی ایمیل/SMS از طریق Background Job انجام می‌شود
-                // فعلاً فقط Status را به Sending تغییر می‌دهیم
+                if (sendEmail || sendSms)
+                {
+                    Hangfire.BackgroundJob.Enqueue(() =>
+                        Startup.ProcessCampaignSendQueue(campaignId, sendEmail, sendSms));
+                }
+                else
+                {
+                    campaign.Status = NewsletterCampaignStatus.Sent;
+                    campaign.SentCount = recipients.Count;
+                    _campaignRepository.Update(campaign);
+                    await _context.SaveChangesAsync();
+                }
 
-                return ServiceResult.Successful($"Campaign شروع به ارسال شد. {recipients.Count} مشترک در صف ارسال قرار گرفتند.");
+                return ServiceResult.Successful($"Campaign در صف ارسال قرار گرفت. {recipients.Count} مشترک.");
             }
             catch (Exception ex)
             {
@@ -425,6 +465,10 @@ namespace ClinicApp.Services.CMS
                 {
                     return ServiceResult.Failed("تاریخ زمان‌بندی باید در آینده باشد");
                 }
+
+                _logger.Information(
+                    "NewsletterCampaign زمان‌بندی شد - CampaignId: {CampaignId}, UserId: {UserId}, ScheduledAt: {ScheduledAt}",
+                    campaignId, _currentUserService.UserId, scheduledAt);
 
                 campaign.ScheduledAt = scheduledAt;
                 campaign.Status = NewsletterCampaignStatus.Scheduled;
@@ -529,18 +573,11 @@ namespace ClinicApp.Services.CMS
                 {
                     recipient.OpenedAt = DateTime.Now;
                     recipient.UpdatedAt = DateTime.Now;
-
                     _recipientRepository.Update(recipient);
-
-                    // به‌روزرسانی Campaign Statistics
-                    var campaign = await _campaignRepository.GetByIdAsync(campaignId);
-                    if (campaign != null)
-                    {
-                        campaign.OpenedCount++;
-                        _campaignRepository.Update(campaign);
-                    }
-
                     await _context.SaveChangesAsync();
+
+                    // افزایش اتمیک آمار (ضد race در ترافیک بالا)
+                    await _campaignRepository.IncrementOpenedCountAsync(campaignId);
                 }
 
                 return ServiceResult.Successful();
@@ -568,18 +605,11 @@ namespace ClinicApp.Services.CMS
                     recipient.ClickedAt = DateTime.Now;
                     recipient.ClickedUrl = url;
                     recipient.UpdatedAt = DateTime.Now;
-
                     _recipientRepository.Update(recipient);
-
-                    // به‌روزرسانی Campaign Statistics
-                    var campaign = await _campaignRepository.GetByIdAsync(campaignId);
-                    if (campaign != null)
-                    {
-                        campaign.ClickedCount++;
-                        _campaignRepository.Update(campaign);
-                    }
-
                     await _context.SaveChangesAsync();
+
+                    // افزایش اتمیک آمار (ضد race در ترافیک بالا)
+                    await _campaignRepository.IncrementClickedCountAsync(campaignId);
                 }
 
                 return ServiceResult.Successful();
@@ -650,6 +680,138 @@ namespace ClinicApp.Services.CMS
             {
                 _logger.Error(ex, "خطا در محاسبه تعداد Recipients");
                 return ServiceResult<int>.Failed("خطا در محاسبه تعداد Recipients");
+            }
+        }
+
+        public async Task ProcessCampaignSendQueueAsync(int campaignId, bool sendEmail, bool sendSms)
+        {
+            var campaign = await _campaignRepository.GetByIdAsync(campaignId);
+            if (campaign == null || campaign.Status != NewsletterCampaignStatus.Sending)
+            {
+                _logger.Warning("ProcessCampaignSendQueue: Campaign یافت نشد یا وضعیت Sending نیست - CampaignId: {CampaignId}", campaignId);
+                return;
+            }
+
+            var recipients = (await _recipientRepository.GetByCampaignIdAsync(campaignId))
+                .Where(r => r.Status == NewsletterRecipientStatus.Pending)
+                .ToList();
+            if (!recipients.Any())
+            {
+                campaign.Status = NewsletterCampaignStatus.Sent;
+                campaign.SentCount = 0;
+                campaign.FailedCount = 0;
+                _campaignRepository.Update(campaign);
+                await _context.SaveChangesAsync();
+                return;
+            }
+
+            int sentCount = 0;
+            int failedCount = 0;
+            foreach (var recipient in recipients)
+            {
+                var subscription = await _subscriptionRepository.GetByIdAsync(recipient.NewsletterSubscriptionId);
+                if (subscription == null)
+                {
+                    recipient.Status = NewsletterRecipientStatus.Failed;
+                    recipient.ErrorMessage = "مشترک یافت نشد";
+                    _recipientRepository.Update(recipient);
+                    failedCount++;
+                    await _context.SaveChangesAsync();
+                    continue;
+                }
+
+                bool anySent = false;
+                bool anyFailed = false;
+                var errors = new List<string>();
+
+                if (sendEmail)
+                {
+                    if (string.IsNullOrWhiteSpace(subscription.Email))
+                    { errors.Add("ایمیل مشترک موجود نیست"); anyFailed = true; }
+                    else
+                    {
+                        var emailResult = await _emailService.SendNewsletterAsync(campaign, subscription);
+                        if (emailResult.Success) anySent = true;
+                        else { anyFailed = true; errors.Add(emailResult.Message ?? "ایمیل"); }
+                    }
+                }
+                if (sendSms)
+                {
+                    if (string.IsNullOrWhiteSpace(subscription.PhoneNumber))
+                    { errors.Add("شماره تماس مشترک موجود نیست"); anyFailed = true; }
+                    else
+                    {
+                        var smsResult = await _smsService.SendNewsletterSmsAsync(campaign, subscription);
+                        if (smsResult.Success) anySent = true;
+                        else { anyFailed = true; errors.Add(smsResult.Message ?? "SMS"); }
+                    }
+                }
+                if (!sendEmail && !sendSms)
+                { errors.Add("نوع ارسال مشخص نشده"); anyFailed = true; }
+
+                recipient.SentAt = anySent ? DateTime.Now : (DateTime?)null;
+                recipient.Status = anySent ? NewsletterRecipientStatus.Sent : NewsletterRecipientStatus.Failed;
+                recipient.ErrorMessage = anyFailed && errors.Any() ? string.Join("; ", errors.Take(3)) : null;
+                if (anySent) sentCount++; else failedCount++;
+                _recipientRepository.Update(recipient);
+                await _context.SaveChangesAsync();
+            }
+
+            campaign.SentCount = sentCount;
+            campaign.FailedCount = failedCount;
+            campaign.Status = sentCount > 0 ? NewsletterCampaignStatus.Sent : NewsletterCampaignStatus.Failed;
+            campaign.UpdatedAt = DateTime.Now;
+            _campaignRepository.Update(campaign);
+            await _context.SaveChangesAsync();
+            _logger.Information("Campaign ارسال شد - CampaignId: {CampaignId}, Sent: {Sent}, Failed: {Failed}", campaignId, sentCount, failedCount);
+        }
+
+        public async Task<ServiceResult> RetryCampaignSendAsync(int campaignId)
+        {
+            try
+            {
+                var campaign = await _campaignRepository.GetByIdAsync(campaignId);
+                if (campaign == null)
+                    return ServiceResult.Failed("کمپین یافت نشد");
+
+                if (campaign.Status != NewsletterCampaignStatus.Sending && campaign.Status != NewsletterCampaignStatus.Failed)
+                    return ServiceResult.Failed("فقط برای کمپین «در حال ارسال» یا «ناموفق» می‌توان ارسال مجدد انجام داد.");
+
+                var recipients = await _recipientRepository.GetByCampaignIdAsync(campaignId);
+                var pending = recipients.Count(r => r.Status == NewsletterRecipientStatus.Pending);
+
+                if (campaign.Status == NewsletterCampaignStatus.Failed)
+                {
+                    var failedRecipients = recipients.Where(r => r.Status == NewsletterRecipientStatus.Failed).ToList();
+                    foreach (var r in failedRecipients)
+                    {
+                        r.Status = NewsletterRecipientStatus.Pending;
+                        r.ErrorMessage = null;
+                        _recipientRepository.Update(r);
+                    }
+                    campaign.Status = NewsletterCampaignStatus.Sending;
+                    campaign.UpdatedAt = DateTime.Now;
+                    campaign.UpdatedByUserId = _currentUserService.UserId;
+                    _campaignRepository.Update(campaign);
+                    await _context.SaveChangesAsync();
+                    pending = failedRecipients.Count;
+                    _logger.Information("ارسال مجدد: کمپین {CampaignId} به وضعیت در حال ارسال برگردانده شد، {Count} گیرنده برای تلاش مجدد.", campaignId, pending);
+                }
+
+                if (pending == 0)
+                {
+                    return ServiceResult.Failed("هیچ گیرنده‌ای در صف ارسال نیست. اگر وضعیت هنوز «در حال ارسال» است، چند لحظه صبر کنید یا با پشتیبانی تماس بگیرید.");
+                }
+
+                Hangfire.BackgroundJob.Enqueue(() =>
+                    Startup.ProcessCampaignSendQueue(campaignId, true, true));
+
+                return ServiceResult.Successful("ارسال مجدد در صف قرار گرفت. به‌زودی انجام می‌شود.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ارسال مجدد کمپین - CampaignId: {CampaignId}", campaignId);
+                return ServiceResult.Failed("خطا در ثبت ارسال مجدد. لطفاً دوباره تلاش کنید.");
             }
         }
 

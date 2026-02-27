@@ -111,6 +111,36 @@ namespace ClinicApp.Repositories.CMS
             return await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
         }
 
+        public async Task<Tuple<List<NewsletterCampaign>, int>> SearchPagedAsync(string searchTerm, NewsletterCampaignStatus? status, DateTime? fromDate, DateTime? toDate, int pageNumber, int pageSize, bool includeDeleted = false)
+        {
+            var query = _context.Set<NewsletterCampaign>()
+                .Include(c => c.Template)
+                .AsQueryable();
+
+            if (!includeDeleted)
+                query = query.Where(c => !c.IsDeleted);
+
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var search = searchTerm.Trim();
+                query = query.Where(c => c.Title.Contains(search) || c.Subject.Contains(search));
+            }
+            if (status.HasValue)
+                query = query.Where(c => c.Status == status.Value);
+            if (fromDate.HasValue)
+                query = query.Where(c => c.CreatedAt >= fromDate.Value);
+            if (toDate.HasValue)
+                query = query.Where(c => c.CreatedAt <= toDate.Value);
+
+            var ordered = query.OrderByDescending(c => c.CreatedAt);
+            var totalCount = await ordered.CountAsync();
+            var items = await ordered
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            return Tuple.Create(items, totalCount);
+        }
+
         public void Add(NewsletterCampaign campaign)
         {
             if (campaign == null)
@@ -141,6 +171,20 @@ namespace ClinicApp.Repositories.CMS
         {
             return await _context.Set<NewsletterCampaign>()
                 .AnyAsync(c => c.NewsletterCampaignId == campaignId && !c.IsDeleted);
+        }
+
+        public Task IncrementOpenedCountAsync(int campaignId)
+        {
+            return _context.Database.ExecuteSqlCommandAsync(
+                "UPDATE NewsletterCampaigns SET OpenedCount = OpenedCount + 1 WHERE NewsletterCampaignId = @p0",
+                campaignId);
+        }
+
+        public Task IncrementClickedCountAsync(int campaignId)
+        {
+            return _context.Database.ExecuteSqlCommandAsync(
+                "UPDATE NewsletterCampaigns SET ClickedCount = ClickedCount + 1 WHERE NewsletterCampaignId = @p0",
+                campaignId);
         }
     }
 }

@@ -31,14 +31,13 @@ namespace ClinicApp.Services
             try
             {
                 if (campaign == null || subscription == null)
-                {
                     return ServiceResult.Failed("Campaign یا Subscription نامعتبر است");
-                }
 
-                if (string.IsNullOrWhiteSpace(subscription.PhoneNumber))
-                {
-                    return ServiceResult.Failed("شماره تماس مشترک موجود نیست");
-                }
+                var phone = NormalizePhone(subscription.PhoneNumber);
+                if (string.IsNullOrWhiteSpace(phone))
+                    return ServiceResult.Failed("شماره تماس مشترک خالی است");
+                if (!IsValidIranianMobile(phone))
+                    return ServiceResult.Failed("فرمت شماره موبایل نامعتبر است (مثال: ۰۹۱۲۳۴۵۶۷۸۹)");
 
                 // Render محتوا با Variables پیشرفته
                 var variables = SmartTemplateVariableHelper.BuildAdvancedVariables(subscription);
@@ -50,18 +49,17 @@ namespace ClinicApp.Services
                     return ServiceResult.Failed("خطا در Render محتوای SMS");
                 }
 
-                var renderedContent = renderResult.Data;
+                var renderedContent = (renderResult.Data ?? string.Empty).Trim();
+                if (string.IsNullOrEmpty(renderedContent))
+                    return ServiceResult.Failed("متن نهایی SMS خالی است");
 
                 // محدودیت طول SMS (حداکثر 160 کاراکتر برای SMS استاندارد)
                 if (renderedContent.Length > 160)
-                {
                     renderedContent = renderedContent.Substring(0, 157) + "...";
-                }
 
-                // ارسال SMS
                 var message = new IdentityMessage
                 {
-                    Destination = subscription.PhoneNumber,
+                    Destination = phone,
                     Body = renderedContent
                 };
 
@@ -76,8 +74,24 @@ namespace ClinicApp.Services
             {
                 _logger.Error(ex, "خطا در ارسال SMS خبرنامه - CampaignId: {CampaignId}, PhoneNumber: {PhoneNumber}", 
                     campaign?.NewsletterCampaignId, subscription?.PhoneNumber);
-                return ServiceResult.Failed("خطا در ارسال SMS");
+                return ServiceResult.Failed("خطا در ارسال SMS. تنظیمات درگاه پیامک و شماره گیرنده را بررسی کنید.");
             }
+        }
+
+        private static string NormalizePhone(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone)) return null;
+            var digits = new string(phone.Where(char.IsDigit).ToArray());
+            if (digits.Length == 11 && digits.StartsWith("09")) return digits;
+            if (digits.Length == 10 && digits.StartsWith("9")) return "0" + digits;
+            return null;
+        }
+
+        private static bool IsValidIranianMobile(string phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone)) return false;
+            var digits = new string(phone.Where(char.IsDigit).ToArray());
+            return (digits.Length == 11 && digits.StartsWith("09")) || (digits.Length == 10 && digits.StartsWith("9"));
         }
 
         public async Task<ServiceResult> SendVerificationSmsAsync(NewsletterSubscription subscription)
@@ -85,14 +99,10 @@ namespace ClinicApp.Services
             try
             {
                 if (subscription == null)
-                {
                     return ServiceResult.Failed("Subscription نامعتبر است");
-                }
-
-                if (string.IsNullOrWhiteSpace(subscription.PhoneNumber))
-                {
-                    return ServiceResult.Failed("شماره تماس مشترک موجود نیست");
-                }
+                var phone = NormalizePhone(subscription.PhoneNumber);
+                if (string.IsNullOrWhiteSpace(phone) || !IsValidIranianMobile(phone))
+                    return ServiceResult.Failed("شماره تماس مشترک نامعتبر است");
 
                 var content = $"سلام {subscription.FullName ?? "کاربر گرامی"}، برای تایید اشتراک خبرنامه کلینیک شفا جیرفت، لطفاً ایمیل خود را بررسی کنید.";
 
@@ -104,7 +114,7 @@ namespace ClinicApp.Services
 
                 var message = new IdentityMessage
                 {
-                    Destination = subscription.PhoneNumber,
+                    Destination = phone,
                     Body = content
                 };
 
