@@ -22,9 +22,22 @@ namespace ClinicApp.Services.CMS
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
         }
 
+        /// <summary>
+        /// همگام — فقط از کش یا Web.config می‌خواند تا در سازنده‌ها deadlock نشود.
+        /// اگر کش خالی باشد مستقیم از Web.config برمی‌گرداند (بدون فراخوانی DB).
+        /// </summary>
         public string GetValue(string fullKey)
         {
-            return GetValueAsync(fullKey).GetAwaiter().GetResult();
+            if (string.IsNullOrWhiteSpace(fullKey)) return null;
+            var (category, key) = ParseFullKey(fullKey);
+            if (string.IsNullOrEmpty(category) || string.IsNullOrEmpty(key)) return FallbackConfig(fullKey);
+
+            lock (CacheLock)
+            {
+                if (CategoryCache.TryGetValue(category, out var cached) && cached.TryGetValue(key, out var val))
+                    return val;
+            }
+            return FallbackConfig(fullKey);
         }
 
         public async Task<string> GetValueAsync(string fullKey)
@@ -33,7 +46,7 @@ namespace ClinicApp.Services.CMS
             var (category, key) = ParseFullKey(fullKey);
             if (string.IsNullOrEmpty(category) || string.IsNullOrEmpty(key)) return FallbackConfig(fullKey);
 
-            var dict = await GetCategoryMergedAsync(category);
+            var dict = await GetCategoryMergedAsync(category).ConfigureAwait(false);
             return dict.TryGetValue(key, out var val) ? val : FallbackConfig(fullKey);
         }
 
@@ -65,7 +78,7 @@ namespace ClinicApp.Services.CMS
                     return cached;
             }
 
-            var fromDb = await _repo.GetByCategoryAsync(category);
+            var fromDb = await _repo.GetByCategoryAsync(category).ConfigureAwait(false);
             var prefix = category == ChannelConfig.Categories.Sms ? "Asanak:" : "Email:";
             var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
