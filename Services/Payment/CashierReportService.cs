@@ -83,10 +83,9 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<CashierDailyReport>.Failed("منشی یافت نشد.", "NOT_FOUND");
                 }
 
-                // Get Sessions
+                // Get Sessions (بدون Include(User) — کاربر قبلاً بارگذاری شده؛ کاهش N+1 و حجم داده)
                 var sessions = await _context.CashSessions
                     .Include(cs => cs.Transactions)
-                    .Include(cs => cs.User)
                     .Where(cs => cs.UserId == cashierId &&
                                  cs.OpenedAt >= startOfDay &&
                                  cs.OpenedAt < endOfDay &&
@@ -171,6 +170,97 @@ namespace ClinicApp.Services.Payment
             }
         }
 
+        /// <summary>
+        /// بارگذاری گزارش‌های روزانه برای بازه با حداقل round-trip به DB (بهینه برای پروداکشن).
+        /// استفاده در گزارش ماهانه، بازه‌زمانی و Export بدون حلقه روزانه.
+        /// </summary>
+        private async Task<List<CashierDailyReport>> GetDailyReportsForRangeInternalAsync(string cashierId, DateTime fromDate, DateTime toDate)
+        {
+            var start = fromDate.Date;
+            var end = toDate.Date.AddDays(1);
+
+            var cashier = await _context.Users.FirstOrDefaultAsync(u => u.Id == cashierId);
+            if (cashier == null)
+                return new List<CashierDailyReport>();
+
+            var sessions = await _context.CashSessions
+                .Include(cs => cs.Transactions)
+                .Where(cs => cs.UserId == cashierId &&
+                             cs.OpenedAt >= start &&
+                             cs.OpenedAt < end &&
+                             !cs.IsDeleted)
+                .OrderBy(cs => cs.OpenedAt)
+                .ToListAsync();
+
+            var discrepancies = await _context.PaymentDiscrepancies
+                .Include(d => d.CashSession)
+                .Where(d => d.CashSession.UserId == cashierId &&
+                            d.ReportedAt >= start &&
+                            d.ReportedAt < end)
+                .ToListAsync();
+
+            var cashierName = cashier.UserName ?? cashier.Email ?? "نامشخص";
+            var dailyReports = new List<CashierDailyReport>();
+
+            for (var date = fromDate.Date; date <= toDate.Date; date = date.AddDays(1))
+            {
+                var dayEnd = date.AddDays(1);
+                var daySessions = sessions.Where(s => s.OpenedAt >= date && s.OpenedAt < dayEnd).ToList();
+                var dayTransactions = daySessions.SelectMany(s => s.Transactions).Where(t => !t.IsDeleted).ToList();
+                var dayDiscrepancies = discrepancies.Where(d => d.ReportedAt >= date && d.ReportedAt < dayEnd).ToList();
+
+                var report = new CashierDailyReport
+                {
+                    CashierId = cashierId,
+                    CashierName = cashierName,
+                    Date = date,
+                    SessionsOpened = daySessions.Count,
+                    SessionsClosed = daySessions.Count(s => s.ClosedAt.HasValue),
+                    TotalTransactions = dayTransactions.Count,
+                    PosTransactions = dayTransactions.Count(t => t.Method == PaymentMethod.POS),
+                    CashTransactions = dayTransactions.Count(t => t.Method == PaymentMethod.Cash),
+                    TotalAmount = dayTransactions.Where(t => t.Status == PaymentStatus.Success).Sum(t => t.Amount),
+                    PosAmount = dayTransactions.Where(t => t.Method == PaymentMethod.POS && t.Status == PaymentStatus.Success).Sum(t => t.Amount),
+                    CashAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Cash && t.Status == PaymentStatus.Success).Sum(t => t.Amount),
+                    SuccessfulTransactions = dayTransactions.Count(t => t.Status == PaymentStatus.Success),
+                    FailedTransactions = dayTransactions.Count(t => t.Status == PaymentStatus.Failed),
+                    SuccessRate = dayTransactions.Count > 0 ? (decimal)(dayTransactions.Count(t => t.Status == PaymentStatus.Success) * 100.0 / dayTransactions.Count) : 0,
+                    AverageTransactionTime = dayTransactions.Any(t => t.UpdatedAt.HasValue)
+                        ? (decimal)dayTransactions.Where(t => t.UpdatedAt.HasValue).Average(t => (t.UpdatedAt.Value - t.CreatedAt).TotalSeconds)
+                        : 0,
+                    DiscrepancyCount = dayDiscrepancies.Count,
+                    TotalDiscrepancy = dayDiscrepancies.Sum(d => d.Difference),
+                    Sessions = daySessions.Select(s => new CashSessionSummary
+                    {
+                        CashSessionId = s.Id,
+                        SessionNumber = s.SessionNumber,
+                        OpenedAt = s.OpenedAt,
+                        ClosedAt = s.ClosedAt,
+                        DurationMinutes = s.ClosedAt.HasValue ? (int?)(s.ClosedAt.Value - s.OpenedAt).TotalMinutes : null,
+                        OpeningBalance = s.OpeningBalance,
+                        CashBalance = s.CashBalance,
+                        PosBalance = s.PosBalance,
+                        TransactionCount = s.Transactions.Count(t => !t.IsDeleted),
+                        Status = s.ClosedAt.HasValue ? "Closed" : "Open"
+                    }).ToList(),
+                    Discrepancies = dayDiscrepancies.Select(d => new DiscrepancySummary
+                    {
+                        Id = d.Id,
+                        Type = d.Type.ToString(),
+                        ExpectedAmount = d.ExpectedAmount,
+                        ActualAmount = d.ActualAmount,
+                        Difference = d.Difference,
+                        Reason = d.Reason,
+                        Status = d.Status.ToString(),
+                        ReportedAt = d.ReportedAt
+                    }).ToList()
+                };
+                dailyReports.Add(report);
+            }
+
+            return dailyReports;
+        }
+
         #endregion
 
         #region GetMonthlyReportAsync
@@ -194,7 +284,7 @@ namespace ClinicApp.Services.Payment
 
                 // Convert Persian month to Gregorian date range
                 var startDate = new DateTime(year, month, 1);
-                var endDate = startDate.AddMonths(1);
+                var endDate = startDate.AddMonths(1).AddDays(-1); // last day of month inclusive
 
                 // Get Cashier Info
                 var cashier = await _context.Users.FirstOrDefaultAsync(u => u.Id == cashierId);
@@ -203,16 +293,9 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<CashierMonthlyReport>.Failed("منشی یافت نشد.", "NOT_FOUND");
                 }
 
-                // Get Daily Reports for the month
-                var dailyReports = new List<CashierDailyReport>();
-                for (var date = startDate; date < endDate; date = date.AddDays(1))
-                {
-                    var dailyResult = await GetDailyReportAsync(cashierId, date);
-                    if (dailyResult.Success && dailyResult.Data.TotalTransactions > 0)
-                    {
-                        dailyReports.Add(dailyResult.Data);
-                    }
-                }
+                // یک بار بارگذاری بازه ماه (بدون حلقه روزانه)
+                var allDaily = await GetDailyReportsForRangeInternalAsync(cashierId, startDate, endDate);
+                var dailyReports = allDaily.Where(d => d.TotalTransactions > 0).ToList();
 
                 // Build Monthly Report
                 var report = new CashierMonthlyReport
@@ -260,62 +343,80 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<List<CashierSummary>>.Failed("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.", "VALIDATION");
                 }
 
-                // Get all cashiers who have sessions in this period
+                var rangeStart = fromDate.Date;
+                var rangeEndExclusive = toDate.Date.AddDays(1);
+
+                // 1) شناسه منشی‌هایی که در بازه حداقل یک سشن دارند
                 var cashierIds = await _context.CashSessions
-                    .Where(cs => cs.OpenedAt >= fromDate &&
-                                 cs.OpenedAt <= toDate &&
+                    .Where(cs => cs.OpenedAt >= rangeStart &&
+                                 cs.OpenedAt < rangeEndExclusive &&
                                  !cs.IsDeleted)
                     .Select(cs => cs.UserId)
                     .Distinct()
                     .ToListAsync();
 
-                var summaries = new List<CashierSummary>();
-
-                foreach (var cashierId in cashierIds)
+                if (cashierIds.Count == 0)
                 {
-                    var cashier = await _context.Users.FirstOrDefaultAsync(u => u.Id == cashierId);
-                    if (cashier == null) continue;
-
-                    // Get Sessions with Transactions to avoid N+1
-                    var sessions = await _context.CashSessions
-                        .Include(cs => cs.Transactions)
-                        .Where(cs => cs.UserId == cashierId &&
-                                     cs.OpenedAt >= fromDate &&
-                                     cs.OpenedAt <= toDate &&
-                                     !cs.IsDeleted)
-                        .ToListAsync();
-
-                    // Get Transactions
-                    var transactions = sessions
-                        .SelectMany(s => s.Transactions)
-                        .Where(t => !t.IsDeleted &&
-                                    t.CreatedAt >= fromDate &&
-                                    t.CreatedAt <= toDate)
-                        .ToList();
-
-                    // Get Discrepancies
-                    var discrepancies = await _context.PaymentDiscrepancies
-                        .Include(d => d.CashSession)
-                        .Where(d => d.CashSession.UserId == cashierId &&
-                                    d.ReportedAt >= fromDate &&
-                                    d.ReportedAt <= toDate)
-                        .ToListAsync();
-
-                    var summary = new CashierSummary
-                    {
-                        CashierId = cashierId,
-                        CashierName = cashier.UserName ?? cashier.Email ?? "نامشخص",
-                        SessionCount = sessions.Count,
-                        TransactionCount = transactions.Count,
-                        TotalAmount = transactions.Where(t => t.Status == PaymentStatus.Success).Sum(t => t.Amount),
-                        DiscrepancyCount = discrepancies.Count,
-                        SuccessRate = transactions.Count > 0 ? (decimal)(transactions.Count(t => t.Status == PaymentStatus.Success) * 100.0 / transactions.Count) : 0
-                    };
-
-                    summaries.Add(summary);
+                    _logger.Information("✅ All cashiers summary: no sessions in range");
+                    return ServiceResult<List<CashierSummary>>.Successful(new List<CashierSummary>());
                 }
 
-                // Calculate Ranks
+                // 2) بارگذاری یک‌جای کاربران (منشی‌ها)
+                var users = await _context.Users
+                    .Where(u => cashierIds.Contains(u.Id) && !u.IsDeleted)
+                    .Select(u => new { u.Id, u.UserName, u.Email })
+                    .ToListAsync();
+                var userDict = users.ToDictionary(u => u.Id);
+
+                // 3) بارگذاری یک‌جای سشن‌ها و تراکنش‌ها در بازه
+                var sessions = await _context.CashSessions
+                    .Include(cs => cs.Transactions)
+                    .Where(cs => cs.OpenedAt >= rangeStart &&
+                                 cs.OpenedAt < rangeEndExclusive &&
+                                 !cs.IsDeleted)
+                    .ToListAsync();
+
+                // 4) بارگذاری یک‌جای اختلاف‌های مالی در بازه (فیلتر منشی از طریق CashSession)
+                var discrepancies = await _context.PaymentDiscrepancies
+                    .Include(d => d.CashSession)
+                    .Where(d => d.ReportedAt >= rangeStart &&
+                                d.ReportedAt < rangeEndExclusive &&
+                                d.CashSession != null &&
+                                cashierIds.Contains(d.CashSession.UserId))
+                    .ToListAsync();
+
+                // 5) ساخت خلاصه به‌ازای هر منشی در حافظه
+                var summaries = new List<CashierSummary>();
+                foreach (var cashierId in cashierIds)
+                {
+                    if (!userDict.TryGetValue(cashierId, out var user))
+                        continue;
+
+                    var cashierSessions = sessions.Where(s => s.UserId == cashierId).ToList();
+                    var transactions = cashierSessions
+                        .SelectMany(s => s.Transactions)
+                        .Where(t => !t.IsDeleted &&
+                                    t.CreatedAt >= rangeStart &&
+                                    t.CreatedAt < rangeEndExclusive)
+                        .ToList();
+                    var cashierDiscrepancies = discrepancies
+                        .Where(d => d.CashSession != null && d.CashSession.UserId == cashierId)
+                        .ToList();
+
+                    summaries.Add(new CashierSummary
+                    {
+                        CashierId = cashierId,
+                        CashierName = user.UserName ?? user.Email ?? "نامشخص",
+                        SessionCount = cashierSessions.Count,
+                        TransactionCount = transactions.Count,
+                        TotalAmount = transactions.Where(t => t.Status == PaymentStatus.Success).Sum(t => t.Amount),
+                        DiscrepancyCount = cashierDiscrepancies.Count,
+                        SuccessRate = transactions.Count > 0
+                            ? (decimal)(transactions.Count(t => t.Status == PaymentStatus.Success) * 100.0 / transactions.Count)
+                            : 0
+                    });
+                }
+
                 var rankedSummaries = summaries
                     .OrderByDescending(s => s.TransactionCount)
                     .ThenByDescending(s => s.TotalAmount)
@@ -326,9 +427,9 @@ namespace ClinicApp.Services.Payment
                     rankedSummaries[i].Rank = i + 1;
                 }
 
-                _logger.Information("✅ All cashiers summary generated successfully. Count: {Count}", summaries.Count);
+                _logger.Information("✅ All cashiers summary generated successfully. Count: {Count} (queries: 5 fixed)", rankedSummaries.Count);
 
-                return ServiceResult<List<CashierSummary>>.Successful(summaries);
+                return ServiceResult<List<CashierSummary>>.Successful(rankedSummaries);
             }
             catch (Exception ex)
             {
@@ -357,33 +458,73 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<CashierPerformanceComparison>.Failed("تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد.", "VALIDATION");
                 }
 
+                var distinctIds = cashierIds.Distinct().ToList();
+
                 var allSummariesResult = await GetAllCashiersSummaryAsync(fromDate, toDate);
                 if (!allSummariesResult.Success)
                 {
                     return ServiceResult<CashierPerformanceComparison>.Failed(allSummariesResult.Message, allSummariesResult.Code);
                 }
 
-                var selectedSummaries = allSummariesResult.Data
-                    .Where(s => cashierIds.Contains(s.CashierId))
+                var withData = allSummariesResult.Data
+                    .Where(s => distinctIds.Contains(s.CashierId))
                     .ToList();
 
-                if (selectedSummaries.Count == 0)
+                var missingIds = distinctIds
+                    .Except(withData.Select(s => s.CashierId))
+                    .ToList();
+
+                if (missingIds.Count > 0)
                 {
-                    return ServiceResult<CashierPerformanceComparison>.Failed("هیچ داده‌ای برای منشی‌های انتخاب شده یافت نشد.", "NOT_FOUND");
+                    var missingUsers = await _context.Users
+                        .Where(u => missingIds.Contains(u.Id) && !u.IsDeleted)
+                        .Select(u => new { u.Id, u.UserName, u.Email })
+                        .ToListAsync();
+
+                    foreach (var u in missingUsers)
+                    {
+                        withData.Add(new CashierSummary
+                        {
+                            CashierId = u.Id,
+                            CashierName = u.UserName ?? u.Email ?? "نامشخص",
+                            SessionCount = 0,
+                            TransactionCount = 0,
+                            TotalAmount = 0,
+                            DiscrepancyCount = 0,
+                            SuccessRate = 0,
+                            Rank = null
+                        });
+                    }
+
+                    var stillMissing = missingIds.Except(missingUsers.Select(x => x.Id)).ToList();
+                    if (stillMissing.Count > 0)
+                    {
+                        _logger.Warning("⚠️ Compare: {Count} selected cashier(s) not found in Users: {Ids}", stillMissing.Count, string.Join(", ", stillMissing));
+                    }
+                }
+
+                var ranked = withData
+                    .OrderByDescending(s => s.TransactionCount)
+                    .ThenByDescending(s => s.TotalAmount)
+                    .ToList();
+
+                for (int i = 0; i < ranked.Count; i++)
+                {
+                    ranked[i].Rank = i + 1;
                 }
 
                 var comparison = new CashierPerformanceComparison
                 {
                     FromDate = fromDate,
                     ToDate = toDate,
-                    Cashiers = selectedSummaries,
-                    TopPerformer = selectedSummaries.OrderByDescending(s => s.TransactionCount).FirstOrDefault(),
-                    AverageTransactionCount = selectedSummaries.Average(s => (decimal)s.TransactionCount),
-                    AverageTotalAmount = selectedSummaries.Average(s => s.TotalAmount),
-                    AverageSuccessRate = selectedSummaries.Average(s => s.SuccessRate)
+                    Cashiers = ranked,
+                    TopPerformer = ranked.FirstOrDefault(s => s.TransactionCount > 0),
+                    AverageTransactionCount = ranked.Any() ? ranked.Average(s => (decimal)s.TransactionCount) : 0,
+                    AverageTotalAmount = ranked.Any() ? ranked.Average(s => s.TotalAmount) : 0,
+                    AverageSuccessRate = ranked.Any() ? ranked.Average(s => s.SuccessRate) : 0
                 };
 
-                _logger.Information("✅ Cashiers comparison completed successfully. Count: {Count}", selectedSummaries.Count);
+                _logger.Information("✅ Cashiers comparison completed successfully. Count: {Count} (with data: {WithData})", ranked.Count, ranked.Count(s => s.TransactionCount > 0));
 
                 return ServiceResult<CashierPerformanceComparison>.Successful(comparison);
             }
@@ -417,13 +558,7 @@ namespace ClinicApp.Services.Payment
                 if (cashier == null)
                     return ServiceResult<CashierDailyReport>.Failed("منشی یافت نشد.", "NOT_FOUND");
 
-                var dailyReports = new List<CashierDailyReport>();
-                for (var date = fromDate.Date; date <= toDate.Date; date = date.AddDays(1))
-                {
-                    var dailyResult = await GetDailyReportAsync(cashierId, date);
-                    if (dailyResult.Success)
-                        dailyReports.Add(dailyResult.Data);
-                }
+                var dailyReports = await GetDailyReportsForRangeInternalAsync(cashierId, fromDate.Date, toDate.Date);
 
                 if (dailyReports.Count == 0)
                 {
@@ -552,16 +687,8 @@ namespace ClinicApp.Services.Payment
                 }
                 else
                 {
-                    // Export گزارش روزانه برای بازه زمانی
-                    var dailyReports = new List<CashierDailyReport>();
-                    for (var date = fromDate.Date; date <= toDate.Date; date = date.AddDays(1))
-                    {
-                        var dailyResult = await GetDailyReportAsync(cashierId, date);
-                        if (dailyResult.Success && dailyResult.Data.TotalTransactions > 0)
-                        {
-                            dailyReports.Add(dailyResult.Data);
-                        }
-                    }
+                    var dailyReports = (await GetDailyReportsForRangeInternalAsync(cashierId, fromDate.Date, toDate.Date))
+                        .Where(d => d.TotalTransactions > 0).ToList();
 
                     if (dailyReports.Count == 0)
                     {
@@ -768,16 +895,8 @@ namespace ClinicApp.Services.Payment
                 }
                 else
                 {
-                    // Export گزارش روزانه برای بازه زمانی
-                    var dailyReports = new List<CashierDailyReport>();
-                    for (var date = fromDate.Date; date <= toDate.Date; date = date.AddDays(1))
-                    {
-                        var dailyResult = await GetDailyReportAsync(cashierId, date);
-                        if (dailyResult.Success && dailyResult.Data.TotalTransactions > 0)
-                        {
-                            dailyReports.Add(dailyResult.Data);
-                        }
-                    }
+                    var dailyReports = (await GetDailyReportsForRangeInternalAsync(cashierId, fromDate.Date, toDate.Date))
+                        .Where(d => d.TotalTransactions > 0).ToList();
 
                     if (dailyReports.Count == 0)
                     {

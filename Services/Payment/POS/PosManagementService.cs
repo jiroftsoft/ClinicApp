@@ -34,6 +34,7 @@ namespace ClinicApp.Services.Payment.POS
         private readonly IPosTerminalRepository _posTerminalRepository;
         private readonly ICashSessionRepository _cashSessionRepository;
         private readonly IPaymentTransactionRepository _paymentTransactionRepository;
+        private readonly ICashSessionAuditService _cashSessionAuditService;
         private readonly ILogger _logger;
         private IPosManagementService _posManagementServiceImplementation;
 
@@ -45,11 +46,13 @@ namespace ClinicApp.Services.Payment.POS
             IPosTerminalRepository posTerminalRepository,
             ICashSessionRepository cashSessionRepository,
             IPaymentTransactionRepository paymentTransactionRepository,
+            ICashSessionAuditService cashSessionAuditService,
             ILogger logger)
         {
             _posTerminalRepository = posTerminalRepository ?? throw new ArgumentNullException(nameof(posTerminalRepository));
             _cashSessionRepository = cashSessionRepository ?? throw new ArgumentNullException(nameof(cashSessionRepository));
             _paymentTransactionRepository = paymentTransactionRepository ?? throw new ArgumentNullException(nameof(paymentTransactionRepository));
+            _cashSessionAuditService = cashSessionAuditService ?? throw new ArgumentNullException(nameof(cashSessionAuditService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -631,6 +634,16 @@ namespace ClinicApp.Services.Payment.POS
                     savedSession.CashSessionId, userId, initialAmount);
                 _logger.Information("🏦 AUDIT StartSession | SessionId: {SessionId}, UserId: {UserId}, InitialAmount: {InitialAmount}, OpenedAt: {OpenedAt}",
                     savedSession.CashSessionId, userId, initialAmount, savedSession.OpenedAt);
+
+                // ثبت در CashSessionAuditLogs برای ردیابی و دسترسی منشی/ادمین (PerformedByUserId از ICurrentUserService در AuditService پر می‌شود)
+                var auditOpen = await _cashSessionAuditService.LogActionAsync(
+                    savedSession.CashSessionId,
+                    "Open",
+                    null,
+                    new { OpeningBalance = initialAmount, UserId = userId, OpenedAt = savedSession.OpenedAt, SessionNumber = savedSession.SessionNumber },
+                    description ?? "شروع جلسه صندوق");
+                if (!auditOpen.Success)
+                    _logger.Warning("⚠️ CashSessionAuditLog Open ثبت نشد: {Message}", auditOpen.Message);
                 
                 return ServiceResult<CashSession>.Successful(savedSession, "جلسه صندوق با موفقیت شروع شد.");
             }
@@ -713,6 +726,13 @@ namespace ClinicApp.Services.Payment.POS
                     _logger.Warning("⚠️ Cash session was already closed (race or duplicate) - SessionId: {SessionId}", sessionId);
                     return ServiceResult<CashSession>.Failed("این جلسه قبلاً بسته شده است.");
                 }
+
+                // ثبت در CashSessionAuditLogs برای ردیابی و دسترسی منشی/ادمین (PerformedByUserId از ICurrentUserService در AuditService پر می‌شود)
+                var oldValue = new { Status = oldStatus, CashBalance = oldCashBalance };
+                var newValue = new { Status = (int)CashSessionStatus.Closed, FinalCashAmount = finalAmount, ClosedAt = DateTime.Now, EndedByUserId = endedByUserId };
+                var auditClose = await _cashSessionAuditService.LogActionAsync(sessionId, "Close", oldValue, newValue, description ?? "پایان جلسه صندوق");
+                if (!auditClose.Success)
+                    _logger.Warning("⚠️ CashSessionAuditLog Close ثبت نشد: {Message}", auditClose.Message);
                 
                 _logger.Information("✅ Cash session ended successfully - SessionId: {SessionId}, FinalAmount: {FinalAmount}, Difference: {Difference}",
                     sessionId, finalAmount, updatedSession.Difference);

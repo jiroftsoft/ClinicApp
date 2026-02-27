@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Payment;
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Payment;
@@ -25,6 +26,7 @@ namespace ClinicApp.Controllers.Payment.POS
     {
         private readonly IPosManagementService _posManagementService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ICashSessionAuditService _cashSessionAuditService;
         private readonly IValidator<PosTerminalCreateViewModel> _terminalCreateValidator;
         private readonly IValidator<PosTerminalEditViewModel> _terminalEditValidator;
         private readonly IValidator<PosTerminalSearchViewModel> _terminalSearchValidator;
@@ -35,6 +37,7 @@ namespace ClinicApp.Controllers.Payment.POS
         public PosManagementController(
             IPosManagementService posManagementService,
             ICurrentUserService currentUserService,
+            ICashSessionAuditService cashSessionAuditService,
             IValidator<PosTerminalCreateViewModel> terminalCreateValidator,
             IValidator<PosTerminalEditViewModel> terminalEditValidator,
             IValidator<PosTerminalSearchViewModel> terminalSearchValidator,
@@ -45,12 +48,25 @@ namespace ClinicApp.Controllers.Payment.POS
         {
             _posManagementService = posManagementService ?? throw new ArgumentNullException(nameof(posManagementService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _cashSessionAuditService = cashSessionAuditService ?? throw new ArgumentNullException(nameof(cashSessionAuditService));
             _terminalCreateValidator = terminalCreateValidator ?? throw new ArgumentNullException(nameof(terminalCreateValidator));
             _terminalEditValidator = terminalEditValidator ?? throw new ArgumentNullException(nameof(terminalEditValidator));
             _terminalSearchValidator = terminalSearchValidator ?? throw new ArgumentNullException(nameof(terminalSearchValidator));
             _sessionStartValidator = sessionStartValidator ?? throw new ArgumentNullException(nameof(sessionStartValidator));
             _sessionEndValidator = sessionEndValidator ?? throw new ArgumentNullException(nameof(sessionEndValidator));
             _sessionSearchValidator = sessionSearchValidator ?? throw new ArgumentNullException(nameof(sessionSearchValidator));
+        }
+
+        /// <summary>
+        /// تشخیص یکسان UserId در تمام اکشن‌های جلسه صندوق تا لیست و «جلسه فعال» برای یک کاربر باشند.
+        /// اول CurrentUserService، در صورت خالی بودن و احراز هویت، Identity.GetUserId().
+        /// </summary>
+        private string GetCurrentUserIdForCashSession()
+        {
+            var userId = _currentUserService?.UserId;
+            if (string.IsNullOrWhiteSpace(userId) && User?.Identity?.IsAuthenticated == true)
+                userId = User.Identity.GetUserId();
+            return userId;
         }
 
         #region Index Actions
@@ -74,22 +90,11 @@ namespace ClinicApp.Controllers.Payment.POS
             {
                 _logger.Information("درخواست لیست جلسات صندوق - کاربر: {UserName}", _currentUserService?.UserName ?? "Unknown");
 
-                // ✅ دریافت UserId با fallback: اول از CurrentUserService، سپس از User.Identity (برای سازگاری با OTP/کد ملی)
-                var userId = _currentUserService?.UserId;
-                if (string.IsNullOrWhiteSpace(userId) && User?.Identity?.IsAuthenticated == true)
-                {
-                    userId = User.Identity.GetUserId();
-                    if (!string.IsNullOrWhiteSpace(userId))
-                        _logger.Information("UserId از Identity.GetUserId() بازیابی شد: {UserId}", userId);
-                }
-                if (string.IsNullOrWhiteSpace(userId))
-                {
-                    _logger.Information("UserId در دسترس نیست - نمایش تمام جلسات. IsAuthenticated: {IsAuth}", _currentUserService?.IsAuthenticated ?? false);
-                }
-                else
-                {
+                var userId = GetCurrentUserIdForCashSession();
+                if (!string.IsNullOrWhiteSpace(userId))
                     _logger.Information("دریافت جلسات برای UserId: {UserId}", userId);
-                }
+                if (string.IsNullOrWhiteSpace(userId))
+                    _logger.Information("UserId در دسترس نیست - نمایش تمام جلسات. IsAuthenticated: {IsAuth}", _currentUserService?.IsAuthenticated ?? false);
 
                 // دریافت جلسات کاربر فعلی (یا تمام جلسات اگر UserId null باشد)
                 var result = await _posManagementService.GetUserCashSessionsAsync(userId, 1, 50);
@@ -503,6 +508,10 @@ namespace ClinicApp.Controllers.Payment.POS
                     Duration = result.Data.Duration
                 };
 
+                // لاگ‌های Audit برای ردیابی (منشی/ادمین با نقش خود دسترسی دارند — همان صفحه SessionDetails)
+                var auditResult = await _cashSessionAuditService.GetAuditLogsAsync(id);
+                ViewBag.AuditLogs = auditResult.Success && auditResult.Data != null ? auditResult.Data : new List<ClinicApp.Models.Entities.Payment.CashSessionAuditLog>();
+
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -519,8 +528,14 @@ namespace ClinicApp.Controllers.Payment.POS
         {
             try
             {
-                // بررسی اینکه آیا جلسه فعالی وجود دارد یا نه
-                var activeSessionResult = await _posManagementService.GetActiveCashSessionAsync(_currentUserService.UserId);
+                var userId = GetCurrentUserIdForCashSession();
+                if (string.IsNullOrWhiteSpace(userId))
+                {
+                    TempData["Error"] = "شناسه کاربر در دسترس نیست. لطفاً مجدداً وارد شوید.";
+                    return RedirectToAction("Sessions");
+                }
+                // بررسی اینکه آیا جلسه فعالی وجود دارد یا نه (همان UserId لیست جلسات)
+                var activeSessionResult = await _posManagementService.GetActiveCashSessionAsync(userId);
                 if (activeSessionResult.Success && activeSessionResult.Data != null)
                 {
                     TempData["Warning"] = "شما در حال حاضر یک جلسه صندوق باز دارید. لطفاً ابتدا جلسه قبلی را ببندید.";
@@ -551,20 +566,26 @@ namespace ClinicApp.Controllers.Payment.POS
             try
             {
                 _logger.Information("درخواست شروع جلسه نقدی. مبلغ اولیه: {InitialAmount}, کاربر: {UserName}",
-                    model.InitialCashAmount, _currentUserService.UserName);
+                    model?.InitialCashAmount, _currentUserService.UserName);
 
-                // اعتبارسنجی مدل
+                if (model == null)
+                {
+                    TempData["Error"] = "اطلاعات ارسالی نامعتبر است.";
+                    return RedirectToAction("StartSession");
+                }
+
                 var validation = await _sessionStartValidator.ValidateAsync(model);
                 if (!validation.IsValid)
                 {
-                    return HandleValidationErrors(validation.Errors.Select(e => e.ErrorMessage));
+                    foreach (var error in validation.Errors)
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    return View(model);
                 }
 
-                // شروع جلسه
-                var userId = _currentUserService.UserId;
+                var userId = GetCurrentUserIdForCashSession();
                 if (string.IsNullOrWhiteSpace(userId))
                 {
-                    _logger.Warning("UserId از CurrentUserService null یا empty است. استفاده از fallback");
+                    _logger.Warning("UserId از CurrentUserService و Identity هر دو null یا empty است. استفاده از fallback سیستمی");
                     userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
                     _logger.Information("استفاده از UserId fallback: {UserId}", userId);
                 }
@@ -576,7 +597,8 @@ namespace ClinicApp.Controllers.Payment.POS
 
                 if (!result.Success)
                 {
-                    return HandleServiceError(result);
+                    TempData["Error"] = result.Message ?? "خطا در شروع جلسه صندوق.";
+                    return View(model);
                 }
 
                 _logger.Information("جلسه نقدی با موفقیت شروع شد. شناسه: {SessionId}, کاربر: {UserName}",
@@ -586,7 +608,9 @@ namespace ClinicApp.Controllers.Payment.POS
             }
             catch (Exception ex)
             {
-                return HandleException(ex, "شروع جلسه نقدی");
+                _logger.Error(ex, "خطا در شروع جلسه نقدی");
+                TempData["Error"] = "خطا در شروع جلسه صندوق. لطفاً مجدداً تلاش کنید.";
+                return View(model ?? new CashSessionStartViewModel());
             }
         }
 
@@ -606,27 +630,38 @@ namespace ClinicApp.Controllers.Payment.POS
                 var validation = await _sessionEndValidator.ValidateAsync(model);
                 if (!validation.IsValid)
                 {
-                    return HandleValidationErrors(validation.Errors.Select(e => e.ErrorMessage));
+                    var errors = validation.Errors.Select(e => e.ErrorMessage).ToList();
+                    if (Request.IsAjaxRequest())
+                        return HandleValidationErrors(errors);
+                    NotificationHelper.SetError(TempData, "اطلاعات وارد شده نامعتبر است: " + string.Join(" ", errors));
+                    return RedirectToAction("SessionDetails", new { id = sessionId });
                 }
 
                 // ✅ HIS Production: بررسی مالکیت جلسه — فقط صاحب جلسه یا ادمین می‌تواند ببندد
                 var sessionResult = await _posManagementService.GetSessionByIdAsync(sessionId);
                 if (!sessionResult.Success || sessionResult.Data == null)
                 {
-                    return HandleServiceError(sessionResult);
+                    if (Request.IsAjaxRequest())
+                        return HandleServiceError(sessionResult);
+                    NotificationHelper.SetError(TempData, sessionResult.Message ?? "جلسه یافت نشد.");
+                    return RedirectToAction("SessionDetails", new { id = sessionId });
                 }
                 var session = sessionResult.Data;
-                var userId = _currentUserService.UserId;
+                // تشخیص کاربر با همان منطق StartSession/Sessions تا صاحب جلسه به‌درستی شناسایی شود (ضد باگ مالکیت)
+                var userId = GetCurrentUserIdForCashSession();
                 if (string.IsNullOrWhiteSpace(userId))
                 {
+                    _logger.Warning("در EndSession شناسه کاربر از CurrentUser و Identity در دسترس نیست؛ فقط ادمین مجاز است.");
                     userId = SystemUsers.SystemUserId ?? SystemUsers.AdminUserId ?? "00000000-0000-0000-0000-000000000000";
-                    _logger.Information("استفاده از UserId fallback: {UserId}", userId);
                 }
                 var isAdmin = User?.IsInRole(AppRoles.Admin) ?? false;
+                // فقط صاحب جلسه (همان کاربری که جلسه را شروع کرده) یا ادمین می‌تواند جلسه را ببندد — پروداکشن و ضد تقلب
                 if (session.UserId != userId && !isAdmin)
                 {
-                    _logger.Warning("کاربر {UserId} تلاش برای بستن جلسه {SessionId} متعلق به {OwnerId}", userId, sessionId, session.UserId);
-                    NotificationHelper.SetError(TempData, "شما مجوز بستن این جلسه را ندارید.");
+                    _logger.Warning("کاربر {UserId} (نام: {UserName}) تلاش برای بستن جلسه {SessionId} متعلق به {OwnerId}", userId, _currentUserService?.UserName, sessionId, session.UserId);
+                    if (Request.IsAjaxRequest())
+                        return HandleServiceError(ServiceResult.Failed("شما مجوز بستن این جلسه را ندارید. فقط صاحب جلسه یا مدیر سیستم می‌توانند جلسه را ببندند.", "FORBIDDEN"));
+                    NotificationHelper.SetError(TempData, "شما مجوز بستن این جلسه را ندارید. فقط صاحب جلسه یا مدیر سیستم می‌توانند جلسه را ببندند.");
                     return RedirectToAction("SessionDetails", new { id = sessionId });
                 }
 
@@ -639,12 +674,16 @@ namespace ClinicApp.Controllers.Payment.POS
 
                 if (!result.Success)
                 {
-                    return HandleServiceError(result);
+                    if (Request.IsAjaxRequest())
+                        return HandleServiceError(result);
+                    NotificationHelper.SetError(TempData, result.Message ?? "پایان جلسه انجام نشد.");
+                    return RedirectToAction("SessionDetails", new { id = sessionId });
                 }
 
                 _logger.Information("جلسه نقدی با موفقیت پایان یافت. شناسه: {SessionId}, کاربر: {UserName}",
                     sessionId, _currentUserService.UserName);
 
+                NotificationHelper.SetSuccess(TempData, "جلسه صندوق با موفقیت بسته شد.");
                 return RedirectToAction("SessionDetails", new { id = sessionId });
             }
             catch (Exception ex)

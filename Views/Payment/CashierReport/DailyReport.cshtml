@@ -1,41 +1,59 @@
 @model ClinicApp.ViewModels.Payment.CashierDailyReportViewModel
+@using System.Globalization
 @{
     ViewBag.Title = "گزارش روزانه - " + Model.Report.CashierName;
     Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
+    var reportDatePersian = Model.ReportDatePersian ?? ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Report.Date);
 }
 
 @section Styles {
     <link href="~/Content/css/cashier-reports.css" rel="stylesheet" />
+    <style>
+        .cashier-daily-report { font-family: 'Vazir', 'Shabnam', 'Tahoma', sans-serif; direction: rtl; }
+        .summary-card { min-height: 120px; }
+        @@media print {
+            .no-print { display: none !important; }
+            .card { box-shadow: none; border: 1px solid #dee2e6; }
+        }
+    </style>
 }
 
-<div class="container-fluid">
+<div class="container-fluid cashier-daily-report">
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap">
                         <div>
                             <h3 class="card-title mb-0">
                                 <i class="fas fa-calendar-day"></i>
                                 گزارش روزانه - @Model.Report.CashierName
                             </h3>
                             <small class="text-muted">
-                                تاریخ: @ClinicApp.Helpers.PersianDateHelper.ToPersianDate(Model.Report.Date)
+                                تاریخ: @reportDatePersian
                             </small>
                         </div>
-                        <div class="btn-group">
+                        <div class="btn-group no-print mt-2 mt-md-0">
                             <button type="button" class="btn btn-success" onclick="exportToExcel()">
                                 <i class="fas fa-file-excel"></i>
-                                Export Excel
+                                خروجی Excel
                             </button>
                             <button type="button" class="btn btn-danger" onclick="exportToPdf()">
                                 <i class="fas fa-file-pdf"></i>
-                                Export PDF
+                                خروجی PDF
                             </button>
-                            <a href="@Url.Action("Index", "CashierReport")" class="btn btn-secondary">
+                            <button type="button" class="btn btn-outline-secondary" onclick="window.print()">
+                                <i class="fas fa-print"></i>
+                                چاپ
+                            </button>
+                            <a href="@Url.Action("Index", "CashierReport")" class="btn btn-secondary" title="بازگشت به لیست گزارشات">
                                 <i class="fas fa-arrow-right"></i>
                                 بازگشت
+                            </a>
+                            <a href="@Url.Action("Index", "ReceptionV2")" class="btn btn-outline-secondary" title="بازگشت به داشبورد پذیرش">
+                                <i class="fas fa-tachometer-alt"></i>
+                                داشبورد
                             </a>
                         </div>
                     </div>
@@ -46,8 +64,8 @@
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card text-white bg-primary">
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="card text-white bg-primary summary-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
@@ -55,61 +73,70 @@
                             <h3 class="mb-0">@Model.Report.SessionsOpened</h3>
                             <small>بسته شده: @Model.Report.SessionsClosed</small>
                         </div>
-                        <div>
-                            <i class="fas fa-door-open fa-2x opacity-50"></i>
-                        </div>
+                        <div><i class="fas fa-door-open fa-2x opacity-50"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success">
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="card text-white bg-success summary-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title mb-0">تعداد تراکنش‌ها</h6>
-                            <h3 class="mb-0">@Model.Report.TotalTransactions</h3>
+                            <h6 class="card-title mb-0">تراکنش‌ها</h6>
+                            <h3 class="mb-0">@Model.Report.TotalTransactions.ToString("N0")</h3>
                             <small>موفق: @Model.Report.SuccessfulTransactions | ناموفق: @Model.Report.FailedTransactions</small>
                         </div>
-                        <div>
-                            <i class="fas fa-receipt fa-2x opacity-50"></i>
-                        </div>
+                        <div><i class="fas fa-receipt fa-2x opacity-50"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info">
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="card text-white bg-info summary-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">مبلغ کل</h6>
                             <h3 class="mb-0">@Model.Report.TotalAmount.ToString("N0")</h3>
-                            <small>ریال</small>
+                            <small>@Model.CurrencyLabel</small>
                         </div>
-                        <div>
-                            <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
-                        </div>
+                        <div><i class="fas fa-money-bill-wave fa-2x opacity-50"></i></div>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning">
+        <div class="col-md-3 col-6 mb-3 mb-md-0">
+            <div class="card text-white bg-warning summary-card">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-0">نرخ موفقیت</h6>
                             <h3 class="mb-0">@Model.Report.SuccessRate.ToString("F2")%</h3>
-                            <small>میانگین زمان: @Model.Report.AverageTransactionTime.ToString("F2") ثانیه</small>
+                            <small>میانگین: @Model.Report.AverageTransactionTime.ToString("F2") ثانیه</small>
                         </div>
-                        <div>
-                            <i class="fas fa-check-circle fa-2x opacity-50"></i>
-                        </div>
+                        <div><i class="fas fa-check-circle fa-2x opacity-50"></i></div>
                     </div>
                 </div>
             </div>
         </div>
+        @if (Model.Report.DiscrepancyCount > 0)
+        {
+            <div class="col-12 mt-2">
+                <div class="card border-danger summary-card">
+                    <div class="card-body bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="card-title mb-0 text-danger">
+                                    <i class="fas fa-exclamation-triangle"></i> اختلاف‌های مالی
+                                </h6>
+                                <h4 class="mb-0 text-danger">@Model.Report.DiscrepancyCount مورد — مجموع: @Model.Report.TotalDiscrepancy.ToString("N0") @Model.CurrencyLabel</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
     </div>
 
     <!-- Transaction Breakdown -->
@@ -299,27 +326,38 @@
             </div>
         </div>
     }
+
+    @if (Model.GeneratedAtUtc.HasValue)
+    {
+        <div class="row no-print">
+            <div class="col-12 text-muted small">
+                <i class="fas fa-clock"></i> تولید گزارش: @Model.GeneratedAtUtc.Value.ToLocalTime().ToString("yyyy/MM/dd HH:mm")
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script src="~/Scripts/chart.min.js"></script>
     <script src="~/Scripts/payment/cashier-reports-charts.js"></script>
-    
     <script>
+        (function() {
+            var exportParams = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(new {
+                cashierId = Model.Report.CashierId,
+                date = Model.Report.Date.ToString("yyyy-MM-dd")
+            }));
+            window.getDailyReportExportParams = function() { return exportParams; };
+        })();
         $(document).ready(function() {
-            // Initialize Charts
             if (typeof CashierReportsCharts !== 'undefined') {
-                // Payment Method Chart (Pie)
                 var paymentMethodData = {
                     labels: ['POS', 'نقدی'],
                     datasets: [{
-                        data: [@Model.Report.PosAmount, @Model.Report.CashAmount],
+                        data: [@Model.Report.PosAmount.ToString(CultureInfo.InvariantCulture), @Model.Report.CashAmount.ToString(CultureInfo.InvariantCulture)],
                         backgroundColor: ['#007bff', '#28a745']
                     }]
                 };
                 CashierReportsCharts.createPieChart('paymentMethodChart', paymentMethodData);
-
-                // Transaction Status Chart (Bar)
                 var transactionStatusData = {
                     labels: ['موفق', 'ناموفق'],
                     datasets: [{
@@ -331,28 +369,16 @@
                 CashierReportsCharts.createBarChart('transactionStatusChart', transactionStatusData);
             }
         });
-
         function exportToExcel() {
-            var cashierId = '@Model.Report.CashierId';
-            var date = '@Model.Report.Date.ToString("yyyy-MM-dd")';
-            var url = '@Url.Action("ExportToExcel", "CashierReport")' + 
-                '?cashierId=' + cashierId + 
-                '&fromDate=' + date + 
-                '&toDate=' + date + 
-                '&reportType=Daily';
-            
+            var p = window.getDailyReportExportParams();
+            if (!p) return;
+            var url = '@Url.Action("ExportToExcel", "CashierReport")' + '?cashierId=' + encodeURIComponent(p.cashierId) + '&fromDate=' + encodeURIComponent(p.date) + '&toDate=' + encodeURIComponent(p.date) + '&reportType=Daily';
             window.location.href = url;
         }
-
         function exportToPdf() {
-            var cashierId = '@Model.Report.CashierId';
-            var date = '@Model.Report.Date.ToString("yyyy-MM-dd")';
-            var url = '@Url.Action("ExportToPdf", "CashierReport")' + 
-                '?cashierId=' + cashierId + 
-                '&fromDate=' + date + 
-                '&toDate=' + date + 
-                '&reportType=Daily';
-            
+            var p = window.getDailyReportExportParams();
+            if (!p) return;
+            var url = '@Url.Action("ExportToPdf", "CashierReport")' + '?cashierId=' + encodeURIComponent(p.cashierId) + '&fromDate=' + encodeURIComponent(p.date) + '&toDate=' + encodeURIComponent(p.date) + '&reportType=Daily';
             window.location.href = url;
         }
     </script>

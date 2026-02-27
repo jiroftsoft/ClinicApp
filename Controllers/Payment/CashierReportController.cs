@@ -95,7 +95,7 @@ namespace ClinicApp.Controllers.Payment
         #region Daily Report
 
         /// <summary>
-        /// گزارش روزانه (GET)
+        /// گزارش روزانه (GET) — اعتبارسنجی QueryString، Audit Log، نقش‌مجاز از طریق [Authorize]
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> DailyReport(string cashierId, DateTime? date)
@@ -108,7 +108,25 @@ namespace ClinicApp.Controllers.Payment
                     return RedirectToAction("Index");
                 }
 
-                var reportDate = date ?? DateTime.Today;
+                if (!IsValidCashierId(cashierId))
+                {
+                    _logger.Warning("⚠️ DailyReport invalid cashierId format. Length: {Length}", cashierId?.Length ?? 0);
+                    NotificationHelper.SetError(TempData, "شناسه منشی نامعتبر است.");
+                    return RedirectToAction("Index");
+                }
+
+                var reportDate = (date ?? DateTime.Today).Date;
+                var today = DateTime.Today;
+                if (reportDate > today)
+                {
+                    _logger.Warning("⚠️ DailyReport future date requested: {Date}", reportDate);
+                    reportDate = today;
+                }
+                if (reportDate < today.AddYears(-5))
+                {
+                    NotificationHelper.SetWarning(TempData, "تاریخ خارج از بازه مجاز است.");
+                    return RedirectToAction("Index");
+                }
 
                 _logger.Information("📊 Getting daily report for Cashier: {CashierId}, Date: {Date}", cashierId, reportDate);
 
@@ -120,6 +138,9 @@ namespace ClinicApp.Controllers.Payment
                     return RedirectToAction("Index");
                 }
 
+                _logger.Information("AUDIT DailyReport UserId={UserId} CashierId={CashierId} Date={Date}",
+                    _currentUserService?.UserId ?? "anonymous", cashierId, reportDate);
+
                 var model = new CashierDailyReportViewModel
                 {
                     Report = result.Data,
@@ -129,7 +150,9 @@ namespace ClinicApp.Controllers.Payment
                         StartDate = reportDate,
                         EndDate = reportDate,
                         ReportType = ReportType.Daily
-                    }
+                    },
+                    GeneratedAtUtc = DateTime.UtcNow,
+                    ReportDatePersian = PersianDateHelper.ToPersianDate(reportDate)
                 };
 
                 _logger.Information("✅ Daily report loaded successfully");
@@ -154,10 +177,11 @@ namespace ClinicApp.Controllers.Payment
             try
             {
                 var date = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today;
+                date = date.Date;
 
-                if (string.IsNullOrWhiteSpace(filter?.CashierId))
+                if (string.IsNullOrWhiteSpace(filter?.CashierId) || !IsValidCashierId(filter.CashierId))
                 {
-                    NotificationHelper.SetWarning(TempData, "لطفاً منشی را انتخاب کنید");
+                    NotificationHelper.SetWarning(TempData, "لطفاً منشی معتبر را انتخاب کنید");
                     return RedirectToAction("Index");
                 }
 
@@ -372,8 +396,10 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                var startDate = fromDate ?? DateTime.Today.AddDays(-30);
-                var endDate = toDate ?? DateTime.Today;
+                var startDate = (fromDate ?? DateTime.Today.AddDays(-30)).Date;
+                var endDate = (toDate ?? DateTime.Today).Date;
+                if (startDate > endDate)
+                    endDate = startDate;
 
                 _logger.Information("📊 Getting all cashiers summary from {FromDate} to {ToDate}", startDate, endDate);
 
@@ -419,7 +445,8 @@ namespace ClinicApp.Controllers.Payment
             {
                 var startDate = ParseDateFromFilter(filter, useStart: true) ?? this.ParseDateFromHiddenInput("StartDate", _logger) ?? DateTime.Today.AddDays(-30);
                 var endDate = ParseDateFromFilter(filter, useStart: false) ?? this.ParseDateFromHiddenInput("EndDate", _logger) ?? DateTime.Today;
-
+                startDate = startDate.Date;
+                endDate = endDate.Date;
                 if (startDate > endDate)
                 {
                     NotificationHelper.SetWarning(TempData, "تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد");
@@ -450,8 +477,10 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
-                var startDate = fromDate ?? DateTime.Today.AddDays(-30);
-                var endDate = toDate ?? DateTime.Today;
+                var startDate = (fromDate ?? DateTime.Today.AddDays(-30)).Date;
+                var endDate = (toDate ?? DateTime.Today).Date;
+                if (startDate > endDate)
+                    endDate = startDate;
 
                 _logger.Information("📊 Getting compare cashiers from {FromDate} to {ToDate}", startDate, endDate);
 
@@ -471,7 +500,7 @@ namespace ClinicApp.Controllers.Payment
                     SelectedCashierIds = cashierIds ?? new List<string>()
                 };
 
-                // اگر منشی‌هایی انتخاب شده‌اند، گزارش را دریافت کن
+                // اگر منشی‌هایی انتخاب شده‌اند، گزارش را دریافت کن (همیشه منشی‌های انتخاب‌شده با داده یا صفر نمایش داده می‌شوند)
                 if (cashierIds != null && cashierIds.Count > 0)
                 {
                     var result = await _reportService.CompareCashiersAsync(cashierIds, startDate, endDate);
@@ -546,8 +575,9 @@ namespace ClinicApp.Controllers.Payment
         [HttpGet]
         public async Task<ActionResult> ExportToExcel(string cashierId, DateTime? fromDate, DateTime? toDate, string reportType)
         {
-            var from = fromDate ?? DateTime.Today.AddDays(-7);
-            var to = toDate ?? DateTime.Today;
+            var from = (fromDate ?? DateTime.Today.AddDays(-7)).Date;
+            var to = (toDate ?? DateTime.Today).Date;
+            if (from > to) to = from;
             return await ExportToExcelCore(cashierId ?? "", from, to);
         }
 
@@ -555,8 +585,9 @@ namespace ClinicApp.Controllers.Payment
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ExportToExcelPost(string cashierId, DateTime? fromDate, DateTime? toDate)
         {
-            var from = fromDate ?? DateTime.Today.AddDays(-7);
-            var to = toDate ?? DateTime.Today;
+            var from = (fromDate ?? DateTime.Today.AddDays(-7)).Date;
+            var to = (toDate ?? DateTime.Today).Date;
+            if (from > to) to = from;
             return await ExportToExcelCore(cashierId ?? "", from, to);
         }
 
@@ -564,6 +595,12 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
+                if (!string.IsNullOrEmpty(cashierId) && cashierId != "all" && !IsValidCashierId(cashierId))
+                {
+                    _logger.Warning("⚠️ ExportToExcel invalid cashierId");
+                    NotificationHelper.SetError(TempData, "شناسه منشی نامعتبر است.");
+                    return RedirectToAction("Index");
+                }
                 _logger.Information("📊 Exporting to Excel - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}", 
                     cashierId, fromDate, toDate);
 
@@ -593,8 +630,9 @@ namespace ClinicApp.Controllers.Payment
         [HttpGet]
         public async Task<ActionResult> ExportToPdf(string cashierId, DateTime? fromDate, DateTime? toDate, string reportType)
         {
-            var from = fromDate ?? DateTime.Today.AddDays(-7);
-            var to = toDate ?? DateTime.Today;
+            var from = (fromDate ?? DateTime.Today.AddDays(-7)).Date;
+            var to = (toDate ?? DateTime.Today).Date;
+            if (from > to) to = from;
             return await ExportToPdfCore(cashierId ?? "", from, to);
         }
 
@@ -602,8 +640,9 @@ namespace ClinicApp.Controllers.Payment
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> ExportToPdfPost(string cashierId, DateTime? fromDate, DateTime? toDate)
         {
-            var from = fromDate ?? DateTime.Today.AddDays(-7);
-            var to = toDate ?? DateTime.Today;
+            var from = (fromDate ?? DateTime.Today.AddDays(-7)).Date;
+            var to = (toDate ?? DateTime.Today).Date;
+            if (from > to) to = from;
             return await ExportToPdfCore(cashierId ?? "", from, to);
         }
 
@@ -611,6 +650,12 @@ namespace ClinicApp.Controllers.Payment
         {
             try
             {
+                if (!string.IsNullOrEmpty(cashierId) && cashierId != "all" && !IsValidCashierId(cashierId))
+                {
+                    _logger.Warning("⚠️ ExportToPdf invalid cashierId");
+                    NotificationHelper.SetError(TempData, "شناسه منشی نامعتبر است.");
+                    return RedirectToAction("Index");
+                }
                 _logger.Information("📊 Exporting to PDF - Cashier: {CashierId}, From: {FromDate}, To: {ToDate}", 
                     cashierId, fromDate, toDate);
 
@@ -635,6 +680,16 @@ namespace ClinicApp.Controllers.Payment
         }
 
         #endregion
+
+        /// <summary>
+        /// اعتبارسنجی شناسه منشی برای جلوگیری از QueryString نامعتبر (GUID یا شناسه معتبر، حداکثر طول).
+        /// </summary>
+        private static bool IsValidCashierId(string cashierId)
+        {
+            if (string.IsNullOrWhiteSpace(cashierId)) return false;
+            if (cashierId.Length > 128) return false;
+            return Guid.TryParse(cashierId, out _);
+        }
 
         /// <summary>
         /// پارس تاریخ شمسی از فیلتر (StartDateShamsi یا EndDateShamsi) برای استفاده در POST.

@@ -112,6 +112,12 @@
         </div>
         <div class="offcanvas-body reception-nav-body">
             <ul class="list-group reception-nav-list">
+                <li class="list-group-item reception-nav-item reception-nav-item--dashboard">
+                    <a href="@Url.Action("Index", "ReceptionV2")" class="reception-nav-link" title="داشبورد پذیرش (صفحه اصلی منشی)">
+                        <span><i class="fas fa-tachometer-alt me-2"></i>داشبورد پذیرش</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
                 <li class="list-group-item reception-nav-item">
                     <a href="@Url.Action("Index", "ReceptionV2")" class="reception-nav-link">
                         <span><i class="fas fa-user-plus me-2"></i>پذیرش جدید</span>
@@ -127,6 +133,12 @@
                 <li class="list-group-item reception-nav-item">
                     <a href="@Url.Action("Index", "PosManagement", new { area = "" })" class="reception-nav-link">
                         <span><i class="fas fa-credit-card me-2"></i>تنظیمات پوز</span>
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                <li class="list-group-item reception-nav-item">
+                    <a href="@Url.Action("Index", "CashierReport", new { area = "" })" class="reception-nav-link">
+                        <span><i class="fas fa-chart-bar me-2"></i>گزارشات صندوق</span>
                         <i class="fas fa-chevron-left"></i>
                     </a>
                 </li>

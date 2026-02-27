@@ -153,12 +153,13 @@ namespace ClinicApp.ViewModels.Payment
     #region Daily Report ViewModel
 
     /// <summary>
-    /// ViewModel برای گزارش روزانه
+    /// ViewModel استاندارد مالی برای گزارش روزانه منشی
+    /// محاسبات در سرویس؛ نمایش و فیلتر در این مدل.
     /// </summary>
     public class CashierDailyReportViewModel
     {
         /// <summary>
-        /// گزارش روزانه
+        /// گزارش روزانه (داده و محاسبات از Service Layer)
         /// </summary>
         public CashierDailyReport Report { get; set; }
 
@@ -166,6 +167,21 @@ namespace ClinicApp.ViewModels.Payment
         /// فیلتر گزارش
         /// </summary>
         public CashierReportFilterViewModel Filter { get; set; }
+
+        /// <summary>
+        /// زمان تولید گزارش (UTC) برای Audit و نمایش در footer
+        /// </summary>
+        public DateTime? GeneratedAtUtc { get; set; }
+
+        /// <summary>
+        /// تاریخ گزارش به شمسی برای نمایش در هدر/چاپ
+        /// </summary>
+        public string ReportDatePersian { get; set; }
+
+        /// <summary>
+        /// واحد پول برای نمایش (ریال)
+        /// </summary>
+        public string CurrencyLabel => "ریال";
 
         /// <summary>
         /// Constructor

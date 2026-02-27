@@ -4,6 +4,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Collections.Generic
 @using ClinicApp.ViewModels.Shared
+@using ClinicApp.Helpers
 @{
     ViewBag.Title = "جزئیات جلسه نقدی";
     Layout = "~/Views/Shared/_ReceptionLayout.cshtml";
@@ -250,6 +251,48 @@
                     </div>
                 </div>
             </div>
+
+            @{
+                var auditLogs = ViewBag.AuditLogs as IList<ClinicApp.Models.Entities.Payment.CashSessionAuditLog>;
+            }
+            @if (auditLogs != null && auditLogs.Any())
+            {
+                <div class="card mb-3">
+                    <div class="card-header bg-light d-flex align-items-center">
+                        <i class="fas fa-history text-secondary me-2"></i>
+                        <strong>تاریخچه اقدامات (Audit)</strong>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>اقدام</th>
+                                        <th>انجام‌دهنده</th>
+                                        <th>زمان</th>
+                                        <th>دلیل/توضیح</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var log in auditLogs.OrderByDescending(x => x.PerformedAt))
+                                    {
+                                        <tr>
+                                            <td>
+                                                @if (log.Action == "Open") { <span class="badge bg-success">باز کردن</span> }
+                                                else if (log.Action == "Close") { <span class="badge bg-danger">بستن</span> }
+                                                else { @log.Action }
+                                            </td>
+                                            <td><small>@(log.PerformedByUser?.UserName ?? log.PerformedByUserId)</small></td>
+                                            <td><small>@log.PerformedAt.ToString("yyyy/MM/dd HH:mm")</small></td>
+                                            <td><small class="text-muted">@(log.Reason ?? "—")</small></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -302,6 +345,27 @@
 }
 
 @section scripts {
+    @{ var pageNotification = NotificationHelper.GetFirstAvailable(TempData); }
+    @if (pageNotification != null)
+    {
+        <script>
+            (function() {
+                try {
+                    if (typeof toastr !== 'undefined' && typeof jQuery !== 'undefined') {
+                        var msg = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(pageNotification.Message ?? ""));
+                        var title = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(pageNotification.Title ?? ""));
+                        var t = @((int)pageNotification.Type);
+                        jQuery(function() {
+                            if (t === 0) toastr.success(msg, title);
+                            else if (t === 1) toastr.error(msg, title);
+                            else if (t === 2) toastr.warning(msg, title);
+                            else toastr.info(msg, title);
+                        });
+                    }
+                } catch (e) { console.warn('SessionDetails notification:', e); }
+            })();
+        </script>
+    }
     <script>
         function openEndSessionModal() {
             var modal = new bootstrap.Modal(document.getElementById('endSessionModal'));

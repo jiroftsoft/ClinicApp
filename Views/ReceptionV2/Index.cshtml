@@ -26,17 +26,51 @@
 @Html.Partial("Partials/_ReceptionSummaryHeader")
 
 <div class="reception-pro container-fluid" dir="rtl">
-    <!-- Simple Header: Quick Navigation Only -->
+    <!-- هدر پذیرش جدید: لیست پذیرش‌ها + دسترسی سریع صندوق (آیکون با راهنما) -->
     <div class="card shadow-sm mb-3">
-        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center flex-wrap gap-2">
             <h5 class="m-0">
                 <i class="fas fa-user-plus me-2"></i>پذیرش جدید
             </h5>
-            <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-light btn-sm">
-                <i class="fas fa-list me-1"></i>لیست پذیرش‌ها
-            </a>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <a href="@Url.Action("Index", "ReceptionListV2")" class="btn btn-light btn-sm">
+                    <i class="fas fa-list me-1"></i>لیست پذیرش‌ها
+                </a>
+                <span class="text-white-50 d-none d-md-inline">|</span>
+                <div class="d-flex gap-1" role="group" aria-label="دسترسی سریع صندوق و پرداخت">
+                    <a href="@Url.Action("Index", "PosManagement")"
+                       class="btn btn-light btn-sm p-1 px-2 reception-quick-icon"
+                       data-bs-toggle="tooltip" data-bs-placement="bottom"
+                       title="تنظیمات پوز — مدیریت ترمینال‌های پرداخت و تنظیمات">
+                        <i class="fas fa-credit-card" aria-hidden="true"></i>
+                    </a>
+                    <a href="@Url.Action("Sessions", "PosManagement")"
+                       class="btn btn-light btn-sm p-1 px-2 reception-quick-icon"
+                       data-bs-toggle="tooltip" data-bs-placement="bottom"
+                       title="لیست جلسات صندوق — مشاهده و بستن جلسات نقدی">
+                        <i class="fas fa-money-bill-wave" aria-hidden="true"></i>
+                    </a>
+                    <a href="@Url.Action("StartSession", "PosManagement")"
+                       class="btn btn-light btn-sm p-1 px-2 reception-quick-icon"
+                       data-bs-toggle="tooltip" data-bs-placement="bottom"
+                       title="شروع جلسه صندوق — برای ثبت پرداخت‌های نقدی ابتدا جلسه را شروع کنید">
+                        <i class="fas fa-play-circle text-success" aria-hidden="true"></i>
+                    </a>
+                    <a href="@Url.Action("Index", "CashierReport")"
+                       class="btn btn-light btn-sm p-1 px-2 reception-quick-icon"
+                       data-bs-toggle="tooltip" data-bs-placement="bottom"
+                       title="گزارشات صندوق — گزارش روزانه و خلاصه صندوق‌داران">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                    </a>
+                </div>
+            </div>
         </div>
     </div>
+
+    <style>
+        .reception-quick-icon { min-width: 2rem; }
+        .reception-quick-icon:hover { opacity: 0.95; }
+    </style>
 
     <div class="row mt-3">
         <div class="col-xl-8 col-lg-7">
