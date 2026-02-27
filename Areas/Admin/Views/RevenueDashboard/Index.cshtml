@@ -6,6 +6,10 @@
     var s = Model?.Summary;
     var c = Model?.ChartData;
 }
+@section Styles {
+    <link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
+}
 <div class="container-fluid" dir="rtl">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 mb-0 text-gray-800">
@@ -21,21 +25,57 @@
         </div>
     }
 
-    <!-- فیلتر -->
+    <!-- فیلتر — همه مقادیر از مدل (strongly-typed) -->
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light py-2">
-            <i class="fas fa-filter me-2"></i>فیلتر بازه زمانی
+            <i class="fas fa-filter me-2"></i>فیلتر
         </div>
         <div class="card-body py-3">
             @using (Html.BeginForm("Index", "RevenueDashboard", FormMethod.Get, new { id = "filterForm", @class = "row g-3" }))
             {
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">از تاریخ (شمسی)</label>
-                    <input type="text" name="StartDatePersian" id="StartDatePersian" class="form-control" placeholder="1403/12/01" value="@(Model?.Filter?.StartDatePersian)" />
+                    <input type="text" name="startDatePersian" id="StartDatePersian" class="form-control" placeholder="1404/01/01" value="@(Model?.Filter?.StartDatePersian)" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">تا تاریخ (شمسی)</label>
-                    <input type="text" name="EndDatePersian" id="EndDatePersian" class="form-control" placeholder="1403/12/08" value="@(Model?.Filter?.EndDatePersian)" />
+                    <input type="text" name="endDatePersian" id="EndDatePersian" class="form-control" placeholder="1404/12/29" value="@(Model?.Filter?.EndDatePersian)" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">پزشک</label>
+                    <select name="doctorId" id="DoctorId" class="form-select">
+                        @if (Model?.Doctors != null)
+                        {
+                            foreach (var item in Model.Doctors)
+                            {
+                                <option value="@item.Value" @(item.Selected ? "selected" : "")>@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">دپارتمان</label>
+                    <select name="departmentId" id="DepartmentId" class="form-select">
+                        @if (Model?.Departments != null)
+                        {
+                            foreach (var item in Model.Departments)
+                            {
+                                <option value="@item.Value" @(item.Selected ? "selected" : "")>@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">روش پرداخت</label>
+                    <select name="paymentMethod" id="PaymentMethod" class="form-select">
+                        @if (Model?.PaymentMethods != null)
+                        {
+                            foreach (var item in Model.PaymentMethods)
+                            {
+                                <option value="@item.Value" @(item.Selected ? "selected" : "")>@item.Text</option>
+                            }
+                        }
+                    </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">
@@ -114,6 +154,9 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="StartDatePersian" id="ExportStartDatePersian" value="@(Model?.Filter?.StartDatePersian)" />
                 <input type="hidden" name="EndDatePersian" id="ExportEndDatePersian" value="@(Model?.Filter?.EndDatePersian)" />
+                <input type="hidden" name="DoctorId" id="ExportDoctorId" value="@(Model?.Filter?.DoctorId)" />
+                <input type="hidden" name="DepartmentId" id="ExportDepartmentId" value="@(Model?.Filter?.DepartmentId)" />
+                <input type="hidden" name="PaymentMethod" id="ExportPaymentMethod" value="@(Model?.Filter?.PaymentMethod)" />
                 <button type="submit" class="btn btn-success w-100">
                     <i class="fas fa-file-excel me-1"></i>خروجی Excel
                 </button>
@@ -160,7 +203,22 @@
 </div>
 
 @section Scripts {
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.js"></script>
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+    <script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                JalaliDatePickerEnterprise.startWatchAgain();
+            }
+            setTimeout(function() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }
+            }, 300);
+        })();
+    </script>
     <script>
         (function() {
             var labels = @Html.Raw(c != null && c.Labels != null ? JsonConvert.SerializeObject(c.Labels) : "[]");
@@ -216,8 +274,14 @@
             }
 
             document.getElementById('exportForm').addEventListener('submit', function() {
-                document.getElementById('ExportStartDatePersian').value = document.getElementById('StartDatePersian').value;
-                document.getElementById('ExportEndDatePersian').value = document.getElementById('EndDatePersian').value;
+                document.getElementById('ExportStartDatePersian').value = document.getElementById('StartDatePersian').value || '';
+                document.getElementById('ExportEndDatePersian').value = document.getElementById('EndDatePersian').value || '';
+                var doctorEl = document.getElementById('DoctorId');
+                var deptEl = document.getElementById('DepartmentId');
+                var methodEl = document.getElementById('PaymentMethod');
+                document.getElementById('ExportDoctorId').value = doctorEl ? doctorEl.value || '' : '';
+                document.getElementById('ExportDepartmentId').value = deptEl ? deptEl.value || '' : '';
+                document.getElementById('ExportPaymentMethod').value = methodEl ? methodEl.value || '' : '';
             });
         })();
     </script>

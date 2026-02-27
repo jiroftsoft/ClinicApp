@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Admin;
@@ -16,15 +17,18 @@ namespace ClinicApp.Services.Insurance
     {
         private readonly IInsuranceClaimRepository _claimRepository;
         private readonly IInsuranceBatchRepository _batchRepository;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
         public InsuranceRevenueService(
             IInsuranceClaimRepository claimRepository,
             IInsuranceBatchRepository batchRepository,
+            ApplicationDbContext context,
             ILogger logger)
         {
             _claimRepository = claimRepository ?? throw new ArgumentNullException(nameof(claimRepository));
             _batchRepository = batchRepository ?? throw new ArgumentNullException(nameof(batchRepository));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -221,27 +225,39 @@ namespace ClinicApp.Services.Insurance
                     TotalDeduction = 0
                 };
 
-                batch = await _batchRepository.AddAsync(batch);
-
-                decimal totalClaimed = 0, totalApproved = 0, totalDeduction = 0;
-                foreach (var claimId in claimIds)
+                using (var transaction = _context.Database.BeginTransaction())
                 {
-                    var claim = await _claimRepository.GetByIdWithDetailsAsync(claimId);
-                    if (claim == null || claim.InsurancePlan == null || claim.InsurancePlan.InsuranceProviderId != providerId) continue;
-                    claim.BatchId = batch.Id;
-                    await _claimRepository.UpdateAsync(claim);
-                    totalClaimed += claim.ClaimedAmount;
-                    totalApproved += claim.ApprovedAmount;
-                    totalDeduction += claim.DeductionAmount;
+                    try
+                    {
+                        batch = await _batchRepository.AddAsync(batch);
+
+                        decimal totalClaimed = 0, totalApproved = 0, totalDeduction = 0;
+                        foreach (var claimId in claimIds)
+                        {
+                            var claim = await _claimRepository.GetByIdWithDetailsAsync(claimId);
+                            if (claim == null || claim.InsurancePlan == null || claim.InsurancePlan.InsuranceProviderId != providerId) continue;
+                            claim.BatchId = batch.Id;
+                            await _claimRepository.UpdateAsync(claim);
+                            totalClaimed += claim.ClaimedAmount;
+                            totalApproved += claim.ApprovedAmount;
+                            totalDeduction += claim.DeductionAmount;
+                        }
+
+                        batch.TotalClaimed = totalClaimed;
+                        batch.TotalApproved = totalApproved;
+                        batch.TotalDeduction = totalDeduction;
+                        await _batchRepository.UpdateAsync(batch);
+
+                        transaction.Commit();
+                        _logger.Information("دسته مطالبه {BatchNumber} با {Count} مطالبه ایجاد شد", batchNumber, claimIds.Count);
+                        return ServiceResult<object>.Successful(new { batch.Id, batch.BatchNumber });
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
                 }
-
-                batch.TotalClaimed = totalClaimed;
-                batch.TotalApproved = totalApproved;
-                batch.TotalDeduction = totalDeduction;
-                await _batchRepository.UpdateAsync(batch);
-
-                _logger.Information("دسته مطالبه {BatchNumber} با {Count} مطالبه ایجاد شد", batchNumber, claimIds.Count);
-                return ServiceResult<object>.Successful(new { batch.Id, batch.BatchNumber });
             }
             catch (Exception ex)
             {
@@ -281,7 +297,7 @@ namespace ClinicApp.Services.Insurance
                     int row = 2;
                     foreach (var b in breakdown)
                     {
-                        wsProvider.Cells[row, 1].Value = b.ProviderName;
+                        wsProvider.Cells[row, 1].Value = SafeExcelCellValue(b.ProviderName);
                         wsProvider.Cells[row, 2].Value = b.TotalClaimed;
                         wsProvider.Cells[row, 3].Value = b.TotalPaid;
                         wsProvider.Cells[row, 4].Value = b.TotalDeduction;
@@ -297,7 +313,7 @@ namespace ClinicApp.Services.Insurance
                     row = 2;
                     foreach (var a in aging)
                     {
-                        wsAging.Cells[row, 1].Value = a.AgeGroup;
+                        wsAging.Cells[row, 1].Value = SafeExcelCellValue(a.AgeGroup);
                         wsAging.Cells[row, 2].Value = a.TotalClaimed;
                         wsAging.Cells[row, 3].Value = a.TotalApproved;
                         wsAging.Cells[row, 4].Value = a.ClaimCount;
@@ -316,6 +332,18 @@ namespace ClinicApp.Services.Insurance
                 _logger.Error(ex, "خطا در خروجی Excel درآمد بیمه");
                 return ServiceResult<byte[]>.Failed("خطا در خروجی Excel.", "EXCEPTION");
             }
+        }
+
+        /// <summary>
+        /// جلوگیری از Excel Formula Injection: مقادیر متنی که با کاراکترهای فرمول شروع می‌شوند به‌صورت متن ذخیره می‌شوند.
+        /// </summary>
+        private static string SafeExcelCellValue(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return value;
+            var trimmed = value.TrimStart();
+            if (trimmed.Length > 0 && (trimmed[0] == '=' || trimmed[0] == '+' || trimmed[0] == '-' || trimmed[0] == '@' || trimmed[0] == '\t' || trimmed[0] == '\r'))
+                return "'" + value;
+            return value;
         }
 
         private (DateTime? start, DateTime? end) ResolveDateRange(InsuranceRevenueFilterViewModel filter)

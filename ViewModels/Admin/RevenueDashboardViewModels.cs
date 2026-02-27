@@ -85,7 +85,17 @@ namespace ClinicApp.ViewModels.Admin
     }
 
     /// <summary>
-    /// مدل اصلی صفحه داشبورد درآمد
+    /// آیتم انتخاب برای دراپ‌داون‌های داشبورد درآمد (strongly-typed، بدون وابستگی به ViewBag)
+    /// </summary>
+    public class RevenueDashboardSelectItem
+    {
+        public string Value { get; set; }
+        public string Text { get; set; }
+        public bool Selected { get; set; }
+    }
+
+    /// <summary>
+    /// مدل اصلی صفحه داشبورد درآمد — تمام داده‌های مهم به‌صورت strongly-typed
     /// </summary>
     public class RevenueDashboardViewModel
     {
@@ -95,6 +105,15 @@ namespace ClinicApp.ViewModels.Admin
         public List<DoctorRevenueItemViewModel> DoctorRevenues { get; set; } = new List<DoctorRevenueItemViewModel>();
         public List<DailyRevenueItemViewModel> DailyTrend { get; set; } = new List<DailyRevenueItemViewModel>();
         public List<RevenueDetailRowViewModel> DetailRows { get; set; } = new List<RevenueDetailRowViewModel>();
+
+        /// <summary>لیست پزشکان برای فیلتر (strongly-typed)</summary>
+        public List<RevenueDashboardSelectItem> Doctors { get; set; } = new List<RevenueDashboardSelectItem>();
+
+        /// <summary>لیست دپارتمان‌ها برای فیلتر (strongly-typed)</summary>
+        public List<RevenueDashboardSelectItem> Departments { get; set; } = new List<RevenueDashboardSelectItem>();
+
+        /// <summary>لیست روش‌های پرداخت برای فیلتر (strongly-typed)</summary>
+        public List<RevenueDashboardSelectItem> PaymentMethods { get; set; } = new List<RevenueDashboardSelectItem>();
     }
 
     /// <summary>

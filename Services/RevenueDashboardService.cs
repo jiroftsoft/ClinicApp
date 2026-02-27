@@ -86,27 +86,56 @@ namespace ClinicApp.Services
                 if (start == null || end == null)
                     return ServiceResult<RevenueSummaryViewModel>.Failed("بازه تاریخ معتبر نیست.", "VALIDATION");
 
-                var stats = await _paymentTransactionRepository.GetStatisticsAsync(start.Value, end.Value);
-                var cashStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.Cash, start.Value, end.Value);
-                var posStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.POS, start.Value, end.Value);
-                var onlineStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.Online, start.Value, end.Value);
+                decimal totalRevenue;
+                int totalTransactions;
+                decimal cashRevenue;
+                decimal posRevenue;
+                decimal onlineRevenue;
+                int receptionCount;
 
-                var receptions = await _receptionRepository.GetByDateRangeAsync(start.Value, end.Value);
-                var receptionCount = receptions?.Count ?? 0;
+                if (HasFilter(filter))
+                {
+                    var baseQuery = GetFilteredTransactionsQuery(start.Value, end.Value, filter.DoctorId, filter.DepartmentId, filter.PaymentMethod);
+                    totalRevenue = await baseQuery.SumAsync(pt => pt.Amount);
+                    totalTransactions = await baseQuery.CountAsync();
+                    cashRevenue = await baseQuery.Where(pt => pt.Method == PaymentMethod.Cash).SumAsync(pt => pt.Amount);
+                    posRevenue = await baseQuery.Where(pt => pt.Method == PaymentMethod.POS).SumAsync(pt => pt.Amount);
+                    onlineRevenue = await baseQuery.Where(pt => pt.Method == PaymentMethod.Online).SumAsync(pt => pt.Amount);
+                    receptionCount = await baseQuery.Select(pt => pt.ReceptionId).Distinct().CountAsync();
+                }
+                else
+                {
+                    var stats = await _paymentTransactionRepository.GetStatisticsAsync(start.Value, end.Value);
+                    var cashStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.Cash, start.Value, end.Value);
+                    var posStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.POS, start.Value, end.Value);
+                    var onlineStats = await _paymentTransactionRepository.GetStatisticsByPaymentMethodAsync(PaymentMethod.Online, start.Value, end.Value);
+                    totalRevenue = stats.SuccessfulAmount;
+                    totalTransactions = stats.SuccessfulTransactions;
+                    cashRevenue = cashStats.SuccessfulAmount;
+                    posRevenue = posStats.SuccessfulAmount;
+                    onlineRevenue = onlineStats.SuccessfulAmount;
+                    var receptions = await _receptionRepository.GetByDateRangeAsync(start.Value, end.Value);
+                    receptionCount = receptions?.Count ?? 0;
+                }
 
-                var totalRevenue = stats.SuccessfulAmount;
-                var totalTransactions = stats.SuccessfulTransactions;
-                var cashRevenue = cashStats.SuccessfulAmount;
-                var posRevenue = posStats.SuccessfulAmount;
-                var onlineRevenue = onlineStats.SuccessfulAmount;
                 var otherRevenue = totalRevenue - cashRevenue - posRevenue - onlineRevenue;
                 if (otherRevenue < 0) otherRevenue = 0;
 
                 var days = (end.Value - start.Value).Days + 1;
                 var previousStart = start.Value.AddDays(-days);
                 var previousEnd = start.Value.AddDays(-1);
-                var prevStats = await _paymentTransactionRepository.GetStatisticsAsync(previousStart, previousEnd);
-                var previousRevenue = prevStats.SuccessfulAmount;
+                decimal previousRevenue;
+                if (HasFilter(filter))
+                {
+                    var prevQuery = GetFilteredTransactionsQuery(previousStart, previousEnd, filter.DoctorId, filter.DepartmentId, filter.PaymentMethod);
+                    previousRevenue = await prevQuery.SumAsync(pt => pt.Amount);
+                }
+                else
+                {
+                    var prevStats = await _paymentTransactionRepository.GetStatisticsAsync(previousStart, previousEnd);
+                    previousRevenue = prevStats.SuccessfulAmount;
+                }
+
                 var growthRate = previousRevenue > 0
                     ? Math.Round((decimal)((totalRevenue - previousRevenue) / previousRevenue * 100), 1)
                     : (totalRevenue > 0 ? 100m : 0m);
@@ -143,12 +172,10 @@ namespace ClinicApp.Services
                 if (start == null || end == null)
                     return ServiceResult<RevenueChartDataViewModel>.Failed("بازه تاریخ معتبر نیست.", "VALIDATION");
 
-                var days = (end.Value - start.Value).Days + 1;
+                var chartEnd = end.Value;
+                var days = (chartEnd - start.Value).Days + 1;
                 if (days > MaxChartDays)
-                {
-                    end = start.Value.AddDays(MaxChartDays - 1);
-                    days = MaxChartDays;
-                }
+                    chartEnd = start.Value.AddDays(MaxChartDays - 1);
 
                 var labels = new List<string>();
                 var dailyValues = new List<decimal>();
@@ -156,14 +183,35 @@ namespace ClinicApp.Services
                 var posValues = new List<decimal>();
                 var onlineValues = new List<decimal>();
 
-                for (var d = start.Value.Date; d <= end.Value.Date; d = d.AddDays(1))
+                if (HasFilter(filter))
                 {
-                    var dayStats = await _paymentTransactionRepository.GetDailyStatisticsAsync(d);
-                    labels.Add(PersianDateHelper.ToPersianDate(d));
-                    dailyValues.Add(dayStats.SuccessfulAmount);
-                    cashValues.Add(dayStats.CashAmount);
-                    posValues.Add(dayStats.PosAmount);
-                    onlineValues.Add(dayStats.OnlineAmount);
+                    for (var d = start.Value.Date; d <= chartEnd.Date; d = d.AddDays(1))
+                    {
+                        var dayStart = d.Date;
+                        var dayEnd = d.Date.AddDays(1).AddSeconds(-1);
+                        var dayQuery = GetFilteredTransactionsQuery(dayStart, dayEnd, filter.DoctorId, filter.DepartmentId, filter.PaymentMethod);
+                        var dayTotal = await dayQuery.SumAsync(pt => pt.Amount);
+                        var dayCash = await dayQuery.Where(pt => pt.Method == PaymentMethod.Cash).SumAsync(pt => pt.Amount);
+                        var dayPos = await dayQuery.Where(pt => pt.Method == PaymentMethod.POS).SumAsync(pt => pt.Amount);
+                        var dayOnline = await dayQuery.Where(pt => pt.Method == PaymentMethod.Online).SumAsync(pt => pt.Amount);
+                        labels.Add(PersianDateHelper.ToPersianDate(d));
+                        dailyValues.Add(dayTotal);
+                        cashValues.Add(dayCash);
+                        posValues.Add(dayPos);
+                        onlineValues.Add(dayOnline);
+                    }
+                }
+                else
+                {
+                    for (var d = start.Value.Date; d <= chartEnd.Date; d = d.AddDays(1))
+                    {
+                        var dayStats = await _paymentTransactionRepository.GetDailyStatisticsAsync(d);
+                        labels.Add(PersianDateHelper.ToPersianDate(d));
+                        dailyValues.Add(dayStats.SuccessfulAmount);
+                        cashValues.Add(dayStats.CashAmount);
+                        posValues.Add(dayStats.PosAmount);
+                        onlineValues.Add(dayStats.OnlineAmount);
+                    }
                 }
 
                 var chart = new RevenueChartDataViewModel
@@ -192,8 +240,19 @@ namespace ClinicApp.Services
                 if (start == null || end == null)
                     return ServiceResult<byte[]>.Failed("بازه تاریخ معتبر نیست.", "VALIDATION");
 
-                var transactions = await _paymentTransactionRepository.GetByDateRangeAsync(start.Value, end.Value, 1, 10000);
-                var list = transactions?.Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted).ToList() ?? new List<PaymentTransaction>();
+                List<PaymentTransaction> list;
+                if (HasFilter(filter))
+                {
+                    var query = GetFilteredTransactionsQuery(start.Value, end.Value, filter.DoctorId, filter.DepartmentId, filter.PaymentMethod)
+                        .OrderByDescending(pt => pt.CreatedAt)
+                        .Take(10000);
+                    list = await query.ToListAsync();
+                }
+                else
+                {
+                    var transactions = await _paymentTransactionRepository.GetByDateRangeAsync(start.Value, end.Value, 1, 10000);
+                    list = transactions?.Where(t => t.Status == PaymentStatus.Success && !t.IsDeleted).ToList() ?? new List<PaymentTransaction>();
+                }
 
                 using (var package = new ExcelPackage())
                 {
@@ -224,6 +283,37 @@ namespace ClinicApp.Services
                 _logger.Error(ex, "خطا در خروجی Excel داشبورد درآمد");
                 return ServiceResult<byte[]>.Failed("خطا در خروجی Excel.", "EXCEPTION");
             }
+        }
+
+        private static bool HasFilter(RevenueDashboardFilterViewModel filter)
+        {
+            return filter.DoctorId.HasValue || filter.DepartmentId.HasValue ||
+                   !string.IsNullOrWhiteSpace(filter.PaymentMethod);
+        }
+
+        private IQueryable<PaymentTransaction> GetFilteredTransactionsQuery(
+            DateTime start,
+            DateTime end,
+            int? doctorId,
+            int? departmentId,
+            string paymentMethod)
+        {
+            var endInclusive = end.Date.AddDays(1).AddSeconds(-1);
+            var query = _context.PaymentTransactions
+                .AsNoTracking()
+                .Where(pt => !pt.IsDeleted && pt.Status == PaymentStatus.Success &&
+                             pt.CreatedAt >= start && pt.CreatedAt <= endInclusive &&
+                             pt.ReceptionId != 0);
+
+            if (doctorId.HasValue)
+                query = query.Where(pt => pt.Reception.DoctorId == doctorId.Value);
+            if (departmentId.HasValue)
+                query = query.Where(pt => pt.Reception.DepartmentId == departmentId.Value);
+            if (!string.IsNullOrWhiteSpace(paymentMethod) &&
+                Enum.TryParse(paymentMethod, true, out PaymentMethod pm))
+                query = query.Where(pt => pt.Method == pm);
+
+            return query;
         }
 
         private (DateTime? start, DateTime? end) ResolveDateRange(RevenueDashboardFilterViewModel filter)

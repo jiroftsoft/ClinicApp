@@ -429,6 +429,22 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
+            // مسیر جایگزین: داشبورد درآمد — /Admin/CMS/RevenueDashboard → کنترلر Admin (نه CMS)
+            context.MapRoute(
+                name: "Admin_CMS_RevenueDashboard_Fix",
+                url: "Admin/CMS/RevenueDashboard/{action}/{id}",
+                defaults: new { controller = "RevenueDashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
+            // مسیر جایگزین: داشبورد مدیریت — /Admin/CMS/Dashboard → کنترلر Dashboard در Admin (نه CMS)
+            context.MapRoute(
+                name: "Admin_CMS_Dashboard_Fix",
+                url: "Admin/CMS/Dashboard/{action}/{id}",
+                defaults: new { controller = "Dashboard", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // CMS Home: صفحهٔ ورود CMS — گرید ماژول‌ها
             context.MapRoute(
                 name: "Admin_CMS_Home",

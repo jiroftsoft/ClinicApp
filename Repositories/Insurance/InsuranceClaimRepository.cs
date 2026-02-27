@@ -115,34 +115,41 @@ namespace ClinicApp.Repositories.Insurance
             var asOf = (asOfDate ?? DateTime.Now).Date;
             var pendingStatuses = new[] { ClaimStatus.Pending, ClaimStatus.Approved, ClaimStatus.PartiallyPaid };
 
-            var list = await _context.InsuranceClaims
-                .Where(c => !c.IsDeleted && pendingStatuses.Contains(c.Status))
-                .Select(c => new { c.SubmissionDate, c.ClaimedAmount, c.ApprovedAmount })
-                .ToListAsync();
+            // aggregation در DB با DbFunctions.DiffDays (SQL-friendly، بدون بارگذاری کل لیست در حافظه)
+            var baseQuery = _context.InsuranceClaims
+                .Where(c => !c.IsDeleted && pendingStatuses.Contains(c.Status));
 
-            int GetDays(DateTime d) => (int)(asOf - d.Date).TotalDays;
-            string Bucket(int days)
+            var bucket0_30 = await baseQuery
+                .Where(c => DbFunctions.DiffDays(c.SubmissionDate, asOf) >= 0 && DbFunctions.DiffDays(c.SubmissionDate, asOf) <= 30)
+                .GroupBy(c => 1)
+                .Select(g => new { TotalClaimed = g.Sum(x => x.ClaimedAmount), TotalApproved = g.Sum(x => x.ApprovedAmount), ClaimCount = g.Count() })
+                .FirstOrDefaultAsync();
+
+            var bucket31_60 = await baseQuery
+                .Where(c => DbFunctions.DiffDays(c.SubmissionDate, asOf) > 30 && DbFunctions.DiffDays(c.SubmissionDate, asOf) <= 60)
+                .GroupBy(c => 1)
+                .Select(g => new { TotalClaimed = g.Sum(x => x.ClaimedAmount), TotalApproved = g.Sum(x => x.ApprovedAmount), ClaimCount = g.Count() })
+                .FirstOrDefaultAsync();
+
+            var bucket61_90 = await baseQuery
+                .Where(c => DbFunctions.DiffDays(c.SubmissionDate, asOf) > 60 && DbFunctions.DiffDays(c.SubmissionDate, asOf) <= 90)
+                .GroupBy(c => 1)
+                .Select(g => new { TotalClaimed = g.Sum(x => x.ClaimedAmount), TotalApproved = g.Sum(x => x.ApprovedAmount), ClaimCount = g.Count() })
+                .FirstOrDefaultAsync();
+
+            var bucket90Plus = await baseQuery
+                .Where(c => DbFunctions.DiffDays(c.SubmissionDate, asOf) > 90)
+                .GroupBy(c => 1)
+                .Select(g => new { TotalClaimed = g.Sum(x => x.ClaimedAmount), TotalApproved = g.Sum(x => x.ApprovedAmount), ClaimCount = g.Count() })
+                .FirstOrDefaultAsync();
+
+            return new List<InsuranceClaimAgingRow>
             {
-                if (days <= 30) return "0-30 روز";
-                if (days <= 60) return "31-60 روز";
-                if (days <= 90) return "61-90 روز";
-                return "بیش از 90 روز";
-            }
-
-            var grouped = list
-                .Select(x => new { Days = GetDays(x.SubmissionDate), x.ClaimedAmount, x.ApprovedAmount })
-                .GroupBy(x => Bucket(x.Days))
-                .Select(g => new InsuranceClaimAgingRow
-                {
-                    AgeGroup = g.Key,
-                    TotalClaimed = g.Sum(x => x.ClaimedAmount),
-                    TotalApproved = g.Sum(x => x.ApprovedAmount),
-                    ClaimCount = g.Count()
-                })
-                .ToList();
-
-            var order = new[] { "0-30 روز", "31-60 روز", "61-90 روز", "بیش از 90 روز" };
-            return order.Select(k => grouped.FirstOrDefault(x => x.AgeGroup == k)).Where(x => x != null).Cast<InsuranceClaimAgingRow>().ToList();
+                new InsuranceClaimAgingRow { AgeGroup = "0-30 روز", TotalClaimed = bucket0_30?.TotalClaimed ?? 0, TotalApproved = bucket0_30?.TotalApproved ?? 0, ClaimCount = bucket0_30?.ClaimCount ?? 0 },
+                new InsuranceClaimAgingRow { AgeGroup = "31-60 روز", TotalClaimed = bucket31_60?.TotalClaimed ?? 0, TotalApproved = bucket31_60?.TotalApproved ?? 0, ClaimCount = bucket31_60?.ClaimCount ?? 0 },
+                new InsuranceClaimAgingRow { AgeGroup = "61-90 روز", TotalClaimed = bucket61_90?.TotalClaimed ?? 0, TotalApproved = bucket61_90?.TotalApproved ?? 0, ClaimCount = bucket61_90?.ClaimCount ?? 0 },
+                new InsuranceClaimAgingRow { AgeGroup = "بیش از 90 روز", TotalClaimed = bucket90Plus?.TotalClaimed ?? 0, TotalApproved = bucket90Plus?.TotalApproved ?? 0, ClaimCount = bucket90Plus?.ClaimCount ?? 0 }
+            };
         }
 
         public async Task<List<InsuranceProviderBreakdownRow>> GetProviderBreakdownAsync(DateTime start, DateTime end)

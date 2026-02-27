@@ -5,6 +5,10 @@
     ViewBag.Title = "داشبورد درآمد بیمه‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminPlatformLayout.cshtml";
 }
+@section Styles {
+    <link href="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/css/jalali-datepicker-enterprise.css" rel="stylesheet" />
+}
 <div class="container-fluid" dir="rtl">
     <div class="d-flex align-items-center justify-content-between mb-4">
         <h1 class="h4 mb-0 text-gray-800">
@@ -70,7 +74,22 @@
 </div>
 
 @section Scripts {
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalaali.js"></script>
+    <script src="~/Content/js/plugins/PersianDateTimePicker/jalalidatepicker.min.js"></script>
+    <script src="~/Content/js/jalali-datepicker-enterprise.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                JalaliDatePickerEnterprise.startWatchAgain();
+            }
+            setTimeout(function() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }
+            }, 300);
+        })();
+    </script>
     <script>
         (function() {
             var pieLabels = @Html.Raw(Model?.ChartData?.PieLabels != null ? JsonConvert.SerializeObject(Model.ChartData.PieLabels) : "[]");

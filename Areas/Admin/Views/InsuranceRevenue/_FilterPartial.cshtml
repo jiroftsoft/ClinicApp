@@ -9,11 +9,11 @@
         <form id="filterForm" class="row g-3" method="get" action="@Url.Action("Index", "InsuranceRevenue", new { area = "Admin" })">
             <div class="col-md-2">
                 <label class="form-label">از تاریخ (شمسی)</label>
-                <input type="text" name="startDatePersian" id="StartDatePersian" class="form-control" placeholder="1403/01/01" value="@(Model?.StartDatePersian)" />
+                <input type="text" name="startDatePersian" id="StartDatePersian" class="form-control" placeholder="1404/01/01" value="@(Model?.StartDatePersian)" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">تا تاریخ (شمسی)</label>
-                <input type="text" name="endDatePersian" id="EndDatePersian" class="form-control" placeholder="1403/12/29" value="@(Model?.EndDatePersian)" />
+                <input type="text" name="endDatePersian" id="EndDatePersian" class="form-control" placeholder="1404/12/29" value="@(Model?.EndDatePersian)" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
             </div>
             <div class="col-md-2">
                 <label class="form-label">بیمه‌گذار</label>

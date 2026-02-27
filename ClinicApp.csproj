@@ -586,6 +586,7 @@
     <Compile Include="Areas\Admin\Controllers\PromotionalEventController.cs" />
     <Compile Include="Areas\Admin\Controllers\ReceptionistDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\ReceptionistReportsController.cs" />
+    <Compile Include="Areas\Admin\Controllers\RevenueDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Security\LoginHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
