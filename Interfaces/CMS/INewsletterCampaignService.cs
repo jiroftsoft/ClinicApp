@@ -32,7 +32,11 @@ namespace ClinicApp.Interfaces.CMS
         /// <summary>ارسال واقعی به صف گیرندگان و به‌روزرسانی وضعیت به Sent/Failed و SentCount. از طریق Hangfire فراخوانی می‌شود.</summary>
         Task ProcessCampaignSendQueueAsync(int campaignId, bool sendEmail, bool sendSms);
         /// <summary>ارسال مجدد برای کمپین در حال ارسال (ادامه صف) یا ناموفق (تلاش مجدد برای گیرندگان ناموفق).</summary>
-        Task<ServiceResult> RetryCampaignSendAsync(int campaignId);
+        Task<ServiceResult> RetryCampaignSendAsync(int campaignId, bool sendEmail = true, bool sendSms = true);
+        /// <summary>تنظیم وضعیت کمپین به ناموفق (مثلاً پس از خطای Job). برای پروداکشن ضدگلوله.</summary>
+        Task MarkCampaignAsFailedAsync(int campaignId, string errorMessage = null);
+        /// <summary>وضعیت کمپین را برمی‌گرداند (برای تصمیم ارسال فوری vs ارسال مجدد).</summary>
+        Task<NewsletterCampaignStatus?> GetCampaignStatusAsync(int campaignId);
     }
 }
 

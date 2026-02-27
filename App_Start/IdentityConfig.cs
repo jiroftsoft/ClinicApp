@@ -19,6 +19,7 @@ using System.Net;
 using System.Net.Mail;
 using System.Reflection;
 using System.Security.Claims;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClinicApp.Models.Core;
@@ -149,11 +150,38 @@ namespace ClinicApp
                 EnableSsl = enableSsl
             };
 
-            var subject = message.Subject ?? string.Empty;
-            using var mailMessage = new MailMessage(fromAddress, message.Destination, subject, message.Body ?? string.Empty)
+            var fromDisplayName = (GetConfig("Email:NoReplyDisplayName") ?? string.Empty).Trim();
+            var subjectPrefix = (GetConfig("Email:SubjectPrefix") ?? string.Empty).Trim();
+            var rawSubject = message.Subject ?? string.Empty;
+            var subject = string.IsNullOrEmpty(subjectPrefix)
+                ? rawSubject
+                : (subjectPrefix.EndsWith(" ") ? subjectPrefix + rawSubject : subjectPrefix + " " + rawSubject);
+            var body = message.Body ?? string.Empty;
+
+            var fromMail = new MailAddress(fromAddress, string.IsNullOrEmpty(fromDisplayName) ? fromAddress : fromDisplayName, Encoding.UTF8);
+            var toMail = new MailAddress(message.Destination);
+            using var mailMessage = new MailMessage(fromMail, toMail)
             {
-                IsBodyHtml = true
+                Subject = subject,
+                Body = body,
+                IsBodyHtml = true,
+                BodyEncoding = Encoding.UTF8,
+                SubjectEncoding = Encoding.UTF8
             };
+
+            var bccRaw = (GetConfig("Email:BccAddresses") ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(bccRaw))
+            {
+                var bccAddresses = bccRaw.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var bcc in bccAddresses)
+                {
+                    var trimmed = bcc.Trim();
+                    if (!string.IsNullOrEmpty(trimmed) && IsValidEmailFormat(trimmed))
+                        mailMessage.Bcc.Add(new MailAddress(trimmed));
+                }
+            }
+
+            mailMessage.Headers.Add("X-Mailer", "ClinicApp");
 
             await smtpClient.SendMailAsync(mailMessage);
         }

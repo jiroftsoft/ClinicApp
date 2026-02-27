@@ -82,17 +82,23 @@ namespace ClinicApp.Services.CMS
             var prefix = category == ChannelConfig.Categories.Sms ? "Asanak:" : "Email:";
             var merged = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-            var configKeys = new[] { "FromAddress", "SmtpServer", "Port", "Username", "Password", "Enabled", "EnableSsl", "MaxRetries", "TimeoutMs", "RetryBaseDelayMs" };
+            var configKeys = new[] { "FromAddress", "SmtpServer", "Port", "Username", "Password", "Enabled", "EnableSsl", "MaxRetries", "TimeoutMs", "RetryBaseDelayMs", "NoReplyDisplayName", "SubjectPrefix", "BccAddresses" };
             var smsKeys = new[] { "Username", "Password", "SourceNumber", "Enabled", "TimeoutMs", "MaxRetries", "RetryBaseDelayMs" };
             var keys = category == ChannelConfig.Categories.Sms ? smsKeys : configKeys;
 
             foreach (var k in keys)
             {
-                var fullKey = prefix + k;
                 if (fromDb.TryGetValue(k, out var dbVal) && !string.IsNullOrEmpty(dbVal))
+                {
                     merged[k] = dbVal;
-                else
-                    merged[k] = ConfigurationManager.AppSettings[fullKey] ?? string.Empty;
+                    continue;
+                }
+                // Fallback: برای کلیدهای بدون پیشوند Email: در Web.config
+                var fallback = k == "NoReplyDisplayName" ? ConfigurationManager.AppSettings["NoReplyDisplayName"]
+                    : k == "SubjectPrefix" ? ConfigurationManager.AppSettings["EmailSubjectPrefix"]
+                    : k == "BccAddresses" ? ConfigurationManager.AppSettings["BccAddresses"]
+                    : ConfigurationManager.AppSettings[prefix + k];
+                merged[k] = fallback ?? string.Empty;
             }
 
             lock (CacheLock)
@@ -105,7 +111,13 @@ namespace ClinicApp.Services.CMS
 
         private static string FallbackConfig(string fullKey)
         {
-            return ConfigurationManager.AppSettings[fullKey] ?? string.Empty;
+            var v = ConfigurationManager.AppSettings[fullKey];
+            if (!string.IsNullOrEmpty(v)) return v;
+            // کلیدهای ایمیل که در Web.config بدون پیشوند Email: هستند
+            if (string.Equals(fullKey, "Email:NoReplyDisplayName", StringComparison.OrdinalIgnoreCase)) return ConfigurationManager.AppSettings["NoReplyDisplayName"] ?? string.Empty;
+            if (string.Equals(fullKey, "Email:SubjectPrefix", StringComparison.OrdinalIgnoreCase)) return ConfigurationManager.AppSettings["EmailSubjectPrefix"] ?? string.Empty;
+            if (string.Equals(fullKey, "Email:BccAddresses", StringComparison.OrdinalIgnoreCase)) return ConfigurationManager.AppSettings["BccAddresses"] ?? string.Empty;
+            return string.Empty;
         }
     }
 }

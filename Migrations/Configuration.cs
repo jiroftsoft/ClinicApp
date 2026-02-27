@@ -32,6 +32,13 @@ namespace ClinicApp.Migrations
                     if (string.IsNullOrEmpty(value) && (key == "MaxRetries" || key == "TimeoutMs" || key == "RetryBaseDelayMs")) value = key == "MaxRetries" ? "3" : key == "TimeoutMs" ? "15000" : "400";
                     context.ChannelConfigs.Add(new ChannelConfig { Category = ChannelConfig.Categories.Email, SettingKey = key, SettingValue = value ?? "", UpdatedAt = now });
                 }
+                // کلیدهای اضافی ایمیل (نام فرستنده، پیشوند موضوع، BCC) — از Web.config با نام فعلی
+                var emailExtraKeys = new[] { ("NoReplyDisplayName", "NoReplyDisplayName"), ("SubjectPrefix", "EmailSubjectPrefix"), ("BccAddresses", "BccAddresses") };
+                foreach (var (settingKey, configKey) in emailExtraKeys)
+                {
+                    var value = get(configKey);
+                    context.ChannelConfigs.Add(new ChannelConfig { Category = ChannelConfig.Categories.Email, SettingKey = settingKey, SettingValue = value ?? "", UpdatedAt = now });
+                }
 
                 // پیامک (آسانک) — در DB با Category = Sms ذخیره می‌شود
                 var smsKeys = new[] { "Username", "Password", "SourceNumber", "Enabled", "TimeoutMs", "MaxRetries", "RetryBaseDelayMs" };
@@ -44,6 +51,21 @@ namespace ClinicApp.Migrations
                     context.ChannelConfigs.Add(new ChannelConfig { Category = ChannelConfig.Categories.Sms, SettingKey = key, SettingValue = value ?? "", UpdatedAt = now });
                 }
 
+                context.SaveChanges();
+            }
+            else
+            {
+                // جدول از قبل پر است: کلیدهای جدید ایمیل را در صورت نبودن اضافه کن
+                var emailExtraKeys = new[] { ("NoReplyDisplayName", "NoReplyDisplayName"), ("SubjectPrefix", "EmailSubjectPrefix"), ("BccAddresses", "BccAddresses") };
+                string get(string key) => ConfigurationManager.AppSettings[key] ?? string.Empty;
+                var now = DateTime.UtcNow;
+                foreach (var (settingKey, configKey) in emailExtraKeys)
+                {
+                    if (context.ChannelConfigs.Any(c => c.Category == ChannelConfig.Categories.Email && c.SettingKey == settingKey))
+                        continue;
+                    var value = get(configKey);
+                    context.ChannelConfigs.Add(new ChannelConfig { Category = ChannelConfig.Categories.Email, SettingKey = settingKey, SettingValue = value ?? "", UpdatedAt = now });
+                }
                 context.SaveChanges();
             }
         }

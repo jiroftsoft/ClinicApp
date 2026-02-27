@@ -685,30 +685,36 @@ namespace ClinicApp.Services.CMS
 
         public async Task ProcessCampaignSendQueueAsync(int campaignId, bool sendEmail, bool sendSms)
         {
-            var campaign = await _campaignRepository.GetByIdAsync(campaignId);
-            if (campaign == null || campaign.Status != NewsletterCampaignStatus.Sending)
+            try
             {
-                _logger.Warning("ProcessCampaignSendQueue: Campaign یافت نشد یا وضعیت Sending نیست - CampaignId: {CampaignId}", campaignId);
-                return;
-            }
+                var campaign = await _campaignRepository.GetByIdAsync(campaignId);
+                if (campaign == null || campaign.Status != NewsletterCampaignStatus.Sending)
+                {
+                    _logger.Warning("ProcessCampaignSendQueue: Campaign یافت نشد یا وضعیت Sending نیست - CampaignId: {CampaignId}", campaignId);
+                    return;
+                }
 
-            var recipients = (await _recipientRepository.GetByCampaignIdAsync(campaignId))
-                .Where(r => r.Status == NewsletterRecipientStatus.Pending)
-                .ToList();
-            if (!recipients.Any())
-            {
-                campaign.Status = NewsletterCampaignStatus.Sent;
-                campaign.SentCount = 0;
-                campaign.FailedCount = 0;
-                _campaignRepository.Update(campaign);
-                await _context.SaveChangesAsync();
-                return;
-            }
+                var recipients = (await _recipientRepository.GetByCampaignIdAsync(campaignId))
+                    .Where(r => r.Status == NewsletterRecipientStatus.Pending)
+                    .ToList();
+                if (!recipients.Any())
+                {
+                    var allRecipients = await _recipientRepository.GetByCampaignIdAsync(campaignId);
+                    var sent = allRecipients.Count(r => r.Status == NewsletterRecipientStatus.Sent);
+                    var failed = allRecipients.Count(r => r.Status == NewsletterRecipientStatus.Failed);
+                    campaign.SentCount = sent;
+                    campaign.FailedCount = failed;
+                    campaign.Status = sent > 0 ? NewsletterCampaignStatus.Sent : NewsletterCampaignStatus.Failed;
+                    campaign.UpdatedAt = DateTime.Now;
+                    _campaignRepository.Update(campaign);
+                    await _context.SaveChangesAsync();
+                    return;
+                }
 
-            int sentCount = 0;
-            int failedCount = 0;
-            foreach (var recipient in recipients)
-            {
+                int sentCount = 0;
+                int failedCount = 0;
+                foreach (var recipient in recipients)
+                {
                 var subscription = await _subscriptionRepository.GetByIdAsync(recipient.NewsletterSubscriptionId);
                 if (subscription == null)
                 {
@@ -755,18 +761,51 @@ namespace ClinicApp.Services.CMS
                 if (anySent) sentCount++; else failedCount++;
                 _recipientRepository.Update(recipient);
                 await _context.SaveChangesAsync();
-            }
+                }
 
-            campaign.SentCount = sentCount;
-            campaign.FailedCount = failedCount;
-            campaign.Status = sentCount > 0 ? NewsletterCampaignStatus.Sent : NewsletterCampaignStatus.Failed;
-            campaign.UpdatedAt = DateTime.Now;
-            _campaignRepository.Update(campaign);
-            await _context.SaveChangesAsync();
-            _logger.Information("Campaign ارسال شد - CampaignId: {CampaignId}, Sent: {Sent}, Failed: {Failed}", campaignId, sentCount, failedCount);
+                var allRecipientsForCount = await _recipientRepository.GetByCampaignIdAsync(campaignId);
+                campaign.SentCount = allRecipientsForCount.Count(r => r.Status == NewsletterRecipientStatus.Sent);
+                campaign.FailedCount = allRecipientsForCount.Count(r => r.Status == NewsletterRecipientStatus.Failed);
+                campaign.Status = campaign.SentCount > 0 ? NewsletterCampaignStatus.Sent : NewsletterCampaignStatus.Failed;
+                campaign.UpdatedAt = DateTime.Now;
+                _campaignRepository.Update(campaign);
+                await _context.SaveChangesAsync();
+                _logger.Information("Campaign ارسال شد - CampaignId: {CampaignId}, Sent: {Sent}, Failed: {Failed}", campaignId, campaign.SentCount, campaign.FailedCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ProcessCampaignSendQueueAsync - CampaignId: {CampaignId}", campaignId);
+                await MarkCampaignAsFailedAsync(campaignId, ex.Message);
+                throw;
+            }
         }
 
-        public async Task<ServiceResult> RetryCampaignSendAsync(int campaignId)
+        public async Task MarkCampaignAsFailedAsync(int campaignId, string errorMessage = null)
+        {
+            try
+            {
+                var campaign = await _campaignRepository.GetByIdAsync(campaignId);
+                if (campaign == null) return;
+                if (campaign.Status != NewsletterCampaignStatus.Sending) return;
+                campaign.Status = NewsletterCampaignStatus.Failed;
+                campaign.UpdatedAt = DateTime.Now;
+                _campaignRepository.Update(campaign);
+                await _context.SaveChangesAsync();
+                _logger.Warning("وضعیت کمپین به ناموفق تغییر کرد - CampaignId: {CampaignId}, Error: {Error}", campaignId, errorMessage ?? "(بدون پیام)");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در MarkCampaignAsFailedAsync - CampaignId: {CampaignId}", campaignId);
+            }
+        }
+
+        public async Task<NewsletterCampaignStatus?> GetCampaignStatusAsync(int campaignId)
+        {
+            var campaign = await _campaignRepository.GetByIdAsync(campaignId);
+            return campaign?.Status;
+        }
+
+        public async Task<ServiceResult> RetryCampaignSendAsync(int campaignId, bool sendEmail = true, bool sendSms = true)
         {
             try
             {
@@ -779,6 +818,20 @@ namespace ClinicApp.Services.CMS
 
                 var recipients = await _recipientRepository.GetByCampaignIdAsync(campaignId);
                 var pending = recipients.Count(r => r.Status == NewsletterRecipientStatus.Pending);
+
+                if (campaign.Status == NewsletterCampaignStatus.Sending && pending == 0)
+                {
+                    var sent = recipients.Count(r => r.Status == NewsletterRecipientStatus.Sent);
+                    var failed = recipients.Count(r => r.Status == NewsletterRecipientStatus.Failed);
+                    campaign.SentCount = sent;
+                    campaign.FailedCount = failed;
+                    campaign.Status = sent > 0 ? NewsletterCampaignStatus.Sent : NewsletterCampaignStatus.Failed;
+                    campaign.UpdatedAt = DateTime.Now;
+                    _campaignRepository.Update(campaign);
+                    await _context.SaveChangesAsync();
+                    _logger.Information("وضعیت کمپین همگام شد - CampaignId: {CampaignId}, Sent: {Sent}, Failed: {Failed}", campaignId, sent, failed);
+                    return ServiceResult.Successful("وضعیت کمپین به‌روز شد. می‌توانید برای گیرندگان ناموفق دوباره «ارسال مجدد» بزنید.");
+                }
 
                 if (campaign.Status == NewsletterCampaignStatus.Failed)
                 {
@@ -800,11 +853,11 @@ namespace ClinicApp.Services.CMS
 
                 if (pending == 0)
                 {
-                    return ServiceResult.Failed("هیچ گیرنده‌ای در صف ارسال نیست. اگر وضعیت هنوز «در حال ارسال» است، چند لحظه صبر کنید یا با پشتیبانی تماس بگیرید.");
+                    return ServiceResult.Failed("هیچ گیرنده‌ای در صف ارسال نیست. اگر وضعیت هنوز «در حال ارسال» است، چند لحظه صبر کنید یا صفحه را رفرش کنید.");
                 }
 
                 Hangfire.BackgroundJob.Enqueue(() =>
-                    Startup.ProcessCampaignSendQueue(campaignId, true, true));
+                    Startup.ProcessCampaignSendQueue(campaignId, sendEmail, sendSms));
 
                 return ServiceResult.Successful("ارسال مجدد در صف قرار گرفت. به‌زودی انجام می‌شود.");
             }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Interfaces;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces.CMS;
 using ClinicApp.Models.Entities.CMS;
 using ClinicApp.Models.Core;
@@ -35,7 +36,7 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
         public async Task<ActionResult> Index()
         {
             var model = await BuildEditViewModelAsync();
-            return View(model);
+            return View(GetViewPath("Index"), model);
         }
 
         [HttpPost]
@@ -49,8 +50,8 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
 
             if (string.IsNullOrWhiteSpace(model.EmailFromAddress) || string.IsNullOrWhiteSpace(model.EmailSmtpServer) || string.IsNullOrWhiteSpace(model.EmailPort))
             {
-                TempData["ErrorMessage"] = "فیلدهای الزامی ایمیل (آدرس فرستنده، سرور SMTP، پورت) را پر کنید.";
-                return View(await BuildEditViewModelAsync(model));
+                NotificationHelper.SetError(TempData, "فیلدهای الزامی ایمیل (آدرس فرستنده، سرور SMTP، پورت) را پر کنید.", "اعتبارسنجی");
+                return View(GetViewPath("Index"), await BuildEditViewModelAsync(model));
             }
 
             var userId = _currentUser?.UserId;
@@ -58,6 +59,9 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             var emailDict = new Dictionary<string, string>
             {
                 { "FromAddress", model.EmailFromAddress?.Trim() ?? "" },
+                { "NoReplyDisplayName", model.EmailNoReplyDisplayName?.Trim() ?? "" },
+                { "SubjectPrefix", model.EmailSubjectPrefix?.Trim() ?? "" },
+                { "BccAddresses", model.EmailBccAddresses?.Trim() ?? "" },
                 { "SmtpServer", model.EmailSmtpServer?.Trim() ?? "" },
                 { "Port", model.EmailPort?.Trim() ?? "" },
                 { "Username", model.EmailUsername?.Trim() ?? "" },
@@ -85,12 +89,12 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 await _configRepo.SetBulkAsync(ChannelConfig.Categories.Email, emailDict, userId);
                 await _configRepo.SetBulkAsync(ChannelConfig.Categories.Sms, smsDict, userId);
                 _configProvider.InvalidateCache();
-                TempData["SuccessMessage"] = "تنظیمات با موفقیت ذخیره شد. ارسال ایمیل و پیامک از همین مقادیر استفاده می‌کند.";
+                NotificationHelper.SetSuccess(TempData, "تنظیمات با موفقیت ذخیره شد. ارسال ایمیل و پیامک از همین مقادیر استفاده می‌کند.", "ذخیره تنظیمات");
             }
             catch (Exception)
             {
-                TempData["ErrorMessage"] = "خطا در ذخیره تنظیمات. دوباره تلاش کنید.";
-                return View(await BuildEditViewModelAsync(model));
+                NotificationHelper.SetError(TempData, "خطا در ذخیره تنظیمات. دوباره تلاش کنید.", "خطا");
+                return View(GetViewPath("Index"), await BuildEditViewModelAsync(model));
             }
 
             return RedirectToAction("Index");
@@ -104,6 +108,9 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
             var model = new NewsletterSettingsEditViewModel
             {
                 EmailFromAddress = _configProvider.GetValue("Email:FromAddress"),
+                EmailNoReplyDisplayName = _configProvider.GetValue("Email:NoReplyDisplayName"),
+                EmailSubjectPrefix = _configProvider.GetValue("Email:SubjectPrefix"),
+                EmailBccAddresses = _configProvider.GetValue("Email:BccAddresses"),
                 EmailSmtpServer = _configProvider.GetValue("Email:SmtpServer"),
                 EmailPort = _configProvider.GetValue("Email:Port"),
                 EmailUsername = _configProvider.GetValue("Email:Username"),

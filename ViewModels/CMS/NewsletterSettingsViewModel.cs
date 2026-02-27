@@ -30,6 +30,15 @@ namespace ClinicApp.ViewModels.CMS
         [EmailAddress(ErrorMessage = "فرمت ایمیل معتبر نیست")]
         public string EmailFromAddress { get; set; }
 
+        [Display(Name = "نام نمایشی فرستنده")]
+        public string EmailNoReplyDisplayName { get; set; }
+
+        [Display(Name = "پیشوند موضوع ایمیل")]
+        public string EmailSubjectPrefix { get; set; }
+
+        [Display(Name = "رونوشت مخفی (BCC)")]
+        public string EmailBccAddresses { get; set; }
+
         [Display(Name = "سرور SMTP")]
         [Required(ErrorMessage = "سرور SMTP الزامی است")]
         public string EmailSmtpServer { get; set; }

@@ -18,25 +18,27 @@
             font-size: 1rem;
             font-weight: 600;
         }
-        /* جدول کمپین — خوانا و زنده */
+        /* جدول کمپین — بدون اسکرول، تمام ستون‌ها در عرض صفحه */
         .newsletter-campaign-module #campaignsTable {
-            font-size: 0.9375rem;
-            border-collapse: separate;
-            border-spacing: 0;
+            font-size: 0.875rem;
+            border-collapse: collapse;
+            table-layout: fixed;
+            width: 100%;
         }
         .newsletter-campaign-module #campaignsTable thead th {
             background: var(--ncm-primary);
             color: #fff !important;
             font-weight: 600;
-            font-size: 0.875rem;
-            padding: 0.85rem 1rem;
+            font-size: 0.75rem;
+            padding: 0.5rem 0.4rem;
             border: none;
             white-space: nowrap;
+            vertical-align: middle;
         }
         .newsletter-campaign-module #campaignsTable thead th:first-child { border-radius: var(--ncm-radius) 0 0 0; }
         .newsletter-campaign-module #campaignsTable thead th:last-child { border-radius: 0 var(--ncm-radius) 0 0; }
         .newsletter-campaign-module #campaignsTable tbody tr {
-            transition: background-color 0.15s ease;
+            transition: background-color 0.12s ease;
             background-color: var(--ncm-bg-table);
         }
         .newsletter-campaign-module #campaignsTable tbody tr:nth-child(even) {
@@ -46,18 +48,44 @@
             background-color: var(--ncm-bg-table-hover) !important;
         }
         .newsletter-campaign-module #campaignsTable tbody td {
-            padding: 0.9rem 1rem;
+            padding: 0.5rem 0.4rem;
             border-bottom: 1px solid var(--ncm-border);
             vertical-align: middle !important;
+        }
+        /* ستون‌ها با عرض درصدی — بدون اسکرول */
+        .newsletter-campaign-module #campaignsTable th.col-title,
+        .newsletter-campaign-module #campaignsTable .cell-title { width: 14%; }
+        .newsletter-campaign-module #campaignsTable th.col-subject,
+        .newsletter-campaign-module #campaignsTable .cell-subject { width: 12%; }
+        .newsletter-campaign-module #campaignsTable th.col-status,
+        .newsletter-campaign-module #campaignsTable .cell-status { width: 10%; }
+        .newsletter-campaign-module #campaignsTable th.col-num,
+        .newsletter-campaign-module #campaignsTable .cell-num { width: 5%; }
+        .newsletter-campaign-module #campaignsTable th.col-rate,
+        .newsletter-campaign-module #campaignsTable .cell-rate { width: 5%; }
+        .newsletter-campaign-module #campaignsTable th.col-date,
+        .newsletter-campaign-module #campaignsTable .cell-date { width: 8%; }
+        .newsletter-campaign-module #campaignsTable th.col-actions,
+        .newsletter-campaign-module #campaignsTable .cell-actions {
+            width: 22%;
+            text-align: center;
+            vertical-align: middle;
+            border-inline-start: 1px solid var(--ncm-border);
         }
         .newsletter-campaign-module #campaignsTable .cell-title {
             font-weight: 600;
             color: var(--ncm-text);
-            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
         }
         .newsletter-campaign-module #campaignsTable .cell-subject {
             color: var(--ncm-text-muted);
-            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 100%;
         }
         .newsletter-campaign-module #campaignsTable .cell-num {
             text-align: center;
@@ -74,18 +102,36 @@
             font-variant-numeric: tabular-nums;
             color: var(--ncm-text-muted);
             white-space: nowrap;
+            font-size: 0.875rem;
         }
-        .newsletter-campaign-module #campaignsTable .cell-actions {
-            white-space: nowrap;
+        .newsletter-campaign-module #campaignsTable .cell-actions .actions-wrap {
+            display: inline-flex;
+            flex-wrap: wrap;
+            gap: 0.25rem;
+            justify-content: center;
+            align-items: center;
         }
-        .newsletter-campaign-module #campaignsTable .btn-group-sm .btn {
-            padding: 0.4rem 0.6rem;
+        .newsletter-campaign-module #campaignsTable .cell-actions .btn-action {
+            padding: 0.3rem 0.4rem;
+            font-size: 0.75rem;
+            min-width: auto;
+            border-width: 1px;
+            font-weight: 500;
+        }
+        .newsletter-campaign-module #campaignsTable .cell-actions .btn-action .fa {
+            margin-inline-end: 0.15rem;
+        }
+        .newsletter-campaign-module #campaignsTable .cell-actions .btn-action span {
+            font-size: 0.7rem;
         }
         .newsletter-campaign-module .table-responsive {
             border: 1px solid var(--ncm-border);
             border-radius: var(--ncm-radius);
-            overflow: hidden;
-            background: var(--ncm-bg-table);
+            overflow: visible;
+            background: var(--ncm-bg);
+        }
+        .newsletter-campaign-module .card-body {
+            overflow-x: visible;
         }
         /* وضعیت «در حال ارسال» — کاملاً مشخص و خوانا */
         .newsletter-campaign-module .badge-status-sending {
@@ -212,26 +258,26 @@
                     <table class="table align-middle" id="campaignsTable" role="grid" aria-label="لیست کمپین‌های خبرنامه">
                         <thead>
                             <tr>
-                                <th scope="col">عنوان</th>
-                                <th scope="col">موضوع</th>
-                                <th scope="col">وضعیت</th>
-                                <th scope="col" class="text-center">گیرندگان</th>
-                                <th scope="col" class="text-center">ارسال‌شده</th>
-                                <th scope="col" class="text-center">بازشده</th>
-                                <th scope="col" class="text-center">کلیک‌شده</th>
-                                <th scope="col" class="text-center">نرخ باز</th>
-                                <th scope="col" class="text-center">نرخ کلیک</th>
-                                <th scope="col">تاریخ ایجاد</th>
-                                <th scope="col">عملیات</th>
+                                <th scope="col" class="col-title">عنوان</th>
+                                <th scope="col" class="col-subject">موضوع</th>
+                                <th scope="col" class="col-status text-center">وضعیت</th>
+                                <th scope="col" class="col-num text-center" title="گیرندگان">گیرنده</th>
+                                <th scope="col" class="col-num text-center" title="ارسال‌شده">ارسال</th>
+                                <th scope="col" class="col-num text-center" title="بازشده">باز</th>
+                                <th scope="col" class="col-num text-center" title="کلیک‌شده">کلیک</th>
+                                <th scope="col" class="col-rate text-center" title="نرخ باز شدن">باز%</th>
+                                <th scope="col" class="col-rate text-center" title="نرخ کلیک">کلیک%</th>
+                                <th scope="col" class="col-date" title="تاریخ ایجاد">تاریخ</th>
+                                <th scope="col" class="col-actions text-center">عملیات</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model.Campaigns.Items)
                             {
                                 <tr>
-                                    <td class="cell-title">@item.Title</td>
-                                    <td class="cell-subject">@item.Subject</td>
-                                    <td>
+                                    <td class="cell-title" title="@item.Title">@item.Title</td>
+                                    <td class="cell-subject" title="@item.Subject">@item.Subject</td>
+                                    <td class="cell-status">
                                         @{
                                             var statusClass = "badge-secondary";
                                             var statusIcon = "fa-circle";
@@ -273,21 +319,21 @@
                                     <td class="cell-rate">@item.ClickRate.ToString("F2")%</td>
                                     <td class="cell-date">@PersianDateHelper.ToPersianDate(item.CreatedAt)</td>
                                     <td class="cell-actions">
-                                        <div class="btn-group btn-group-sm" role="group" aria-label="عملیات کمپین">
-                                            <a href="@Url.Action("Details", new { id = item.NewsletterCampaignId })" class="btn btn-outline-primary" title="@(item.Status == NewsletterCampaignStatus.Sending || item.Status == NewsletterCampaignStatus.Failed ? "جزئیات، مشاهده خطا و ارسال مجدد" : "جزئیات")"><i class="fas fa-eye" aria-hidden="true"></i></a>
-                                            @if (item.Status == NewsletterCampaignStatus.Draft || item.Status == NewsletterCampaignStatus.Scheduled)
+                                        <div class="actions-wrap" role="group" aria-label="عملیات کمپین">
+                                            <a href="@Url.Action("Details", new { id = item.NewsletterCampaignId })" class="btn btn-outline-primary btn-action" title="@(item.Status == NewsletterCampaignStatus.Sending || item.Status == NewsletterCampaignStatus.Failed ? "جزئیات، مشاهده خطا و ارسال مجدد" : "جزئیات")"><i class="fas fa-eye" aria-hidden="true"></i><span>جزئیات</span></a>
+                                            @if (item.Status == NewsletterCampaignStatus.Draft || item.Status == NewsletterCampaignStatus.Scheduled || item.Status == NewsletterCampaignStatus.Failed)
                                             {
-                                                <a href="@Url.Action("Edit", new { id = item.NewsletterCampaignId })" class="btn btn-outline-warning" title="ویرایش"><i class="fas fa-edit" aria-hidden="true"></i></a>
-                                                <a href="@Url.Action("Send", new { id = item.NewsletterCampaignId })" class="btn btn-outline-success" title="ارسال"><i class="fas fa-paper-plane" aria-hidden="true"></i></a>
+                                                <a href="@Url.Action("Edit", new { id = item.NewsletterCampaignId })" class="btn btn-outline-warning btn-action" title="ویرایش"><i class="fas fa-edit" aria-hidden="true"></i><span>ویرایش</span></a>
+                                                <a href="@Url.Action("Send", new { id = item.NewsletterCampaignId })" class="btn btn-outline-success btn-action" title="@(item.Status == NewsletterCampaignStatus.Failed ? "ارسال مجدد" : "ارسال")"><i class="fas fa-paper-plane" aria-hidden="true"></i><span>@(item.Status == NewsletterCampaignStatus.Failed ? "ارسال مجدد" : "ارسال")</span></a>
                                             }
                                             @if (item.Status == NewsletterCampaignStatus.Scheduled)
                                             {
-                                                <button type="button" class="btn btn-outline-secondary" onclick="cancelSchedule(@item.NewsletterCampaignId)" title="لغو زمان‌بندی"><i class="fas fa-ban" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-outline-secondary btn-action" onclick="cancelSchedule(@item.NewsletterCampaignId)" title="لغو زمان‌بندی"><i class="fas fa-ban" aria-hidden="true"></i><span>لغو</span></button>
                                             }
-                                            <a href="@Url.Action("Statistics", new { id = item.NewsletterCampaignId })" class="btn btn-outline-info" title="آمار"><i class="fas fa-chart-bar" aria-hidden="true"></i></a>
+                                            <a href="@Url.Action("Statistics", new { id = item.NewsletterCampaignId })" class="btn btn-outline-info btn-action" title="آمار"><i class="fas fa-chart-bar" aria-hidden="true"></i><span>آمار</span></a>
                                             @if (item.Status != NewsletterCampaignStatus.Sending)
                                             {
-                                                <button type="button" class="btn btn-outline-danger" onclick="deleteCampaign(@item.NewsletterCampaignId)" title="حذف"><i class="fas fa-trash" aria-hidden="true"></i></button>
+                                                <button type="button" class="btn btn-outline-danger btn-action" onclick="deleteCampaign(@item.NewsletterCampaignId)" title="حذف"><i class="fas fa-trash" aria-hidden="true"></i><span>حذف</span></button>
                                             }
                                         </div>
                                     </td>

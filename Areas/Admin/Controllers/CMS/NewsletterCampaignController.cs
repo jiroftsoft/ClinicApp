@@ -364,11 +364,20 @@ namespace ClinicApp.Areas.Admin.Controllers.CMS
                 }
                 else
                 {
-                    // ارسال فوری
-                    var result = await _campaignService.SendCampaignAsync(
-                        model.NewsletterCampaignId,
-                        model.SendEmail,
-                        model.SendSms);
+                    // ارسال فوری یا ارسال مجدد
+                    var status = await _campaignService.GetCampaignStatusAsync(model.NewsletterCampaignId);
+                    ServiceResult result;
+                    if (status == Models.Enums.NewsletterCampaignStatus.Failed || status == Models.Enums.NewsletterCampaignStatus.Sending)
+                    {
+                        result = await _campaignService.RetryCampaignSendAsync(model.NewsletterCampaignId, model.SendEmail, model.SendSms);
+                    }
+                    else
+                    {
+                        result = await _campaignService.SendCampaignAsync(
+                            model.NewsletterCampaignId,
+                            model.SendEmail,
+                            model.SendSms);
+                    }
 
                     if (result.Success)
                     {

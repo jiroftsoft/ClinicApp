@@ -157,6 +157,7 @@ namespace ClinicApp
         /// <summary>
         /// Job ارسال واقعی کمپین خبرنامه (ایمیل/SMS) و به‌روزرسانی وضعیت به Sent/Failed و SentCount.
         /// از SendCampaignAsync با BackgroundJob.Enqueue فراخوانی می‌شود.
+        /// در صورت هرگونه خطا، وضعیت کمپین به ناموفق تغییر می‌کند (ضدگلوله برای پروداکشن).
         /// </summary>
         public static async Task ProcessCampaignSendQueue(int campaignId, bool sendEmail, bool sendSms)
         {
@@ -169,6 +170,23 @@ namespace ClinicApp
             catch (Exception ex)
             {
                 Log.Error(ex, "خطا در Job ارسال کمپین خبرنامه - CampaignId: {CampaignId}", campaignId);
+                try
+                {
+                    var failScope = CreateNewsletterScopeContainer();
+                    try
+                    {
+                        var failService = failScope.Resolve<INewsletterCampaignService>();
+                        await failService.MarkCampaignAsFailedAsync(campaignId, ex.Message);
+                    }
+                    finally
+                    {
+                        failScope.Dispose();
+                    }
+                }
+                catch (Exception markEx)
+                {
+                    Log.Error(markEx, "خطا در MarkCampaignAsFailedAsync پس از خطای Job - CampaignId: {CampaignId}", campaignId);
+                }
                 throw;
             }
             finally
