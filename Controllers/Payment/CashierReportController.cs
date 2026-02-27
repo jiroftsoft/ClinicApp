@@ -27,7 +27,7 @@ namespace ClinicApp.Controllers.Payment
     /// 
     /// طبق: CRITICAL-FINANCIAL-MODULE-CONTRACT.md, DEVELOPMENT_CONTRACT.md
     /// </summary>
-    //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
+    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     public class CashierReportController : BaseController
     {
         #region Fields

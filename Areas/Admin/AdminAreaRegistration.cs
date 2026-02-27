@@ -414,6 +414,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             ).DataTokens["UseNamespaceFallback"] = false;
 
+            // مسیر جایگزین: گزارش‌های منشی — /Admin/CMS/ReceptionistReports → کنترلر Admin (نه CMS)
+            context.MapRoute(
+                name: "Admin_CMS_ReceptionistReports_Fix",
+                url: "Admin/CMS/ReceptionistReports/{action}/{id}",
+                defaults: new { controller = "ReceptionistReports", action = "PatientBookedAppointments", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            ).DataTokens["UseNamespaceFallback"] = false;
+
             // CMS Home: صفحهٔ ورود CMS — گرید ماژول‌ها
             context.MapRoute(
                 name: "Admin_CMS_Home",

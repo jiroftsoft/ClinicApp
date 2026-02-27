@@ -584,6 +584,7 @@
     <Compile Include="Areas\Admin\Controllers\PaymentManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\PromotionalEventController.cs" />
     <Compile Include="Areas\Admin\Controllers\ReceptionistDashboardController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ReceptionistReportsController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Security\LoginHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
@@ -780,6 +781,7 @@
     <Compile Include="Helpers\Validation\IdentityValidators.cs" />
     <Compile Include="Helpers\ZarinPalHelper.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
+    <Compile Include="Infrastructure\Hangfire\HangfireDashboardFixMiddleware.cs" />
     <Compile Include="Infrastructure\ITimeProvider.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
     <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
@@ -792,6 +794,7 @@
     <Compile Include="Interfaces\Notification\INotificationService.cs" />
     <Compile Include="Interfaces\Appointment\IAppointmentRepository.cs" />
     <Compile Include="Interfaces\Appointment\IDoctorMappingService.cs" />
+    <Compile Include="Interfaces\IPatientBookedAppointmentsReportService.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountRepository.cs" />
@@ -1146,6 +1149,7 @@
     <Compile Include="Models\DTOs\Appointment\DoctorSearchResultDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentCountsDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
+    <Compile Include="Models\DTOs\Appointment\PatientBookedAppointmentReportItemDto.cs" />
     <Compile Include="Models\DTOs\Appointment\ServiceCategoryLookupDto.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\DTOs\Payment\AuditSummary.cs" />
@@ -1745,6 +1749,7 @@
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
+    <Compile Include="Services\PatientBookedAppointmentsReportService.cs" />
     <Compile Include="Services\Payment\Gateway\PaymentGatewayService.cs" />
     <Compile Include="Services\Payment\PaymentService.cs" />
     <Compile Include="Services\Payment\POS\PosManagementService.cs" />
@@ -2410,6 +2415,7 @@
     <Content Include="Content\js\doctor-timeslot-index.js" />
     <Content Include="Content\js\faq-accordion.js" />
     <Content Include="Content\js\gallery-lightbox.js" />
+    <Content Include="Content\js\hangfire-realtime-fix.js" />
     <Content Include="Content\js\hero-carousel.js" />
     <Content Include="Content\js\homepage-animations.js" />
     <Content Include="Content\js\homepage-lazy-load.js" />
@@ -5403,6 +5409,8 @@
     <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayAppointments.cshtml" />
     <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayDoctors.cshtml" />
     <Content Include="Areas\Admin\Views\ReceptionistDashboard\Partials\_WidgetTodayStats.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistReports\PatientBookedAppointments.cshtml" />
+    <Content Include="Areas\Admin\Views\ReceptionistReports\PatientBookedAppointmentsPrint.cshtml" />
     <None Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4-vsdoc.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.js" />
     <Content Include="Infrastructure\SSP1126%28WEB%29\Web Tester_1402-06-29\Scripts\jquery-1.6.4.min.js" />

@@ -8,6 +8,7 @@ using Hangfire;
 using Hangfire.Dashboard;
 using Hangfire.Server;
 using Hangfire.SqlServer;
+using Microsoft.Owin;
 using Owin;
 using ClinicApp.Infrastructure.Hangfire;
 using ClinicApp.Interfaces.Notification;
@@ -60,6 +61,8 @@ namespace ClinicApp
                 DisplayStorageConnectionString = false
             };
 
+            // تزریق اسکریپت رفع خطای RealtimeGraph (statistics.intValue undefined) در داشبورد
+            app.Use((context, next) => new HangfireDashboardFixMiddleware(next).Invoke(context.Environment));
             app.UseHangfireDashboard(dashboardPath, options);
             app.UseHangfireServer(new BackgroundJobServerOptions
             {

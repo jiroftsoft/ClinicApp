@@ -35,6 +35,7 @@
         {
             case "dashboard": return controllerName.Equals("Dashboard", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("DoctorDashboard", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("ReceptionistDashboard", StringComparison.OrdinalIgnoreCase);
             case "reception": return controllerName.Equals("ReceptionV2", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("EmergencyBooking", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("AppointmentAvailability", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("PromotionalEvent", StringComparison.OrdinalIgnoreCase) || controllerName.Equals("ScheduleOptimization", StringComparison.OrdinalIgnoreCase);
+            case "reports": return controllerName.Equals("ReceptionistReports", StringComparison.OrdinalIgnoreCase);
             case "doctors": return new[] { "Doctor", "Specialization", "DoctorSchedule", "DoctorAssignment", "DoctorReporting", "DoctorDashboard" }.Any(c => string.Equals(c, controllerName, StringComparison.OrdinalIgnoreCase));
             case "services": return new[] { "Service", "ServiceComponent", "ServiceTemplate", "SharedService", "ServiceManagement" }.Any(c => string.Equals(c, controllerName, StringComparison.OrdinalIgnoreCase));
             case "insurance": return new[] { "InsuranceProvider", "InsurancePlan", "InsuranceTariff", "SupplementaryTariff", "PatientInsurance", "BusinessRule", "InsuranceCalculation", "CombinedInsuranceCalculation" }.Any(c => string.Equals(c, controllerName, StringComparison.OrdinalIgnoreCase));
@@ -60,6 +61,9 @@
             new { Title = "دسترس‌پذیری نوبت", Url = Url.Action("Index", "AppointmentAvailability", new { area = "Admin" }), Controller = "AppointmentAvailability", Action = (string)null },
             new { Title = "ایونت‌های تبلیغاتی", Url = Url.Action("Index", "PromotionalEvent", new { area = "Admin" }), Controller = "PromotionalEvent", Action = (string)null },
             new { Title = "بهینه‌سازی برنامه", Url = Url.Action("Index", "ScheduleOptimization", new { area = "Admin" }), Controller = "ScheduleOptimization", Action = (string)null }
+        }},
+        new { Key = "reports", Title = "گزارش‌ها", Icon = "fa-file-alt", Items = new[] {
+            new { Title = "نوبت‌های رزرو شده توسط بیماران", Url = Url.Action("PatientBookedAppointments", "ReceptionistReports", new { area = "Admin" }), Controller = "ReceptionistReports", Action = "PatientBookedAppointments" }
         }},
         new { Key = "doctors", Title = "پزشکان و پرسنل", Icon = "fa-user-md", Items = new[] {
             new { Title = "پزشکان", Url = Url.Action("Index", "Doctor", new { area = "Admin" }), Controller = "Doctor", Action = (string)null },

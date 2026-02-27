@@ -66,6 +66,15 @@ namespace ClinicApp.Interfaces.Appointment
             DateTime appointmentDate,
             TimeSpan startTime,
             TimeSpan endTime);
+
+        /// <summary>
+        /// نوبت‌های رزرو شده توسط بیماران (IsOnlineBooking) برای گزارش منشی.
+        /// visitType: "all" | "inperson" | "online"
+        /// </summary>
+        Task<System.Collections.Generic.List<PatientBookedAppointmentReportItemDto>> GetPatientBookedAppointmentsForReportAsync(
+            DateTime? fromDate,
+            DateTime? toDate,
+            string visitType = "all");
     }
 }
 

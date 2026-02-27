@@ -1,0 +1,186 @@
+@using System.Collections.Generic
+@using ClinicApp.Helpers
+@using ClinicApp.Extensions
+@model ClinicApp.Interfaces.PatientBookedAppointmentsReportResult
+@{
+    ViewBag.Title = "گزارش نوبت‌های رزرو شده توسط بیماران";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var items = Model?.Items ?? new List<ClinicApp.Models.DTOs.Appointment.PatientBookedAppointmentReportItemDto>();
+    var fromShamsi = ViewBag.FromDateShamsi as string;
+    var toShamsi = ViewBag.ToDateShamsi as string;
+    var visitType = ViewBag.VisitType as string ?? "all";
+    var visitTypeLabel = visitType == "inperson" ? "فقط حضوری" : (visitType == "online" ? "فقط آنلاین" : "همه");
+}
+@section Styles {
+    <style>
+        .rec-report-page { max-width: 1200px; margin: 0 auto; }
+        .rec-report-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+        .rec-report-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; margin: 0; display: flex; align-items: center; gap: 0.5rem; }
+        .rec-report-filters { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 1rem; }
+        .rec-report-filters label { font-weight: 500; color: #475569; margin-bottom: 0.25rem; display: block; }
+        .rec-report-filters input[type="text"], .rec-report-filters select { padding: 0.5rem 0.75rem; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .rec-report-filters input[type="text"] { width: 130px; }
+        .rec-report-filters select { min-width: 140px; }
+        .rec-report-table-wrap { overflow-x: auto; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+        .rec-report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+        .rec-report-table th, .rec-report-table td { padding: 0.75rem 0.5rem; text-align: right; border-bottom: 1px solid #f1f5f9; }
+        .rec-report-table th { background: #1e40af; color: #fff; font-weight: 600; white-space: nowrap; }
+        .rec-report-table tbody tr:hover { background: #f8fafc; }
+        .rec-report-table .col-id { width: 60px; }
+        .rec-report-table .col-date { width: 120px; }
+        .rec-report-table .col-time { width: 90px; }
+        .rec-report-table .col-patient { min-width: 140px; }
+        .rec-report-table .col-doctor { min-width: 140px; }
+        .rec-report-table .col-price { width: 110px; }
+        .rec-report-badge { display: inline-block; padding: 0.2rem 0.5rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+        .rec-report-badge-online { background: #dbeafe; color: #1d4ed8; }
+        .rec-report-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .rec-report-actions .btn { display: inline-flex; align-items: center; gap: 0.35rem; }
+        .rec-report-empty { text-align: center; padding: 2rem; color: #64748b; }
+        .rec-report-summary { font-size: 0.9rem; color: #475569; margin-bottom: 1rem; }
+    </style>
+}
+
+<div class="rec-report-page">
+    <div class="rec-report-header no-print">
+        <h1 class="rec-report-title">
+            <i class="fas fa-calendar-check text-primary"></i>
+            گزارش نوبت‌های رزرو شده توسط بیماران
+        </h1>
+        <div class="rec-report-actions">
+            <a href="@Url.Action("Index", "ReceptionistDashboard", new { area = "Admin" })" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-right"></i> بازگشت به داشبورد
+            </a>
+            <button type="button" class="btn btn-primary btn-sm" id="btnPrintReport" aria-label="چاپ گزارش" data-print-url="@Url.Action("PatientBookedAppointmentsPrint", "ReceptionistReports", new { area = "Admin" })">
+                <i class="fas fa-print"></i> چاپ گزارش
+            </button>
+        </div>
+    </div>
+
+    <form method="get" action="@Url.Action("PatientBookedAppointments")" class="rec-report-filters no-print">
+        <div>
+            <label for="fromDateShamsi">از تاریخ (شمسی)</label>
+            <input type="text" id="fromDateShamsi" name="fromDateShamsi" class="form-control" value="@fromShamsi" placeholder="۱۴۰۳/۰۱/۰۱" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
+        </div>
+        <div>
+            <label for="toDateShamsi">تا تاریخ (شمسی)</label>
+            <input type="text" id="toDateShamsi" name="toDateShamsi" class="form-control" value="@toShamsi" placeholder="۱۴۰۳/۱۲/۲۹" autocomplete="off" data-jdp="true" data-jdp-theme="medical" />
+        </div>
+        <div>
+            <label for="visitType">نوع ویزیت</label>
+            <select id="visitType" name="visitType" class="form-control" aria-label="نوع ویزیت">
+                <option value="all" @(visitType == "all" ? "selected" : "")>همه</option>
+                <option value="inperson" @(visitType == "inperson" ? "selected" : "")>فقط حضوری</option>
+                <option value="online" @(visitType == "online" ? "selected" : "")>فقط آنلاین</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-filter"></i> اعمال فیلتر
+            </button>
+        </div>
+    </form>
+
+    <p class="rec-report-summary no-print">
+        تعداد: <strong>@items.Count</strong> نوبت
+        @if (Model?.FromDate != null || Model?.ToDate != null)
+        {
+            <span> | بازه: @(Model?.FromDate != null ? Model.FromDate.Value.ToString("yyyy/MM/dd") : "—") تا @(Model?.ToDate != null ? Model.ToDate.Value.ToString("yyyy/MM/dd") : "—")</span>
+        }
+        <span> | نوع ویزیت: @visitTypeLabel</span>
+    </p>
+
+    <div class="rec-report-table-wrap">
+        <table class="rec-report-table" id="reportTable">
+            <thead>
+                <tr>
+                    <th class="col-id">ردیف</th>
+                    <th class="col-date">تاریخ نوبت</th>
+                    <th class="col-time">زمان</th>
+                    <th class="col-patient">بیمار</th>
+                    <th>تلفن</th>
+                    <th class="col-doctor">پزشک</th>
+                    <th>تخصص</th>
+                    <th>وضعیت</th>
+                    <th class="col-price">مبلغ</th>
+                    <th>نوع</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (items.Count == 0)
+                {
+                    <tr>
+                        <td colspan="10" class="rec-report-empty">نوبتی در این بازه یافت نشد.</td>
+                    </tr>
+                }
+                else
+                {
+                    var row = 1;
+                    foreach (var x in items)
+                    {
+                        var dateShamsi = x.AppointmentDate.ToPersianDate();
+                        var timeStr = x.AppointmentDate.ToString("HH:mm");
+                        <tr>
+                            <td>@row</td>
+                            <td>@dateShamsi</td>
+                            <td>@timeStr</td>
+                            <td>@(x.PatientName ?? "—")</td>
+                            <td>@(x.PatientPhone ?? "—")</td>
+                            <td>@(x.DoctorName ?? "—")</td>
+                            <td>@(x.DoctorSpecialty ?? "—")</td>
+                            <td>@(x.StatusDisplay ?? "—")</td>
+                            <td>@MoneyDisplayHelper.FormatTomanDisplay(x.Price)</td>
+                            <td>
+                                @if (x.IsOnlineConsultation)
+                                {
+                                    <span class="rec-report-badge rec-report-badge-online">آنلاین</span>
+                                }
+                                else
+                                {
+                                    <span>حضوری</span>
+                                }
+                            </td>
+                        </tr>
+                        row++;
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var btn = document.getElementById('btnPrintReport');
+            if (!btn) return;
+            btn.addEventListener('click', function () {
+                var base = btn.getAttribute('data-print-url') || '';
+                var from = document.getElementById('fromDateShamsi');
+                var to = document.getElementById('toDateShamsi');
+                var vt = document.getElementById('visitType');
+                var qs = [];
+                if (from && from.value) qs.push('fromDateShamsi=' + encodeURIComponent(from.value));
+                if (to && to.value) qs.push('toDateShamsi=' + encodeURIComponent(to.value));
+                if (vt && vt.value && vt.value !== 'all') qs.push('visitType=' + encodeURIComponent(vt.value));
+                var url = base + (qs.length ? '?' + qs.join('&') : '');
+                var w = window.open(url, 'ReportPrintWindow', 'width=900,height=700,scrollbars=yes,resizable=yes');
+                if (w) w.focus();
+            });
+        })();
+        // JalaliDatePicker Enterprise: از تاریخ / تا تاریخ
+        (function () {
+            function initDatePickers() {
+                if (typeof JalaliDatePickerEnterprise !== 'undefined') {
+                    JalaliDatePickerEnterprise.startWatchAgain();
+                }
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initDatePickers);
+            } else {
+                initDatePickers();
+            }
+            setTimeout(initDatePickers, 300);
+        })();
+    </script>
+}

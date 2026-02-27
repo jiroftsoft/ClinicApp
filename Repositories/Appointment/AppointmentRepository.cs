@@ -415,6 +415,89 @@ namespace ClinicApp.Repositories.Appointment
                 throw;
             }
         }
+
+        /// <summary>
+        /// نوبت‌های رزرو شده توسط بیماران (IsOnlineBooking) برای گزارش منشی — فقط خواندن، بدون تغییر.
+        /// visitType: "all" | "inperson" | "online"
+        /// </summary>
+        public async Task<List<PatientBookedAppointmentReportItemDto>> GetPatientBookedAppointmentsForReportAsync(
+            DateTime? fromDate,
+            DateTime? toDate,
+            string visitType = "all")
+        {
+            try
+            {
+                var query = _context.Appointments
+                    .AsNoTracking()
+                    .Where(a => a.IsOnlineBooking && !a.IsDeleted)
+                    .Include(a => a.Doctor)
+                    .Include(a => a.Doctor.DoctorSpecializations.Select(ds => ds.Specialization))
+                    .Include(a => a.Patient)
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(visitType))
+                {
+                    if (string.Equals(visitType.Trim(), "inperson", StringComparison.OrdinalIgnoreCase))
+                        query = query.Where(a => !a.IsOnlineConsultation);
+                    else if (string.Equals(visitType.Trim(), "online", StringComparison.OrdinalIgnoreCase))
+                        query = query.Where(a => a.IsOnlineConsultation);
+                }
+
+                if (fromDate.HasValue)
+                    query = query.Where(a => DbFunctions.TruncateTime(a.AppointmentDate) >= DbFunctions.TruncateTime(fromDate.Value));
+                if (toDate.HasValue)
+                    query = query.Where(a => DbFunctions.TruncateTime(a.AppointmentDate) <= DbFunctions.TruncateTime(toDate.Value));
+
+                var list = await query
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .ThenByDescending(a => a.CreatedAt)
+                    .ToListAsync()
+                    .ConfigureAwait(false);
+
+                var result = list.Select(a =>
+                {
+                    var spec = a.Doctor?.DoctorSpecializations?.FirstOrDefault()?.Specialization;
+                    return new PatientBookedAppointmentReportItemDto
+                    {
+                        AppointmentId = a.AppointmentId,
+                        AppointmentDate = a.AppointmentDate,
+                        Duration = a.Duration,
+                        PatientName = a.Patient != null ? a.Patient.FullName : (a.PatientName ?? "—"),
+                        PatientPhone = a.PatientPhone ?? (a.Patient != null ? a.Patient.PhoneNumber : null) ?? "—",
+                        DoctorName = a.Doctor != null ? (a.Doctor.FirstName + " " + a.Doctor.LastName).Trim() : "—",
+                        DoctorSpecialty = spec != null ? (spec.Name ?? "—") : "—",
+                        Status = (int)a.Status,
+                        StatusDisplay = GetStatusDisplay(a.Status),
+                        Price = a.Price,
+                        IsOnlineConsultation = a.IsOnlineConsultation,
+                        CreatedAt = a.CreatedAt
+                    };
+                }).ToList();
+
+                _logger.Information("گزارش نوبت‌های رزرو بیماران: {Count} ردیف (از {From} تا {To})",
+                    result.Count, fromDate?.ToString("yyyy/MM/dd") ?? "—", toDate?.ToString("yyyy/MM/dd") ?? "—");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت گزارش نوبت‌های رزرو شده توسط بیماران");
+                throw;
+            }
+        }
+
+        private static string GetStatusDisplay(AppointmentStatus status)
+        {
+            switch (status)
+            {
+                case AppointmentStatus.Available: return "در دسترس";
+                case AppointmentStatus.Scheduled: return "ثبت شده";
+                case AppointmentStatus.Pending: return "در انتظار";
+                case AppointmentStatus.Completed: return "انجام شده";
+                case AppointmentStatus.Cancelled: return "لغو شده";
+                case AppointmentStatus.NoShow: return "عدم حضور";
+                default: return status.ToString();
+            }
+        }
     }
 }
 

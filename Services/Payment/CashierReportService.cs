@@ -276,8 +276,9 @@ namespace ClinicApp.Services.Payment
                     var cashier = await _context.Users.FirstOrDefaultAsync(u => u.Id == cashierId);
                     if (cashier == null) continue;
 
-                    // Get Sessions
+                    // Get Sessions with Transactions to avoid N+1
                     var sessions = await _context.CashSessions
+                        .Include(cs => cs.Transactions)
                         .Where(cs => cs.UserId == cashierId &&
                                      cs.OpenedAt >= fromDate &&
                                      cs.OpenedAt <= toDate &&

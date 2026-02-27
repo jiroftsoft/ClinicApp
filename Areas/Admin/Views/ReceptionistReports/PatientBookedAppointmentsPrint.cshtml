@@ -1,0 +1,140 @@
+@using System.Collections.Generic
+@using ClinicApp.Helpers
+@using ClinicApp.Extensions
+@model ClinicApp.Interfaces.PatientBookedAppointmentsReportResult
+@{
+    Layout = "~/Views/Shared/_PrintLayout.cshtml";
+    ViewBag.Title = "گزارش نوبت‌های رزرو شده توسط بیماران";
+    var items = Model?.Items ?? new List<ClinicApp.Models.DTOs.Appointment.PatientBookedAppointmentReportItemDto>();
+    var fromShamsi = ViewBag.FromDateShamsi as string ?? "—";
+    var toShamsi = ViewBag.ToDateShamsi as string ?? "—";
+    var visitType = ViewBag.VisitType as string ?? "all";
+    var visitTypeLabel = visitType == "inperson" ? "فقط حضوری" : (visitType == "online" ? "فقط آنلاین" : "همه");
+    var logoUrl = Url.Content("~/Content/Images/shafa-logo.png");
+}
+<style>
+    /* قالب چاپ حرفه‌ای — پروداکشن */
+    .report-print { font-family: 'Vazir', 'Tahoma', Arial, sans-serif; max-width: 210mm; margin: 0 auto; padding: 0; }
+    .report-print * { box-sizing: border-box; }
+    .report-print-header { text-align: center; padding: 0 0 16px 0; border-bottom: 3px solid #0d47a1; margin-bottom: 20px; }
+    .report-print-logo { max-height: 52px; width: auto; display: block; margin: 0 auto 8px auto; }
+    .report-print-clinic { font-size: 1.35rem; font-weight: 700; color: #0d47a1; margin: 0; letter-spacing: -0.02em; }
+    .report-print-subtitle { font-size: 0.95rem; color: #37474f; margin: 6px 0 0 0; font-weight: 600; }
+    .report-print-meta { font-size: 0.8rem; color: #546e7a; margin-top: 10px; line-height: 1.6; }
+    .report-print-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; margin-top: 12px; }
+    .report-print-table th, .report-print-table td { padding: 8px 6px; text-align: right; border: 1px solid #b0bec5; }
+    .report-print-table th { background: #0d47a1; color: #fff; font-weight: 600; }
+    .report-print-table tbody tr:nth-child(even) { background: #f5f5f5; }
+    .report-print-table .col-n { width: 36px; }
+    .report-print-table .col-date { width: 95px; }
+    .report-print-table .col-time { width: 55px; }
+    .report-print-empty { text-align: center; padding: 24px; color: #546e7a; }
+    .report-print-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 500; }
+    .report-print-badge-online { background: #e3f2fd; color: #1565c0; }
+    .report-print-foot { margin-top: 28px; padding-top: 16px; border-top: 2px solid #cfd8dc; }
+    .report-print-handover { font-size: 0.75rem; color: #546e7a; margin-bottom: 14px; text-align: center; }
+    .report-print-signature { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+    .report-print-sig-block { text-align: center; flex: 1; min-width: 140px; max-width: 200px; }
+    .report-print-sig-line { border-bottom: 1px solid #263238; height: 32px; margin-bottom: 4px; }
+    .report-print-sig-label { font-size: 0.75rem; font-weight: 600; color: #37474f; }
+    .report-print-date-line { font-size: 0.8rem; color: #546e7a; }
+    @@media print {
+        .report-print { max-width: none; }
+        .report-print-table th { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body { background: #fff !important; }
+    }
+</style>
+
+<div class="report-print">
+    <header class="report-print-header">
+        <img src="@logoUrl" alt="کلینیک شفا" class="report-print-logo" />
+        <h1 class="report-print-clinic">کلینیک درمانی شفا</h1>
+        <p class="report-print-subtitle">گزارش نوبت‌های رزرو شده توسط بیماران</p>
+        <p class="report-print-meta">
+            بازه: @fromShamsi تا @toShamsi
+            &nbsp;|&nbsp; نوع ویزیت: @visitTypeLabel
+            &nbsp;|&nbsp; تعداد: @items.Count نوبت
+            &nbsp;|&nbsp; تاریخ چاپ: @DateTime.Now.ToPersianDate()
+        </p>
+    </header>
+
+    <table class="report-print-table">
+        <thead>
+            <tr>
+                <th class="col-n">ردیف</th>
+                <th class="col-date">تاریخ نوبت</th>
+                <th class="col-time">زمان</th>
+                <th>بیمار</th>
+                <th>تلفن</th>
+                <th>پزشک</th>
+                <th>تخصص</th>
+                <th>وضعیت</th>
+                <th>مبلغ</th>
+                <th>نوع</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (items.Count == 0)
+            {
+                <tr>
+                    <td colspan="10" class="report-print-empty">نوبتی در این بازه یافت نشد.</td>
+                </tr>
+            }
+            else
+            {
+                var row = 1;
+                foreach (var x in items)
+                {
+                    var dateShamsi = x.AppointmentDate.ToPersianDate();
+                    var timeStr = x.AppointmentDate.ToString("HH:mm");
+                    <tr>
+                        <td>@row</td>
+                        <td>@dateShamsi</td>
+                        <td>@timeStr</td>
+                        <td>@(x.PatientName ?? "—")</td>
+                        <td>@(x.PatientPhone ?? "—")</td>
+                        <td>@(x.DoctorName ?? "—")</td>
+                        <td>@(x.DoctorSpecialty ?? "—")</td>
+                        <td>@(x.StatusDisplay ?? "—")</td>
+                        <td>@MoneyDisplayHelper.FormatTomanDisplay(x.Price)</td>
+                        <td>
+                            @if (x.IsOnlineConsultation)
+                            {<span class="report-print-badge report-print-badge-online">آنلاین</span>}
+                            else
+                            {<span>حضوری</span>}
+                        </td>
+                    </tr>
+                    row++;
+                }
+            }
+        </tbody>
+    </table>
+
+    <footer class="report-print-foot">
+        <p class="report-print-handover">این گزارش جهت تحویل به مدیر کلینیک و اخذ امضا تهیه شده است.</p>
+        <div class="report-print-signature">
+            <div class="report-print-sig-block">
+                <div class="report-print-sig-line"></div>
+                <div class="report-print-sig-label">امضای منشی</div>
+            </div>
+            <div class="report-print-sig-block">
+                <div class="report-print-sig-line"></div>
+                <div class="report-print-sig-label">امضای مدیر کلینیک</div>
+            </div>
+            <div class="report-print-sig-block">
+                <div class="report-print-date-line">@DateTime.Now.ToPersianDate()</div>
+                <div class="report-print-sig-label">تاریخ</div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+@section scripts {
+    <script>
+        (function () {
+            if (window.name === 'ReportPrintWindow') {
+                setTimeout(function () { window.print(); }, 250);
+            }
+        })();
+    </script>
+}

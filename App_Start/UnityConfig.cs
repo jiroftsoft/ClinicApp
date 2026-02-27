@@ -521,6 +521,8 @@ namespace ClinicApp
                 // Register Appointment Booking Service
                 container.RegisterType<IAppointmentBookingService, AppointmentBookingService>(new PerRequestLifetimeManager());
                 container.RegisterType<ClinicApp.Interfaces.Appointment.IDoctorMappingService, ClinicApp.Services.Appointment.DoctorMappingService>(new PerRequestLifetimeManager());
+                // گزارش نوبت‌های رزرو شده توسط بیماران (منشی)
+                container.RegisterType<IPatientBookedAppointmentsReportService, PatientBookedAppointmentsReportService>(new PerRequestLifetimeManager());
 
                 // مشاوره آنلاین تصویری (Jitsi)
                 container.RegisterType<IOnlineConsultationRoomRepository, OnlineConsultationRoomRepository>(new PerRequestLifetimeManager());
