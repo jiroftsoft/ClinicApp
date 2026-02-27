@@ -1,0 +1,49 @@
+@model ClinicApp.ViewModels.Admin.InsuranceRevenueFilterViewModel
+@using System.Web.Mvc
+@using System.Web.Mvc.Html
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light py-2">
+        <i class="fas fa-filter me-2"></i>فیلتر
+    </div>
+    <div class="card-body py-3">
+        <form id="filterForm" class="row g-3" method="get" action="@Url.Action("Index", "InsuranceRevenue", new { area = "Admin" })">
+            <div class="col-md-2">
+                <label class="form-label">از تاریخ (شمسی)</label>
+                <input type="text" name="startDatePersian" id="StartDatePersian" class="form-control" placeholder="1403/01/01" value="@(Model?.StartDatePersian)" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">تا تاریخ (شمسی)</label>
+                <input type="text" name="endDatePersian" id="EndDatePersian" class="form-control" placeholder="1403/12/29" value="@(Model?.EndDatePersian)" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">بیمه‌گذار</label>
+                <select name="insuranceProviderId" id="InsuranceProviderId" class="form-select">
+                    <option value="">همه</option>
+                    @if (ViewBag.InsuranceProviders != null)
+                    {
+                        foreach (SelectListItem li in (System.Collections.IEnumerable)ViewBag.InsuranceProviders)
+                        {
+                            <option value="@li.Value" @(li.Selected ? "selected" : "")>@li.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">وضعیت مطالبه</label>
+                <select name="claimStatus" id="ClaimStatus" class="form-select">
+                    <option value="">همه</option>
+                    <option value="1" @(Model?.ClaimStatus == "1" ? "selected" : "")>در انتظار</option>
+                    <option value="2" @(Model?.ClaimStatus == "2" ? "selected" : "")>تأیید شده</option>
+                    <option value="3" @(Model?.ClaimStatus == "3" ? "selected" : "")>پرداخت جزئی</option>
+                    <option value="4" @(Model?.ClaimStatus == "4" ? "selected" : "")>پرداخت شده</option>
+                    <option value="5" @(Model?.ClaimStatus == "5" ? "selected" : "")>رد شده</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-1"></i>اعمال
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -356,6 +356,13 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            context.MapRoute(
+                name: "Admin_InsuranceRevenue_Routes",
+                url: "Admin/InsuranceRevenue/{action}/{id}",
+                defaults: new { controller = "InsuranceRevenue", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
             // ✅ PromotionalEvent Routes - طبق 08-MVC-Routing-Best-Practices.md
             // Route خاص قبل از CMS route برای جلوگیری از match شدن به CMS
             // ⚠️ CRITICAL: باید قبل از Admin_CMS_Default باشد (خاص قبل از عمومی)

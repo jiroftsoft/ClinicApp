@@ -1,0 +1,54 @@
+@model ClinicApp.ViewModels.Admin.InsuranceKPIViewModel
+@{
+    var kpi = Model;
+}
+<div class="row g-3">
+    <div class="col-md-2">
+        <div class="card border-primary h-100">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">کل مطالبات</h6>
+                <p class="h6 mb-0 text-primary">@((kpi?.TotalClaims ?? 0).ToString("N0")) ریال</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card border-success h-100">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">دریافتی واقعی</h6>
+                <p class="h6 mb-0 text-success">@((kpi?.TotalRealized ?? 0).ToString("N0")) ریال</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card h-100">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">مانده مطالبات</h6>
+                <p class="h6 mb-0">@((kpi?.Outstanding ?? 0).ToString("N0")) ریال</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card h-100 @(kpi != null && kpi.DeductionRatePercent > 15 ? "border-danger" : "")">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">درصد کسورات</h6>
+                <p class="h6 mb-0">@(kpi?.DeductionRatePercent ?? 0)%</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card h-100">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">میانگین زمان وصول (روز)</h6>
+                <p class="h6 mb-0">@(kpi?.AverageSettlementDays ?? 0)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card h-100">
+            <div class="card-body py-3">
+                <h6 class="text-muted small">تعداد مطالبات</h6>
+                <p class="h6 mb-0">@(kpi?.ClaimCount ?? 0)</p>
+            </div>
+        </div>
+    </div>
+</div>

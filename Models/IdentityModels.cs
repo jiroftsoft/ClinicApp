@@ -96,6 +96,8 @@ namespace ClinicApp.Models
         public DbSet<PlanService> PlanServices { get; set; }
         public DbSet<PatientInsurance> PatientInsurances { get; set; }
         public DbSet<InsuranceCalculation> InsuranceCalculations { get; set; }
+        public DbSet<InsuranceClaim> InsuranceClaims { get; set; }
+        public DbSet<InsuranceBatch> InsuranceBatches { get; set; }
         public DbSet<BusinessRule> BusinessRules { get; set; }
         public DbSet<Patient> Patients { get; set; }
         public DbSet<PatientSetting> PatientSettings { get; set; }

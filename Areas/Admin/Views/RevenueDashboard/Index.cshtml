@@ -1,0 +1,224 @@
+@model ClinicApp.ViewModels.Admin.RevenueDashboardViewModel
+@using Newtonsoft.Json
+@{
+    ViewBag.Title = "داشبورد درآمد";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminPlatformLayout.cshtml";
+    var s = Model?.Summary;
+    var c = Model?.ChartData;
+}
+<div class="container-fluid" dir="rtl">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h4 mb-0 text-gray-800">
+            <i class="fas fa-chart-line text-primary me-2"></i>داشبورد درآمد
+        </h1>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+        </div>
+    }
+
+    <!-- فیلتر -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light py-2">
+            <i class="fas fa-filter me-2"></i>فیلتر بازه زمانی
+        </div>
+        <div class="card-body py-3">
+            @using (Html.BeginForm("Index", "RevenueDashboard", FormMethod.Get, new { id = "filterForm", @class = "row g-3" }))
+            {
+                <div class="col-md-3">
+                    <label class="form-label">از تاریخ (شمسی)</label>
+                    <input type="text" name="StartDatePersian" id="StartDatePersian" class="form-control" placeholder="1403/12/01" value="@(Model?.Filter?.StartDatePersian)" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">تا تاریخ (شمسی)</label>
+                    <input type="text" name="EndDatePersian" id="EndDatePersian" class="form-control" placeholder="1403/12/08" value="@(Model?.Filter?.EndDatePersian)" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search me-1"></i>اعمال
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- KPI -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card border-primary h-100">
+                <div class="card-body">
+                    <h6 class="text-muted small">کل درآمد</h6>
+                    <p class="h5 mb-0 text-primary">@((s?.TotalRevenue ?? 0).ToString("N0")) <small>ریال</small></p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted small">نقدی</h6>
+                    <p class="h6 mb-0">@((s?.CashRevenue ?? 0).ToString("N0")) ریال</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted small">پوز</h6>
+                    <p class="h6 mb-0">@((s?.PosRevenue ?? 0).ToString("N0")) ریال</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="text-muted small">آنلاین</h6>
+                    <p class="h6 mb-0">@((s?.OnlineRevenue ?? 0).ToString("N0")) ریال</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 @(s != null && s.GrowthRatePercent >= 0 ? "border-success" : "border-danger")">
+                <div class="card-body">
+                    <h6 class="text-muted small">رشد نسبت به دوره قبل</h6>
+                    <p class="h6 mb-0">@(s?.GrowthRatePercent ?? 0)%</p>
+                    <small class="text-muted">میانگین تراکنش: @((s?.AverageTransactionAmount ?? 0).ToString("N0")) ریال</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-2">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2">روند درآمد روزانه</div>
+                <div class="card-body">
+                    <canvas id="revenueTrendChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2">تفکیک روش پرداخت</div>
+                <div class="card-body">
+                    <canvas id="paymentMethodChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-center">
+            @using (Html.BeginForm("ExportToExcel", "RevenueDashboard", FormMethod.Post, new { id = "exportForm" }))
+            {
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="StartDatePersian" id="ExportStartDatePersian" value="@(Model?.Filter?.StartDatePersian)" />
+                <input type="hidden" name="EndDatePersian" id="ExportEndDatePersian" value="@(Model?.Filter?.EndDatePersian)" />
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="fas fa-file-excel me-1"></i>خروجی Excel
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- درآمد به تفکیک پزشک -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light py-2">درآمد به تفکیک پزشک (۱۵ مورد اول)</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>پزشک</th>
+                            <th>درآمد (ریال)</th>
+                            <th>تعداد تراکنش</th>
+                            <th>سهم (%)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model?.DoctorRevenues != null && Model.DoctorRevenues.Any())
+                        {
+                            foreach (var dr in Model.DoctorRevenues)
+                            {
+                                <tr>
+                                    <td>@dr.DoctorName</td>
+                                    <td>@dr.Revenue.ToString("N0")</td>
+                                    <td>@dr.TransactionCount</td>
+                                    <td>@dr.PercentShare</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr><td colspan="4" class="text-center text-muted">داده‌ای در این بازه وجود ندارد.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            var labels = @Html.Raw(c != null && c.Labels != null ? JsonConvert.SerializeObject(c.Labels) : "[]");
+            var dailyValues = @Html.Raw(c != null && c.DailyValues != null ? JsonConvert.SerializeObject(c.DailyValues) : "[]");
+
+            // Line chart
+            var trendCtx = document.getElementById('revenueTrendChart');
+            if (trendCtx && typeof Chart !== 'undefined') {
+                new Chart(trendCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'درآمد (ریال)',
+                            data: dailyValues,
+                            borderColor: 'rgb(13, 110, 253)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: true } },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Pie chart
+            var cash = @(s?.CashRevenue ?? 0);
+            var pos = @(s?.PosRevenue ?? 0);
+            var online = @(s?.OnlineRevenue ?? 0);
+            var other = @(s?.OtherRevenue ?? 0);
+            var pieCtx = document.getElementById('paymentMethodChart');
+            if (pieCtx && typeof Chart !== 'undefined') {
+                new Chart(pieCtx.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['نقدی', 'پوز', 'آنلاین', 'سایر'],
+                        datasets: [{
+                            data: [cash, pos, online, other],
+                            backgroundColor: ['#198754', '#0d6efd', '#fd7e14', '#6c757d']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+
+            document.getElementById('exportForm').addEventListener('submit', function() {
+                document.getElementById('ExportStartDatePersian').value = document.getElementById('StartDatePersian').value;
+                document.getElementById('ExportEndDatePersian').value = document.getElementById('EndDatePersian').value;
+            });
+        })();
+    </script>
+}

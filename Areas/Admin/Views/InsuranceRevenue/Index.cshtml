@@ -1,0 +1,121 @@
+@model ClinicApp.ViewModels.Admin.InsuranceRevenueDashboardViewModel
+@using Newtonsoft.Json
+@using System.Linq
+@{
+    ViewBag.Title = "داشبورد درآمد بیمه‌ها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminPlatformLayout.cshtml";
+}
+<div class="container-fluid" dir="rtl">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <h1 class="h4 mb-0 text-gray-800">
+            <i class="fas fa-shield-alt text-primary me-2"></i>داشبورد درآمد بیمه‌ها
+        </h1>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+        </div>
+    }
+
+    @Html.Partial("_FilterPartial", Model?.Filter)
+
+    <div id="insurance-revenue-kpi-cards">
+        @Html.Partial("_KPICardsPartial", Model?.KPIs)
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2">گزارش Aging (سررسید مطالبات)</div>
+                <div class="card-body">
+                    <div id="aging-chart-container">
+                        @Html.Partial("_AgingChartPartial", Model?.AgingItems)
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light py-2">نمودار سهم بیمه‌گذاران از مطالبات</div>
+                <div class="card-body">
+                    <canvas id="insurancePieChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light py-2">تحلیل به تفکیک بیمه‌گذار</div>
+        <div class="card-body p-0">
+            <div id="provider-table-container">
+                @Html.Partial("_ProviderTablePartial", Model?.ProviderBreakdown)
+            </div>
+        </div>
+    </div>
+
+    @using (Html.BeginForm("ExportToExcel", "InsuranceRevenue", FormMethod.Post, new { id = "exportForm", @class = "mt-3" }))
+    {
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="StartDatePersian" id="ExportStartDatePersian" />
+        <input type="hidden" name="EndDatePersian" id="ExportEndDatePersian" />
+        <input type="hidden" name="InsuranceProviderId" id="ExportInsuranceProviderId" />
+        <input type="hidden" name="ClaimStatus" id="ExportClaimStatus" />
+        <button type="submit" class="btn btn-success">
+            <i class="fas fa-file-excel me-1"></i>خروجی Excel
+        </button>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function() {
+            var pieLabels = @Html.Raw(Model?.ChartData?.PieLabels != null ? JsonConvert.SerializeObject(Model.ChartData.PieLabels) : "[]");
+            var pieValues = @Html.Raw(Model?.ChartData?.PieValues != null ? JsonConvert.SerializeObject(Model.ChartData.PieValues) : "[]");
+            var agingLabels = @Html.Raw(Model?.AgingItems != null ? JsonConvert.SerializeObject(Model.AgingItems.Select(x => x.AgeGroup).ToList()) : "[]");
+            var agingClaimed = @Html.Raw(Model?.AgingItems != null ? JsonConvert.SerializeObject(Model.AgingItems.Select(x => x.TotalClaimed).ToList()) : "[]");
+            var agingApproved = @Html.Raw(Model?.AgingItems != null ? JsonConvert.SerializeObject(Model.AgingItems.Select(x => x.TotalApproved).ToList()) : "[]");
+
+            if (typeof Chart !== 'undefined') {
+                var pieCtx = document.getElementById('insurancePieChart');
+                if (pieCtx) {
+                    new Chart(pieCtx.getContext('2d'), {
+                        type: 'doughnut',
+                        data: {
+                            labels: pieLabels,
+                            datasets: [{ data: pieValues, backgroundColor: ['#0d6efd', '#198754', '#fd7e14', '#6f42c1', '#6c757d'] }]
+                        },
+                        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+                    });
+                }
+                var agingCtx = document.getElementById('agingBarChart');
+                if (agingCtx && agingLabels.length) {
+                    new Chart(agingCtx.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: agingLabels,
+                            datasets: [
+                                { label: 'مطالبات', data: agingClaimed, backgroundColor: 'rgba(13, 110, 253, 0.7)' },
+                                { label: 'تأیید شده', data: agingApproved, backgroundColor: 'rgba(25, 135, 84, 0.7)' }
+                            ]
+                        },
+                        options: { responsive: true, scales: { y: { beginAtZero: true } } }
+                    });
+                }
+            }
+
+            var exportForm = document.getElementById('exportForm');
+            if (exportForm) {
+                exportForm.addEventListener('submit', function() {
+                    document.getElementById('ExportStartDatePersian').value = document.getElementById('StartDatePersian')?.value || '';
+                    document.getElementById('ExportEndDatePersian').value = document.getElementById('EndDatePersian')?.value || '';
+                    document.getElementById('ExportInsuranceProviderId').value = document.getElementById('InsuranceProviderId')?.value || '';
+                    document.getElementById('ExportClaimStatus').value = document.getElementById('ClaimStatus')?.value || '';
+                });
+            }
+        })();
+    </script>
+}

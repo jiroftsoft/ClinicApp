@@ -1,0 +1,42 @@
+@model List<ClinicApp.ViewModels.Admin.InsuranceProviderBreakdownViewModel>
+@{
+    var list = Model ?? new List<ClinicApp.ViewModels.Admin.InsuranceProviderBreakdownViewModel>();
+}
+<div class="table-responsive">
+    <table class="table table-hover mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>بیمه‌گذار</th>
+                <th>کل مطالبات</th>
+                <th>دریافتی</th>
+                <th>مانده</th>
+                <th>کسورات</th>
+                <th>درصد کسری</th>
+                <th>میانگین تأخیر (روز)</th>
+                <th>تعداد</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (list.Any())
+            {
+                foreach (var item in list)
+                {
+                    <tr class="@(item.DeductionRatePercent > 15 ? "table-danger" : "")">
+                        <td>@item.ProviderName</td>
+                        <td>@item.TotalClaimed.ToString("N0")</td>
+                        <td>@item.TotalPaid.ToString("N0")</td>
+                        <td>@item.Outstanding.ToString("N0")</td>
+                        <td>@item.TotalDeduction.ToString("N0")</td>
+                        <td>@item.DeductionRatePercent%</td>
+                        <td>@item.AverageSettlementDays.ToString("F1")</td>
+                        <td>@item.ClaimCount</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="8" class="text-center text-muted">داده‌ای در این بازه وجود ندارد.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

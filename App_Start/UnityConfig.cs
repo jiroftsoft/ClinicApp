@@ -587,6 +587,8 @@ namespace ClinicApp
                 container.RegisterType<IPatientInsuranceRepository, PatientInsuranceRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IPlanServiceRepository, PlanServiceRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceCalculationRepository, InsuranceCalculationRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceClaimRepository, InsuranceClaimRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceBatchRepository, InsuranceBatchRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceTariffRepository, InsuranceTariffRepository>(new PerRequestLifetimeManager());
 
                 // Register Insurance Module Services
@@ -605,6 +607,7 @@ namespace ClinicApp
                 container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryCombinationService, SupplementaryCombinationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceCalculationService, CorrectSupplementaryInsuranceCalculationService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceRevenueService, InsuranceRevenueService>(new PerRequestLifetimeManager());
 
                 // Register Business Rules Engine
                 container.RegisterType<IBusinessRuleEngine, BusinessRuleEngine>(new PerRequestLifetimeManager());
@@ -789,6 +792,7 @@ namespace ClinicApp
 
                 // ========== ثبت سرویس‌های جدید برای Audit Trail و Performance - 1404/10/05 ==========
                 container.RegisterType<ICashierReportService, CashierReportService>(new PerRequestLifetimeManager());
+                container.RegisterType<IRevenueDashboardService, RevenueDashboardService>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashSessionAuditService, CashSessionAuditService>(new PerRequestLifetimeManager());
                 container.RegisterType<IPaymentReconciliationService, PaymentReconciliationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ICashierPerformanceService, CashierPerformanceService>(new PerRequestLifetimeManager());

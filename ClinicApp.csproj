@@ -536,6 +536,7 @@
     <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
     <Compile Include="Areas\Admin\Controllers\CashierDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
+    <Compile Include="Areas\Admin\Controllers\InsuranceRevenueController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AboutPageController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\AnnouncementController.cs" />
     <Compile Include="Areas\Admin\Controllers\CMS\BaseCMSController.cs" />
@@ -795,6 +796,7 @@
     <Compile Include="Interfaces\Appointment\IAppointmentRepository.cs" />
     <Compile Include="Interfaces\Appointment\IDoctorMappingService.cs" />
     <Compile Include="Interfaces\IPatientBookedAppointmentsReportService.cs" />
+    <Compile Include="Interfaces\IRevenueDashboardService.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicBankAccountRepository.cs" />
@@ -903,6 +905,9 @@
     <Compile Include="Interfaces\Insurance\IBusinessRuleRepository.cs" />
     <Compile Include="Interfaces\Insurance\ICombinedInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceCalculationRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceClaimRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceBatchRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceRevenueService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\IInsurancePlanRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsurancePlanService.cs" />
@@ -1140,6 +1145,10 @@
     <Compile Include="Migrations\202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.Designer.cs">
       <DependentUpon>202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202602271142475_AddInsuranceClaimsAndBatches.cs" />
+    <Compile Include="Migrations\202602271142475_AddInsuranceClaimsAndBatches.Designer.cs">
+      <DependentUpon>202602271142475_AddInsuranceClaimsAndBatches.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Core\OtpStateEntity.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentBookingRequestDto.cs" />
     <Compile Include="Models\DTOs\Appointment\AppointmentPriceBreakdownDto.cs" />
@@ -1151,6 +1160,8 @@
     <Compile Include="Models\DTOs\Appointment\PatientAppointmentDto.cs" />
     <Compile Include="Models\DTOs\Appointment\PatientBookedAppointmentReportItemDto.cs" />
     <Compile Include="Models\DTOs\Appointment\ServiceCategoryLookupDto.cs" />
+    <Compile Include="Models\DTOs\Insurance\InsuranceClaimAgingRow.cs" />
+    <Compile Include="Models\DTOs\Insurance\InsuranceProviderBreakdownRow.cs" />
     <Compile Include="Models\DTOs\Insurance\InsuranceStatusCheckResult.cs" />
     <Compile Include="Models\DTOs\Payment\AuditSummary.cs" />
     <Compile Include="Models\DTOs\Payment\CashierDailyReport.cs" />
@@ -1486,6 +1497,8 @@
     <Compile Include="Models\Entities\Doctor\Specialization.cs" />
     <Compile Include="Models\Entities\Insurance\BusinessRule.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceCalculation.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceClaim.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceBatch.cs" />
     <Compile Include="Models\Entities\Insurance\InsurancePlan.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceProvider.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceTariff.cs" />
@@ -1502,6 +1515,8 @@
     <Compile Include="Models\Enums\EmergencyPriority.cs" />
     <Compile Include="Models\Enums\EmergencyType.cs" />
     <Compile Include="Models\Enums\FactorScope.cs" />
+    <Compile Include="Models\Enums\ClaimStatus.cs" />
+    <Compile Include="Models\Enums\BatchStatus.cs" />
     <Compile Include="Models\Enums\InsuranceCalculationType.cs" />
     <Compile Include="Models\Enums\InsurancePriority.cs" />
     <Compile Include="Models\Enums\NotificationChannelType.cs" />
@@ -1675,6 +1690,8 @@
     <Compile Include="Repositories\DepartmentRepository.cs" />
     <Compile Include="Repositories\Insurance\BusinessRuleRepository.cs" />
     <Compile Include="Repositories\Insurance\InsuranceCalculationRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsuranceClaimRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsuranceBatchRepository.cs" />
     <Compile Include="Repositories\Insurance\InsurancePlanRepository.cs" />
     <Compile Include="Repositories\Insurance\InsuranceProviderRepository.cs" />
     <Compile Include="Repositories\Insurance\InsuranceTariffRepository.cs" />
@@ -1727,6 +1744,7 @@
     <Compile Include="Services\Insurance\CombinedInsuranceCalculationTestService.cs" />
     <Compile Include="Services\Insurance\CorrectSupplementaryInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
+    <Compile Include="Services\Insurance\InsuranceRevenueService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanService.cs" />
     <Compile Include="Services\Insurance\InsuranceProviderService.cs" />
@@ -1757,6 +1775,7 @@
     <Compile Include="Services\Payment\Validation\PaymentValidationService.cs" />
     <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
     <Compile Include="Services\ReceptionService.cs" />
+    <Compile Include="Services\RevenueDashboardService.cs" />
     <Compile Include="Services\Reception\EventHandlers\AnalyticsEventHandler.cs" />
     <Compile Include="Services\Reception\EventHandlers\AuditLoggingEventHandler.cs" />
     <Compile Include="Services\Reception\EventHandlers\EmailNotificationEventHandler.cs" />
@@ -1834,6 +1853,8 @@
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotIndexViewModel.cs" />
     <Compile Include="ViewModels\Admin\TimeSlotManagement\TimeSlotStatisticsViewModel.cs" />
     <Compile Include="ViewModels\Admin\Dashboard\DashboardPageViewModel.cs" />
+    <Compile Include="ViewModels\Admin\RevenueDashboardViewModels.cs" />
+    <Compile Include="ViewModels\Admin\InsuranceRevenueViewModels.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\ClinicAdmin\ClinicBankAccountViewModels.cs" />
     <Compile Include="ViewModels\CMS\AboutPageViewModels.cs" />
@@ -5716,6 +5737,12 @@
     <Content Include="Areas\Admin\Views\DoctorReporting\Index.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorReporting\PerformanceReport.cshtml" />
     <Content Include="Areas\Admin\Views\Dashboard\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\RevenueDashboard\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceRevenue\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceRevenue\_FilterPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceRevenue\_KPICardsPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceRevenue\_AgingChartPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceRevenue\_ProviderTablePartial.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Index.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Details.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDashboard\Assignments.cshtml" />
@@ -7814,6 +7841,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.resx">
       <DependentUpon>202602251657527_AddApplicationUser_IsDeleted_CreatedAt_Index.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202602271142475_AddInsuranceClaimsAndBatches.resx">
+      <DependentUpon>202602271142475_AddInsuranceClaimsAndBatches.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

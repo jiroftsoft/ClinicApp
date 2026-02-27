@@ -605,19 +605,24 @@ namespace ClinicApp.Repositories.Payment
                     .Where(pt => !pt.IsDeleted && pt.CreatedAt >= startOfDay && pt.CreatedAt < endOfDay)
                     .ToListAsync();
 
+                var success = transactions.Where(t => t.Status == PaymentStatus.Success).ToList();
                 return new Models.Statistics.DailyPaymentStatistics
                 {
                     Date = date,
                     TotalTransactions = transactions.Count,
                     TotalAmount = transactions.Sum(t => t.Amount),
-                    SuccessfulTransactions = transactions.Count(t => t.Status == PaymentStatus.Success),
-                    SuccessfulAmount = transactions.Where(t => t.Status == PaymentStatus.Success).Sum(t => t.Amount),
+                    SuccessfulTransactions = success.Count,
+                    SuccessfulAmount = success.Sum(t => t.Amount),
                     FailedTransactions = transactions.Count(t => t.Status == PaymentStatus.Failed),
                     FailedAmount = transactions.Where(t => t.Status == PaymentStatus.Failed).Sum(t => t.Amount),
                     PendingTransactions = transactions.Count(t => t.Status == PaymentStatus.Pending),
                     PendingAmount = transactions.Where(t => t.Status == PaymentStatus.Pending).Sum(t => t.Amount),
                     CanceledTransactions = transactions.Count(t => t.Status == PaymentStatus.Canceled),
                     CanceledAmount = transactions.Where(t => t.Status == PaymentStatus.Canceled).Sum(t => t.Amount),
+                    CashAmount = success.Where(t => t.Method == PaymentMethod.Cash).Sum(t => t.Amount),
+                    PosAmount = success.Where(t => t.Method == PaymentMethod.POS).Sum(t => t.Amount),
+                    OnlineAmount = success.Where(t => t.Method == PaymentMethod.Online).Sum(t => t.Amount),
+                    DebtAmount = success.Where(t => t.Method == PaymentMethod.Debt).Sum(t => t.Amount),
                     CalculatedAt = DateTime.Now
                 };
             }
